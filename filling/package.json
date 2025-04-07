@@ -1,0 +1,55 @@
+{
+  "name": "vue-blog-framework",
+  "private": false,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "一个基于Vue3的可集成博客框架",
+  "author": "Your Name",
+  "license": "MIT",
+  "keywords": [
+    "vue",
+    "blog",
+    "framework",
+    "component",
+    "vue3",
+    "pinia",
+    "tailwind"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "dist/vue-blog-framework.umd.js",
+  "module": "dist/vue-blog-framework.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/vue-blog-framework.es.js",
+      "require": "./dist/vue-blog-framework.umd.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:lib": "vite build --config vite.config.lib.js",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8.4.35",
+    "autoprefixer": "^10.4.17"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.10",
+    "@vitejs/plugin-vue": "^4.5.2",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.0.8"
+  }
+}

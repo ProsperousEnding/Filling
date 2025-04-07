@@ -1,0 +1,268 @@
+---
+description: Vue3可集成博客框架
+globs: 
+alwaysApply: false
+---
+
+# Vue3可集成博客框架
+
+## 项目概述
+
+这是一个基于Vue3的可集成博客框架，旨在提供一个易于集成、可定制的博客解决方案，支持各类网站轻松添加博客功能。框架采用现代化前端技术栈，提供丰富的组件和功能，同时保持轻量级和高性能。
+
+## 技术栈
+
+- **核心框架**: Vue 3
+- **开发语言**: JavaScript
+- **状态管理**: Pinia
+- **路由管理**: Vue Router
+- **HTTP客户端**: Axios
+- **CSS框架**: Tailwind CSS
+- **构建工具**: Vite
+
+## 主要功能
+
+- 文章列表展示
+- 文章详情页
+- 分类/标签系统
+- 评论系统
+- 搜索功能
+- 归档功能
+- 响应式设计
+- 自定义主题
+- SEO优化
+- Markdown支持
+- 代码高亮
+- 图片懒加载
+- 分页功能
+
+## 组件设计
+
+### 核心组件
+
+1. **BlogContainer**: 博客框架的主容器
+2. **ArticleList**: 文章列表组件
+3. **ArticleCard**: 文章卡片组件
+4. **ArticleDetail**: 文章详情组件
+5. **CategoryList**: 分类列表组件
+6. **TagCloud**: 标签云组件
+7. **CommentSystem**: 评论系统组件
+8. **SearchBar**: 搜索组件
+9. **Pagination**: 分页组件
+10. **SideBar**: 侧边栏组件
+11. **ArchiveList**: 归档列表组件
+
+### 布局组件
+
+1. **Header**: 博客头部组件
+2. **Footer**: 博客底部组件
+3. **MainContent**: 主内容区域组件
+
+## 状态管理（Pinia）
+
+### Store模块
+
+1. **articleStore**: 管理文章数据
+   - 文章列表
+   - 文章详情
+   - 热门文章
+
+2. **categoryStore**: 管理分类数据
+   - 分类列表
+   - 分类文章计数
+
+3. **tagStore**: 管理标签数据
+   - 标签列表
+   - 标签文章计数
+
+4. **commentStore**: 管理评论数据
+   - 评论列表
+   - 回复列表
+
+5. **userStore**: 管理用户数据
+   - 用户信息
+   - 登录状态
+
+6. **configStore**: 管理博客配置
+   - 主题设置
+   - 显示选项
+
+## 路由设计（Vue Router）
+
+```javascript
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home
+  },
+  {
+    path: '/articles',
+    name: 'Articles',
+    component: ArticleList
+  },
+  {
+    path: '/article/:id',
+    name: 'ArticleDetail',
+    component: ArticleDetail
+  },
+  {
+    path: '/category/:id',
+    name: 'Category',
+    component: CategoryView
+  },
+  {
+    path: '/tag/:id',
+    name: 'Tag',
+    component: TagView
+  },
+  {
+    path: '/archive',
+    name: 'Archive',
+    component: ArchiveView
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: SearchView
+  }
+]
+```
+
+## API交互设计（Axios）
+
+### 接口模块
+
+1. **articleAPI**: 文章相关接口
+   - 获取文章列表
+   - 获取文章详情
+   - 获取热门文章
+
+2. **categoryAPI**: 分类相关接口
+   - 获取分类列表
+   - 获取分类下文章
+
+3. **tagAPI**: 标签相关接口
+   - 获取标签列表
+   - 获取标签下文章
+
+4. **commentAPI**: 评论相关接口
+   - 获取文章评论
+   - 提交评论
+   - 回复评论
+
+5. **searchAPI**: 搜索相关接口
+   - 搜索文章
+
+## 集成方案
+
+### 作为Vue插件
+
+```javascript
+import { createApp } from 'vue'
+import App from './App.vue'
+import VueBlog from 'vue-blog-framework'
+
+const app = createApp(App)
+app.use(VueBlog, {
+  // 配置选项
+  apiBaseUrl: 'https://api.example.com',
+  theme: 'light',
+  pageSize: 10
+})
+app.mount('#app')
+```
+
+### 作为组件集成
+
+```javascript
+import { BlogContainer } from 'vue-blog-framework'
+
+export default {
+  components: {
+    BlogContainer
+  },
+  setup() {
+    return {
+      blogConfig: {
+        apiBaseUrl: 'https://api.example.com',
+        theme: 'dark',
+        pageSize: 8
+      }
+    }
+  }
+}
+```
+
+## 自定义主题
+
+框架支持通过Tailwind CSS进行主题定制：
+
+```javascript
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#3b82f6',
+        secondary: '#10b981',
+        // 自定义颜色
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            // 自定义文章排版
+          }
+        }
+      }
+    }
+  },
+  plugins: [
+    require('@tailwindcss/typography'),
+    // 其他插件
+  ]
+}
+```
+
+## 响应式设计
+
+框架基于Tailwind CSS的响应式断点设计，适配各种设备：
+
+- **sm**: 640px及以上
+- **md**: 768px及以上
+- **lg**: 1024px及以上
+- **xl**: 1280px及以上
+- **2xl**: 1536px及以上
+
+## 性能优化
+
+1. **组件懒加载**：通过动态import实现
+2. **图片懒加载**：仅在视口内加载图片
+3. **列表虚拟滚动**：大量数据时优化渲染性能
+4. **请求缓存**：缓存API请求结果
+5. **代码分割**：按路由分割代码
+6. **资源预加载**：预加载关键资源
+
+## 部署与构建
+
+使用Vite进行开发和构建：
+
+```bash
+# 开发
+npm run dev
+
+# 构建
+npm run build
+
+# 预览构建结果
+npm run preview
+```
+
+## 未来规划
+
+1. **后端集成**：提供与常见后端框架的集成方案
+2. **插件系统**：支持自定义插件扩展功能
+3. **国际化**：多语言支持
+4. **数据分析**：文章阅读数据分析
+5. **PWA支持**：支持离线访问
+6. **微前端集成**：支持作为微前端应用
