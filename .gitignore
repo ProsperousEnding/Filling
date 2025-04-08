@@ -6,9 +6,19 @@
 
 # BlueJ files
 *.ctxt
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+node_modules
+dist
+dist-ssr
+*.local
 
 # Package Files #
 *.jar
@@ -22,3 +32,24 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+.env
+.idea
+package-lock.json
+node_modules
