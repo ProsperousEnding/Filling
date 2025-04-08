@@ -49,6 +49,7 @@ replay_pid*
 .env.development
 .env.production
 
+.vscode
 .env
 .idea
 package-lock.json
