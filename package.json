@@ -35,14 +35,15 @@
   },
   "dependencies": {
     "axios": "^1.6.7",
+    "md5": "^2.3.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },
   "peerDependencies": {
-    "tailwindcss": "^3.4.1",
+    "autoprefixer": "^10.4.17",
     "postcss": "^8.4.35",
-    "autoprefixer": "^10.4.17"
+    "tailwindcss": "^3.4.1"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",

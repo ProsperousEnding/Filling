@@ -41,6 +41,13 @@
             </svg>
           </router-link>
           
+          <!-- 主题设置按钮 -->
+          <router-link to="/theme-settings" class="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all" title="主题设置">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+          </router-link>
+          
           <!-- 主题切换按钮 -->
           <button @click="toggleTheme" class="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
             <svg v-if="config.theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -109,7 +116,8 @@ const navItems = [
   { name: '文章', path: '/articles' },
   { name: '分类', path: '/category' },
   { name: '标签', path: '/tag' },
-  { name: '归档', path: '/archive' }
+  { name: '归档', path: '/archive' },
+  { name: '主题设置', path: '/theme-settings' }
 ]
 </script>
 

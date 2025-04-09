@@ -45,100 +45,116 @@
           @focus="searchFocused = true"
           @blur="searchFocused = false"
           placeholder="搜索文章..."
-          class="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-full bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 font-sf-pro"
+          class="w-full px-4 py-2.5 pr-10 border border-gray-200 dark:border-gray-700 rounded-full bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 font-sf-pro"
           :class="{'ring-2 ring-primary/30': searchFocused}"
         />
-        <button 
-          @click="handleSearch"
-          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors duration-200 active:scale-95"
-          aria-label="搜索"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-        </button>
+        </div>
       </div>
     </div>
     
-    <!-- 分类列表 -->
-    <SidebarSection 
-      title="分类" 
-      :items="categories.length" 
-      v-if="categories.length > 0"
-    >
-      <ul class="space-y-2.5">
-        <li v-for="category in categories" :key="category.id">
-          <router-link 
-            :to="`/category/${category.id}`" 
-            class="flex justify-between items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 py-1.5 px-3 rounded-lg hover:bg-gray-100/50 dark:hover:bg-gray-700/50 font-sf-pro group"
-            active-class="bg-primary/5 text-primary dark:bg-primary/10"
-          >
-            <span class="group-hover:translate-x-0.5 transition-transform duration-200">{{ category.name }}</span>
-            <span v-if="config.showCategoryCount" class="text-xs bg-gray-100/70 dark:bg-gray-700/70 backdrop-blur-sm px-2 py-0.5 rounded-full">{{ category.count }}</span>
-          </router-link>
-        </li>
-      </ul>
-    </SidebarSection>
+    <!-- 无数据提示 - 当所有数据都为空时显示 -->
+    <div v-if="!isLoading && categories.length === 0 && tags.length === 0 && hotArticles.length === 0" 
+         class="py-6 px-4 text-center text-gray-500 dark:text-gray-400 bg-gray-50/50 dark:bg-gray-700/30 rounded-xl">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+      </svg>
+      <p class="text-sm font-sf-pro">暂无数据</p>
+      <p class="text-xs mt-1">请添加分类、标签或文章</p>
+    </div>
     
-    <!-- 标签云 -->
-    <SidebarSection 
-      title="标签" 
-      :items="tags.length" 
-      v-if="tags.length > 0"
-    >
-      <div class="flex flex-wrap gap-2">
-        <router-link 
-          v-for="tag in tags" 
-          :key="tag.id" 
-          :to="`/tag/${tag.id}`"
-          class="px-3 py-1.5 bg-gray-100/70 dark:bg-gray-700/70 backdrop-blur-sm text-sm text-gray-700 dark:text-gray-300 rounded-full hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-primary transition-all duration-200 font-sf-pro transform hover:-translate-y-0.5"
-          active-class="bg-primary/10 text-primary dark:bg-primary/20"
-        >
-          {{ tag.name }}
-          <span v-if="config.showTagCount" class="text-xs opacity-70">({{ tag.count }})</span>
-        </router-link>
-      </div>
-    </SidebarSection>
+    <!-- 数据加载中提示 -->
+    <div v-else-if="isLoading" class="flex justify-center py-8">
+      <div class="loading-spinner"></div>
+    </div>
     
-    <!-- 热门文章 -->
-    <SidebarSection 
-      title="热门文章"
-      :items="hotArticles.length"
-      v-if="hotArticles.length > 0"
-      class="mb-2"
-    >
-      <Transition name="fade" mode="out-in">
-        <div v-if="isLoading && hotArticles.length === 0" class="flex justify-center py-4">
-          <div class="loading-spinner"></div>
-        </div>
-        <ul v-else class="space-y-4">
-          <li v-for="article in hotArticles" :key="article.id" class="group">
+    <!-- 有数据时显示相应区块 -->
+    <template v-else>
+      <!-- 分类列表 -->
+      <SidebarSection 
+        v-if="categories.length > 0"
+        title="分类" 
+        :items="categories.length" 
+        class="mb-6"
+      >
+        <ul class="space-y-2.5">
+          <li v-for="category in categories" :key="category.id">
             <router-link 
-              :to="`/article/${article.id}`" 
-              class="block p-3 rounded-xl transition-all duration-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50"
+              :to="`/category/${category.id}`" 
+              class="flex justify-between items-center text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 py-1.5 px-3 rounded-lg hover:bg-gray-100/50 dark:hover:bg-gray-700/50 font-sf-pro group"
+              active-class="bg-primary/5 text-primary dark:bg-primary/10"
             >
-              <h5 class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-primary line-clamp-2 font-sf-pro">{{ article.title }}</h5>
-              <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-2">
-                <span class="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  {{ article.views }}
-                </span>
-                <span class="mx-1.5">·</span>
-                <span class="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  {{ formatDate(article.createdAt) }}
-                </span>
-              </div>
+              <span class="group-hover:translate-x-0.5 transition-transform duration-200">{{ category.name }}</span>
+              <span v-if="config.showCategoryCount" class="text-xs bg-gray-100/70 dark:bg-gray-700/70 backdrop-blur-sm px-2 py-0.5 rounded-full">{{ category.count }}</span>
             </router-link>
           </li>
         </ul>
-      </Transition>
-    </SidebarSection>
+      </SidebarSection>
+      
+      <!-- 标签云 -->
+      <SidebarSection 
+        v-if="tags.length > 0"
+        title="标签" 
+        :items="tags.length" 
+        class="mb-6"
+      >
+        <div class="flex flex-wrap gap-2">
+          <router-link 
+            v-for="tag in tags" 
+            :key="tag.id" 
+            :to="`/tag/${tag.id}`"
+            class="px-3 py-1.5 bg-gray-100/70 dark:bg-gray-700/70 backdrop-blur-sm text-sm text-gray-700 dark:text-gray-300 rounded-full hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-primary transition-all duration-200 font-sf-pro transform hover:-translate-y-0.5"
+            active-class="bg-primary/10 text-primary dark:bg-primary/20"
+          >
+            {{ tag.name }}
+            <span v-if="config.showTagCount" class="text-xs opacity-70">({{ tag.count }})</span>
+          </router-link>
+        </div>
+      </SidebarSection>
+      
+      <!-- 热门文章 -->
+      <SidebarSection 
+        v-if="hotArticles.length > 0"
+        title="热门文章"
+        :items="hotArticles.length"
+        class="mb-2"
+      >
+        <Transition name="fade" mode="out-in">
+          <div v-if="isLoading && hotArticles.length === 0" class="flex justify-center py-4">
+            <div class="loading-spinner"></div>
+          </div>
+          <ul v-else class="space-y-4">
+            <li v-for="article in hotArticles" :key="article.id" class="group">
+              <router-link 
+                :to="`/article/${article.id}`" 
+                class="block p-3 rounded-xl transition-all duration-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50"
+              >
+                <h5 class="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-primary line-clamp-2 font-sf-pro">{{ article.title }}</h5>
+                <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  <span class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    {{ article.views }}
+                  </span>
+                  <span class="mx-1.5">·</span>
+                  <span class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {{ formatDate(article.createdAt) }}
+                  </span>
+                </div>
+              </router-link>
+            </li>
+          </ul>
+        </Transition>
+      </SidebarSection>
+    </template>
   </aside>
 </template>
 
@@ -218,9 +234,12 @@ onMounted(async () => {
       articleStore.fetchHotArticles(5)
     ])
     
-    categories.value = categoriesData || []
-    tags.value = tagsData || []
-    hotArticles.value = hotArticlesData || []
+    // 过滤无效分类，确保分类项同时具有 id 和 name
+    const validCategories = (categoriesData || []).filter(cat => cat && cat.id && cat.name);
+    
+    categories.value = validCategories; // 使用过滤后的有效分类
+    tags.value = tagsData || [];
+    hotArticles.value = hotArticlesData || [];
   } catch (error) {
     console.error('加载侧边栏数据失败:', error)
   } finally {

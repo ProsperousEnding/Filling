@@ -1,0 +1,111 @@
+/* --- CSS示例：复古终端风格 --- */
+
+/* 强制深色背景和亮绿色文本 */
+body, html {
+  background-color: #0D1117 !important; /* 深黑/暗蓝背景 */
+  color: #33FF33 !important; /* 明亮的绿色文本 */
+  font-family: 'Courier New', Courier, monospace !important; /* 等宽字体 */
+  font-size: 16px; /* 稍微增大字体 */
+}
+
+/* 移除所有圆角、阴影和模糊效果 */
+* {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  text-shadow: 0 0 2px rgba(51, 255, 51, 0.5); /* 给文字加点辉光 */
+}
+
+/* 强制 Header 和 Sidebar 背景 */
+header,
+.sidebar-container,
+.bg-white\\/80, /* 覆盖类似这样的背景类 */
+.dark\\:bg-gray-800\\/80 {
+  background-color: #161B22 !important; /* 稍微亮一点的暗色 */
+  border: 1px solid #33FF33 !important; /* 绿色边框 */
+}
+
+/* 主内容区域 */
+.main-content-area,
+.article-card-container, /* 假设文章卡片有这个容器类 */
+.article-detail-container { /* 假设文章详情有这个容器类 */
+  background-color: transparent !important; /* 透明背景 */
+  border: 1px solid #33FF33 !important; /* 绿色边框 */
+  padding: 1rem;
+}
+
+/* 链接样式 */
+a {
+  color: #33FF99 !important; /* 稍暗的绿色 */
+  text-decoration: underline !important; /* 强制下划线 */
+  text-decoration-style: dashed !important;
+}
+a:hover {
+  color: #99FF99 !important; /* 悬停时更亮 */
+  background-color: rgba(51, 255, 51, 0.1) !important;
+}
+
+/* 按钮样式 */
+button,
+input[type="text"],
+textarea {
+  background-color: #161B22 !important;
+  border: 1px solid #33FF33 !important;
+  color: #33FF33 !important;
+  font-family: 'Courier New', Courier, monospace !important;
+}
+button:hover {
+  background-color: #33FF33 !important;
+  color: #0D1117 !important;
+}
+input[type="text"]::placeholder,
+textarea::placeholder {
+    color: rgba(51, 255, 51, 0.5) !important;
+}
+
+
+/* 隐藏头像图片，只显示文字 */
+.avatar-container img {
+  display: none !important;
+}
+.avatar-container div:last-child { /* 显示文字的容器 */
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #33FF33;
+  height: 100%;
+  width: 100%;
+  background-color: #0D1117 !important;
+}
+.avatar-container span {
+    color: #33FF33 !important;
+    font-size: 3rem !important;
+}
+
+
+/* 移除Header的Mac风格按钮 */
+header .flex.space-x-1\\.5 {
+    display: none !important;
+}
+
+/* 也许加个扫描线效果？(可选，可能影响性能) */
+/* body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 3px, 3px 100%;
+    z-index: 2000;
+    pointer-events: none;
+    animation: scanline 8s linear infinite;
+}
+@keyframes scanline {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100%; }
+} */

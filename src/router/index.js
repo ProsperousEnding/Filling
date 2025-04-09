@@ -8,6 +8,7 @@ const CategoryView = () => import('../views/CategoryView.vue')
 const TagView = () => import('../views/TagView.vue')
 const ArchiveView = () => import('../views/ArchiveView.vue')
 const SearchView = () => import('../views/SearchView.vue')
+const ThemeSettings = () => import('../views/ThemeSettings.vue')
 
 const routes = [
   {
@@ -74,6 +75,14 @@ const routes = [
     component: SearchView,
     meta: {
       title: '搜索'
+    }
+  },
+  {
+    path: '/theme-settings',
+    name: 'ThemeSettings',
+    component: ThemeSettings,
+    meta: {
+      title: '主题设置'
     }
   }
 ]
