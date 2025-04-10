@@ -117,7 +117,6 @@ const navItems = [
   { name: '分类', path: '/category' },
   { name: '标签', path: '/tag' },
   { name: '归档', path: '/archive' },
-  { name: '主题设置', path: '/theme-settings' }
 ]
 </script>
 
