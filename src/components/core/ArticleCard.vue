@@ -1,5 +1,5 @@
 <template>
-  <div class="article-card flex flex-col bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 h-full overflow-hidden border border-gray-100 dark:border-gray-700 hover:scale-[1.02]">
+  <div class="article-card flex flex-col bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 h-full overflow-hidden border border-gray-100 dark:border-gray-700">
     <!-- 文章封面 -->
     <div v-if="article.imageUrl || article.cover" class="article-cover h-48 overflow-hidden">
       <router-link :to="`/article/${article.id}`">
@@ -39,7 +39,7 @@
       
       <!-- 摘要 -->
       <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3 flex-grow leading-relaxed">
-        {{ article.excerpt || article.summary || truncateText(article.content, 120) }}
+        {{ article.excerpt }}
       </p>
       
       <!-- 底部信息 -->
@@ -71,12 +71,12 @@
             </div>
             <span>{{ typeof article.author === 'string' ? article.author : article.author.name }}</span>
           </div>
-          <div v-if="article.readCount !== undefined || article.readTime" class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div v-if="article.readCount !== undefined" class="flex items-center text-xs text-gray-500 dark:text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <span>{{ article.readCount !== undefined ? `${article.readCount} 阅读` : article.readTime }}</span>
+            <span>{{ `${article.readCount} 阅读` }}</span>
           </div>
         </div>
         
@@ -107,7 +107,7 @@ const props = defineProps({
 
 // 日期格式化
 const formatDate = (dateString) => {
-  if (!dateString) return '未知日期'
+  if (!dateString) return ''
   const date = new Date(dateString)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
