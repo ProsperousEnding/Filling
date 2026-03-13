@@ -24,11 +24,12 @@
       </div>
       
       <!-- 文章列表 -->
-      <article-list 
+      <ArticleList 
         :articles="articles" 
         :total="total" 
         :loading="loading" 
         :current-page="currentPage"
+        :page-size="pageSize"
         @page-change="handlePageChange"
       />
     </div>
@@ -40,6 +41,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useArticleStore } from '../stores/article'
 import { useTagStore } from '../stores/tag'
+import ArticleList from '../components/core/ArticleListView.vue'
 
 // 获取路由参数
 const route = useRoute()
@@ -78,7 +80,7 @@ const fetchTag = async () => {
   if (!tagId.value) return
   
   try {
-    const tagData = await tagStore.fetchTagById(tagId.value)
+    const tagData = await tagStore.fetchTagDetail(tagId.value)
     tag.value = tagData
   } catch (error) {
     console.error('获取标签信息失败:', error)
@@ -91,15 +93,14 @@ const fetchArticles = async () => {
   
   loading.value = true
   try {
-    const offset = (currentPage.value - 1) * pageSize.value
-    const result = await articleStore.fetchArticlesByTag(
-      tagId.value, 
-      pageSize.value, 
-      offset
-    )
+    const result = await articleStore.fetchArticles({
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      tag: tagId.value
+    })
     
-    articles.value = result.items || []
-    total.value = result.total || 0
+    articles.value = result?.data || []
+    total.value = result?.total || 0
   } catch (error) {
     console.error('获取标签文章失败:', error)
     articles.value = []

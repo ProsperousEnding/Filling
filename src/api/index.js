@@ -32,26 +32,16 @@ api.interceptors.response.use(
   }
 )
 
-/**
- * 设置API基础URL
- * @param {string} baseURL - API基础URL
- */
-export const setBaseUrl = (baseURL) => {
-  api.defaults.baseURL = baseURL
-}
-
-// 导入API模块
-import * as articlesAPI from './articles'
-import * as categoriesAPI from './categories'
-import * as tagsAPI from './tags'
+// 使用 Markdown 适配器作为内容源
+import { articles as mdArticles, categories as mdCategories, tags as mdTags, search as mdSearch } from './markdownAdapter'
+// 评论仍然使用后端接口（如无后端可忽略）
 import * as commentsAPI from './comments'
-import * as searchAPI from './search'
 
-// 导出API
-export const articles = articlesAPI
-export const categories = categoriesAPI
-export const tags = tagsAPI
+// 导出API（内容走本地 Markdown 适配器）
+export const articles = mdArticles
+export const categories = mdCategories
+export const tags = mdTags
 export const comments = commentsAPI
-export const search = searchAPI
+export const search = mdSearch
 
 export default api

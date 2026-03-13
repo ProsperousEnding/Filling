@@ -22,11 +22,12 @@
       </div>
       
       <!-- 文章列表 -->
-      <article-list 
+      <ArticleList 
         :articles="articles" 
         :total="total" 
         :loading="loading" 
         :current-page="currentPage"
+        :page-size="pageSize"
         @page-change="handlePageChange"
       />
     </div>
@@ -38,6 +39,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useArticleStore } from '../stores/article'
 import { useCategoryStore } from '../stores/category'
+import ArticleList from '../components/core/ArticleListView.vue'
 
 // 获取路由参数
 const route = useRoute()
@@ -76,7 +78,7 @@ const fetchCategory = async () => {
   if (!categoryId.value) return
   
   try {
-    const categoryData = await categoryStore.fetchCategoryById(categoryId.value)
+    const categoryData = await categoryStore.fetchCategoryDetail(categoryId.value)
     category.value = categoryData
   } catch (error) {
     console.error('获取分类信息失败:', error)
@@ -89,15 +91,14 @@ const fetchArticles = async () => {
   
   loading.value = true
   try {
-    const offset = (currentPage.value - 1) * pageSize.value
-    const result = await articleStore.fetchArticlesByCategory(
-      categoryId.value, 
-      pageSize.value, 
-      offset
-    )
+    const result = await articleStore.fetchArticles({
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      category: categoryId.value
+    })
     
-    articles.value = result.items || []
-    total.value = result.total || 0
+    articles.value = result?.data || []
+    total.value = result?.total || 0
   } catch (error) {
     console.error('获取分类文章失败:', error)
     articles.value = []

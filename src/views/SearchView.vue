@@ -5,39 +5,45 @@
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
         搜索结果
       </h1>
-      
       <!-- 搜索框 -->
       <div class="mb-6">
-        <div class="flex items-center">
-          <div class="relative flex-grow">
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="搜索文章..." 
-              class="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              @keyup.enter="performSearch"
+        <div class="search-bar-wrap">
+          <div class="search-bar" role="search">
+            <svg xmlns="http://www.w3.org/2000/svg" class="search-leading-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="搜索文章..."
+              class="search-input"
+              @keyup.enter="performSearch(true, 1)"
             />
-            <button 
-              @click="clearSearch" 
+            <button
               v-if="searchQuery"
-              class="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              type="button"
+              @click="clearSearch"
+              class="search-clear-btn"
+              aria-label="清除搜索"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+            <button
+              type="button"
+              @click="performSearch(true, 1)"
+              :disabled="!trimmedQuery"
+              class="search-submit-btn"
+              aria-label="搜索"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
           </div>
-          <button 
-            @click="performSearch"
-            class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
         </div>
       </div>
-      
       <!-- 搜索状态 -->
       <div v-if="searchPerformed" class="text-gray-600 dark:text-gray-400">
         找到 {{ total }} 条与 "{{ displayQuery }}" 相关的结果
@@ -147,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSearchStore } from '../stores/search'
 import TagCloud from '../components/core/TagCloud.vue'
@@ -161,7 +167,8 @@ const router = useRouter()
 const searchStore = useSearchStore()
 
 // 状态
-const searchQuery = ref(route.query.q || '')
+const searchQuery = ref('')
+const trimmedQuery = computed(() => searchQuery.value.trim())
 const displayQuery = ref('')
 const articles = ref([])
 const total = ref(0)
@@ -170,38 +177,62 @@ const searchPerformed = ref(false)
 const currentPage = ref(parseInt(route.query.page) || 1)
 const pageSize = ref(10)
 
-// 生命周期
-onMounted(() => {
-  // 如果URL中有查询参数，执行搜索
-  if (searchQuery.value) {
-    performSearch()
+const syncFromRoute = () => {
+  const keyword = (route.query.keyword ?? route.query.q ?? '').toString()
+  const page = parseInt(route.query.page) || 1
+
+  if (keyword !== searchQuery.value) {
+    searchQuery.value = keyword
   }
-})
+  currentPage.value = page
+
+  if (keyword) {
+    performSearch(false, page)
+  } else {
+    searchPerformed.value = false
+    displayQuery.value = ''
+    articles.value = []
+    total.value = 0
+  }
+}
+
+watch(() => route.query, syncFromRoute, { immediate: true })
 
 // 执行搜索
-const performSearch = async () => {
-  if (!searchQuery.value.trim()) return
-  
+async function performSearch(updateUrl = true, page = currentPage.value) {
+  const keyword = trimmedQuery.value
+  if (!keyword) return
+
+  if (updateUrl) {
+    currentPage.value = page
+    const nextQuery = {
+      keyword,
+      page
+    }
+    const sameKeyword = route.query.keyword === keyword || route.query.q === keyword
+    const samePage = String(route.query.page || '1') === String(page)
+    if (!sameKeyword || !samePage) {
+      router.push({
+        path: '/search',
+        query: nextQuery
+      })
+    }
+    return
+  }
+
   loading.value = true
   searchPerformed.value = true
-  displayQuery.value = searchQuery.value
-  
+  displayQuery.value = keyword
+
   try {
-    // 更新URL
-    router.push({
-      path: '/search',
-      query: { 
-        q: searchQuery.value,
-        page: currentPage.value 
-      }
+    const result = await searchStore.search({
+      keyword,
+      page,
+      pageSize: pageSize.value
     })
-    
-    // 执行搜索
-    const offset = (currentPage.value - 1) * pageSize.value
-    const results = await searchStore.search(searchQuery.value, pageSize.value, offset)
-    
-    articles.value = results.items || []
-    total.value = results.total || 0
+
+    articles.value = result.items || []
+    total.value = result.total || 0
   } catch (error) {
     console.error('搜索失败:', error)
     articles.value = []
@@ -214,24 +245,33 @@ const performSearch = async () => {
 // 清除搜索
 const clearSearch = () => {
   searchQuery.value = ''
+  displayQuery.value = ''
+  searchPerformed.value = false
+  articles.value = []
+  total.value = 0
+  currentPage.value = 1
+
+  if (route.query.keyword || route.query.q || route.query.page) {
+    router.push({
+      path: '/search'
+    })
+  }
 }
 
 // 页码变更
 const handlePageChange = (page) => {
   currentPage.value = page
-  
-  // 更新URL参数
+  const keyword = trimmedQuery.value
+  if (!keyword) return
+
   router.push({
     path: '/search',
-    query: { 
-      q: searchQuery.value,
-      page 
+    query: {
+      keyword,
+      page
     }
   })
-  
-  // 获取新页面的搜索结果
-  performSearch()
-  
+
   // 滚动到顶部
   window.scrollTo({
     top: 0,
@@ -301,3 +341,158 @@ const formatDate = (dateString) => {
   })
 }
 </script> 
+
+
+<style scoped>
+.search-bar-wrap {
+  max-width: 56rem;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 3rem;
+  padding: 0.32rem 0.48rem 0.32rem 0.72rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(147, 197, 253, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-bar:focus-within {
+  border-color: rgb(59 130 246);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.search-leading-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: rgb(148 163 184);
+}
+
+.search-input {
+  min-width: 0;
+  flex: 1;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  appearance: none;
+  color: rgb(15 23 42);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  padding: 0.16rem 0.1rem !important;
+}
+
+.search-input::placeholder {
+  color: rgb(156 163 175);
+}
+
+.search-clear-btn,
+.search-submit-btn {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: none !important;
+  overflow: visible;
+  transform: none;
+  transition: background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+.search-clear-btn::after,
+.search-submit-btn::after {
+  content: none;
+}
+
+.search-clear-btn {
+  background: transparent;
+  color: rgb(148 163 184);
+}
+
+.search-clear-btn:hover {
+  background: rgb(241 245 249);
+  color: rgb(71 85 105);
+  transform: none;
+}
+
+.search-submit-btn {
+  background: rgb(59 130 246);
+  color: #fff;
+}
+
+.search-submit-btn:hover {
+  background: rgb(37 99 235);
+  transform: none;
+}
+
+.search-submit-btn:focus-visible,
+.search-clear-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.24);
+}
+
+.search-submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.search-submit-btn:disabled:hover {
+  background: rgb(59 130 246);
+}
+
+.search-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  pointer-events: none;
+}
+
+.dark .search-bar {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(31, 41, 55, 0.84);
+}
+
+.dark .search-bar:focus-within {
+  border-color: rgba(96, 165, 250, 0.9);
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+}
+
+.dark .search-input {
+  color: rgb(243 244 246);
+}
+
+.dark .search-input::placeholder {
+  color: rgb(156 163 175);
+}
+
+.dark .search-clear-btn {
+  color: rgb(156 163 175);
+}
+
+.dark .search-clear-btn:hover {
+  background: rgb(55 65 81);
+  color: rgb(229 231 235);
+}
+
+@media (max-width: 640px) {
+  .search-bar {
+    min-height: 2.86rem;
+    padding: 0.26rem 0.36rem 0.26rem 0.62rem;
+    gap: 0.35rem;
+  }
+}
+</style>
+
+
+
+

@@ -1,0 +1,9 @@
+# 个人信息配置
+display_name = "Vue 博主3"
+username = "vueblogger"
+tagline = "记录开发与生活的点滴"
+bio = "一个分享前端与生活故事的创作者。"
+avatar_url = "https://avatars.githubusercontent.com/u/9919?s=200&v=4"
+location = ""
+website = "http://blog.codespace.space"
+social_links = []

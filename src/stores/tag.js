@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { getTagList, getTagDetail, getTagArticles, getAllTags } from '../api/tags'
-import api from '../api'
+import { getTagList, getTagDetail, getTagArticles } from '../api/tags'
 
 export const useTagStore = defineStore('tag', {
   state: () => ({
@@ -18,8 +17,9 @@ export const useTagStore = defineStore('tag', {
       this.loading = true
       try {
         const response = await getTagList()
-        this.tags = response
-        return response
+        const list = Array.isArray(response) ? response : (response?.data || [])
+        this.tags = list
+        return list
       } catch (error) {
         this.error = error.message || '获取标签列表失败'
         throw error
@@ -64,21 +64,6 @@ export const useTagStore = defineStore('tag', {
       this.currentTag = null
       this.tagArticles = []
       this.totalArticles = 0
-    },
-
-    /**
-     * 获取所有标签
-     * @returns {Promise<Array>} - 返回标签数组
-     */
-    async fetchAllTags() {
-      try {
-        const response = await getAllTags()
-        // 确保返回数组类型
-        return Array.isArray(response.data) ? response.data : []
-      } catch (error) {
-        console.error('获取所有标签失败:', error)
-        return []
-      }
     }
   }
 }) 

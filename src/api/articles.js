@@ -1,4 +1,4 @@
-import api from './index'
+import { articles as mdArticles } from './markdownAdapter'
 
 /**
  * 获取文章列表
@@ -10,7 +10,7 @@ import api from './index'
  * @returns {Promise}
  */
 export function getArticleList(params) {
-  return api.get('/articles', { params })
+  return mdArticles.getArticleList(params)
 }
 
 /**
@@ -19,7 +19,7 @@ export function getArticleList(params) {
  * @returns {Promise}
  */
 export function getArticleDetail(id) {
-  return api.get(`/articles/${id}`)
+  return mdArticles.getArticleDetail(id)
 }
 
 /**
@@ -28,7 +28,7 @@ export function getArticleDetail(id) {
  * @returns {Promise}
  */
 export function getHotArticles(limit = 5) {
-  return api.get('/articles/hot', { params: { limit } })
+  return mdArticles.getHotArticles(limit)
 }
 
 /**
@@ -37,7 +37,7 @@ export function getHotArticles(limit = 5) {
  * @returns {Promise}
  */
 export function getLatestArticles(limit = 5) {
-  return api.get('/articles/latest', { params: { limit } })
+  return mdArticles.getLatestArticles(limit)
 }
 
 /**
@@ -47,7 +47,7 @@ export function getLatestArticles(limit = 5) {
  * @returns {Promise}
  */
 export function getRelatedArticles(id, limit = 3) {
-  return api.get(`/articles/${id}/related`, { params: { limit } })
+  return mdArticles.getRelatedArticles(id, limit)
 }
 
 /**
@@ -56,5 +56,5 @@ export function getRelatedArticles(id, limit = 3) {
  * @returns {Promise}
  */
 export function getArchiveArticles(year) {
-  return api.get('/articles/archive', { params: { year } })
+  return mdArticles.getArchiveArticles(year)
 } 

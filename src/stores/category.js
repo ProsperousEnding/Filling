@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { getCategoryList, getCategoryDetail, getCategoryArticles, getAllCategories } from '../api/categories'
-import api from '../api'
+import { getCategoryList, getCategoryDetail, getCategoryArticles } from '../api/categories'
 
 export const useCategoryStore = defineStore('category', {
   state: () => ({
@@ -18,8 +17,9 @@ export const useCategoryStore = defineStore('category', {
       this.loading = true
       try {
         const response = await getCategoryList()
-        this.categories = response
-        return response
+        const list = Array.isArray(response) ? response : (response?.data || [])
+        this.categories = list
+        return list
       } catch (error) {
         this.error = error.message || '获取分类列表失败'
         throw error
@@ -64,21 +64,6 @@ export const useCategoryStore = defineStore('category', {
       this.currentCategory = null
       this.categoryArticles = []
       this.totalArticles = 0
-    },
-
-    /**
-     * 获取所有分类
-     * @returns {Promise<Array>} - 返回分类数组
-     */
-    async fetchAllCategories() {
-      try {
-        const response = await getAllCategories()
-        // 确保返回数组类型
-        return Array.isArray(response.data) ? response.data : []
-      } catch (error) {
-        console.error('获取所有分类失败:', error)
-        return []
-      }
     }
   }
 }) 

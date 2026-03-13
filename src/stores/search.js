@@ -19,8 +19,13 @@ export const useSearchStore = defineStore('search', {
       
       try {
         const response = await searchArticles(params)
-        this.searchResults = response.data
-        this.total = response.total
+        if (Array.isArray(response)) {
+          this.searchResults = response
+          this.total = response.length
+        } else {
+          this.searchResults = response.data
+          this.total = response.total
+        }
         
         // 添加到搜索历史
         if (params.keyword && !this.searchHistory.includes(params.keyword)) {
@@ -29,7 +34,7 @@ export const useSearchStore = defineStore('search', {
           localStorage.setItem('vue-blog-search-history', JSON.stringify(this.searchHistory))
         }
         
-        return response
+        return { items: this.searchResults, total: this.total }
       } catch (error) {
         this.error = error.message || '搜索失败'
         throw error

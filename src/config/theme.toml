@@ -1,0 +1,50 @@
+# 主题配置文件
+current_preset = "default"
+custom_css = ""
+custom_js = ""
+
+[presets]
+
+[presets.default]
+primary = "59, 130, 246"
+secondary = "107, 114, 128"
+background = "255, 255, 255"
+dark_background = "31, 41, 55"
+content_bg = "255, 255, 255, 0.8"
+dark_content_bg = "31, 41, 55, 0.9"
+text_primary = "17, 24, 39"
+dark_text_primary = "243, 244, 246"
+text_secondary = "107, 114, 128"
+dark_text_secondary = "156, 163, 175"
+border_color = "229, 231, 235"
+dark_border_color = "55, 65, 81"
+
+[presets.ocean]
+primary = "6, 182, 212"
+secondary = "45, 212, 191"
+background = "240, 249, 255"
+dark_background = "15, 23, 42"
+content_bg = "240, 249, 255, 0.8"
+dark_content_bg = "15, 23, 42, 0.9"
+text_primary = "15, 23, 42"
+dark_text_primary = "241, 245, 249"
+text_secondary = "71, 85, 105"
+dark_text_secondary = "148, 163, 184"
+border_color = "226, 232, 240"
+dark_border_color = "51, 65, 85"
+
+[presets.forest]
+primary = "34, 197, 94"
+secondary = "16, 185, 129"
+background = "240, 253, 244"
+dark_background = "20, 83, 45"
+content_bg = "240, 253, 244, 0.8"
+dark_content_bg = "20, 83, 45, 0.9"
+text_primary = "20, 83, 45"
+dark_text_primary = "240, 253, 244"
+text_secondary = "34, 197, 94"
+dark_text_secondary = "110, 231, 183"
+border_color = "220, 252, 231"
+dark_border_color = "22, 101, 52"
+custom_css = ""
+custom_js = ""

@@ -149,9 +149,14 @@ const updateColor = (key, value) => {
 }
 
 // 保存主题
-const saveTheme = () => {
-  configStore.saveCustomTheme(customTheme)
-  configStore.setThemePreset('custom')
+const saveTheme = async () => {
+  try {
+    await configStore.saveCustomTheme(customTheme)
+    await configStore.setThemePreset('custom')
+    alert('✅ 自定义主题已保存到 theme.toml 文件！')
+  } catch (error) {
+    alert('❌ 保存失败：' + error.message)
+  }
 }
 
 // 颜色格式转换：RGB字符串转十六进制

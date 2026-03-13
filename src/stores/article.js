@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getArticleList, getArticleDetail, getHotArticles, getLatestArticles, getArchiveArticles } from '../api/articles'
+import { getArticleList, getArticleDetail, getHotArticles, getLatestArticles, getArchiveArticles, getRelatedArticles } from '../api/articles'
 
 export const useArticleStore = defineStore('article', {
   state: () => ({
@@ -81,6 +81,17 @@ export const useArticleStore = defineStore('article', {
         return Array.isArray(response.data) ? response.data : []
       } catch (error) {
         console.error('获取归档文章失败:', error)
+        return []
+      }
+    },
+    
+    // 获取相关文章
+    async fetchRelatedArticles(id, limit = 3) {
+      try {
+        const response = await getRelatedArticles(id, limit)
+        return Array.isArray(response) ? response : []
+      } catch (error) {
+        console.error('获取相关文章失败:', error)
         return []
       }
     },

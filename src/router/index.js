@@ -9,6 +9,9 @@ const TagView = () => import('../views/TagView.vue')
 const ArchiveView = () => import('../views/ArchiveView.vue')
 const SearchView = () => import('../views/SearchView.vue')
 const ThemeSettings = () => import('../views/ThemeSettings.vue')
+const ProfileSettings = () => import('../views/settings/ProfileSettings.vue')
+const PersonalLogs = () => import('../views/settings/PersonalLogs.vue')
+const ArticleDrafts = () => import('../views/settings/ArticleDrafts.vue')
 
 const routes = [
   {
@@ -83,6 +86,30 @@ const routes = [
     component: ThemeSettings,
     meta: {
       title: '主题设置'
+    }
+  },
+  {
+    path: '/settings/profile',
+    name: 'ProfileSettings',
+    component: ProfileSettings,
+    meta: {
+      title: '个人资料设置'
+    }
+  },
+  {
+    path: '/settings/logs',
+    name: 'PersonalLogs',
+    component: PersonalLogs,
+    meta: {
+      title: '个人日志'
+    }
+  },
+  {
+    path: '/settings/drafts',
+    name: 'ArticleDrafts',
+    component: ArticleDrafts,
+    meta: {
+      title: '文章草稿'
     }
   }
 ]

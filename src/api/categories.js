@@ -1,11 +1,11 @@
-import api from './index'
+import { categories as categoriesAPI } from './index'
 
 /**
  * 获取分类列表
  * @returns {Promise}
  */
 export function getCategoryList() {
-  return api.get('/categories')
+  return categoriesAPI.getCategoryList()
 }
 
 /**
@@ -14,7 +14,7 @@ export function getCategoryList() {
  * @returns {Promise}
  */
 export function getCategoryDetail(id) {
-  return api.get(`/categories/${id}`)
+  return categoriesAPI.getCategoryDetail(id)
 }
 
 /**
@@ -26,7 +26,7 @@ export function getCategoryDetail(id) {
  * @returns {Promise}
  */
 export function getCategoryArticles(id, params) {
-  return api.get(`/categories/${id}/articles`, { params })
+  return categoriesAPI.getCategoryArticles(id, params)
 }
 
 /**
@@ -34,5 +34,5 @@ export function getCategoryArticles(id, params) {
  * @returns {Promise}
  */
 export function getAllCategories() {
-  return api.get('/categories')
+  return categoriesAPI.getCategoryList()
 } 

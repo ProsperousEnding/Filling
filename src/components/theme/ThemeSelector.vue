@@ -63,13 +63,22 @@ const themeNames = {
 const cssInput = ref('')
 
 // 选择主题
-const selectTheme = (name) => {
-  configStore.setThemePreset(name)
+const selectTheme = async (name) => {
+  try {
+    await configStore.setThemePreset(name)
+  } catch (error) {
+    console.error('切换主题失败:', error)
+  }
 }
 
 // 保存自定义CSS
-const saveCustomCSS = () => {
-  configStore.setCustomCSS(cssInput.value)
+const saveCustomCSS = async () => {
+  try {
+    await configStore.setCustomCSS(cssInput.value)
+    alert('✅ CSS 已保存到 theme.toml 文件！')
+  } catch (error) {
+    alert('❌ 保存失败：' + error.message)
+  }
 }
 
 // 组件加载时初始化

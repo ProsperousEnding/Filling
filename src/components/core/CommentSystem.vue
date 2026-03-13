@@ -198,6 +198,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import md5 from 'md5'
 import { useCommentStore } from '../../stores/comment'
 import { useConfigStore } from '../../stores/config'
 
@@ -367,8 +368,7 @@ const formatDate = (dateString) => {
 
 // 获取头像URL
 const getAvatarUrl = (email) => {
-  if (!email) return 'https://via.placeholder.com/80'
-  const md5 = require('md5')
+  if (!email) return ''
   const hash = md5(email.trim().toLowerCase())
   return `https://www.gravatar.com/avatar/${hash}?d=mp&s=80`
 }

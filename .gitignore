@@ -54,3 +54,9 @@ replay_pid*
 .idea
 package-lock.json
 node_modules
+
+# Backup and temporary files
+*.backup
+*.backup2
+*-temp.js
+*-temp.vue

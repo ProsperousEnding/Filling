@@ -10,18 +10,31 @@
 import BlogContainer from './components/core/BlogContainer.vue'
 import CustomStyle from './components/theme/CustomStyle.vue'
 import CustomScript from './components/theme/CustomScript.vue'
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useConfigStore } from './stores/config'
 
 const configStore = useConfigStore()
 
 // 初始化主题设置
-onMounted(() => {
-  // 从本地存储加载主题设置
+onMounted(async () => {
+  // 强制从 TOML 文件重新加载所有配置（确保获取最新值）
+  await configStore.reloadConfigFromToml()
+  
+  // 从本地存储加载主题设置（只加载明暗主题）
   configStore.loadThemeFromStorage()
   
   // 应用当前主题预设
   configStore.applyThemePreset(configStore.currentThemePreset)
+  
+  // 启动配置文件监听器（开发模式下自动重新加载配置）
+  configStore.setupConfigWatcher()
+  
+  console.log('🚀 应用已启动，所有配置从 TOML 文件加载')
+})
+
+// 组件卸载时取消监听
+onUnmounted(() => {
+  configStore.teardownConfigWatcher()
 })
 </script>
 

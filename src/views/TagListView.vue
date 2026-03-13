@@ -105,7 +105,7 @@ onMounted(async () => {
 const fetchTags = async () => {
   loading.value = true
   try {
-    const result = await tagStore.fetchAllTags()
+    const result = await tagStore.fetchTags()
     tags.value = result || []
   } catch (error) {
     console.error('获取标签列表失败:', error)

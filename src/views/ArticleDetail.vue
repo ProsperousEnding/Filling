@@ -138,7 +138,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '../stores/article'
 import { useConfigStore } from '../stores/config'
@@ -161,6 +161,14 @@ const loading = ref(false)
 // 加载文章详情
 onMounted(async () => {
   await fetchArticleDetail()
+})
+
+// 监听路由参数变化，支持同组件内跳转
+watch(articleId, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    await fetchArticleDetail()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 })
 
 // 获取文章详情
@@ -189,9 +197,11 @@ const fetchArticleDetail = async () => {
   }
 }
 
-// 格式化日期
+// 格式化日期（容错处理）
 const formatDate = (dateString) => {
+  if (!dateString) return '未知日期'
   const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '未知日期'
   return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',

@@ -1,10 +1,10 @@
 <template>
-  <div class="sidebar-section mb-8">
-    <div class="flex justify-between items-center mb-4">
-      <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 font-sf-pro">{{ title }}</h4>
+  <div class="sidebar-section">
+    <div class="flex justify-between items-center mb-1.5">
+      <h4 class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide font-sf-pro leading-none">{{ title }}</h4>
       <span 
         v-if="items && showItemCount" 
-        class="text-xs bg-gray-100/70 dark:bg-gray-700/70 backdrop-blur-sm px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400"
+        class="text-xs bg-gray-100/70 dark:bg-gray-700/70 backdrop-blur-sm px-1.5 py-0.5 rounded-full text-gray-500 dark:text-gray-400 leading-none"
       >
         {{ items }}
       </span>

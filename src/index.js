@@ -1,7 +1,6 @@
 // 导入组件
 import BlogContainer from './components/core/BlogContainer.vue'
 import ArticleCard from './components/core/ArticleCard.vue'
-import ArticleList from './components/core/ArticleList.vue'
 import CommentSystem from './components/core/CommentSystem.vue'
 import TagCloud from './components/core/TagCloud.vue'
 import Pagination from './components/core/Pagination.vue'
@@ -32,7 +31,6 @@ const install = (app, options = {}) => {
   // 注册全局组件
   app.component('BlogContainer', BlogContainer)
   app.component('ArticleCard', ArticleCard)
-  app.component('ArticleList', ArticleList)
   app.component('CommentSystem', CommentSystem)
   app.component('TagCloud', TagCloud)
   app.component('Pagination', Pagination)
@@ -51,7 +49,6 @@ const install = (app, options = {}) => {
 export {
   BlogContainer,
   ArticleCard,
-  ArticleList,
   CommentSystem,
   TagCloud,
   Pagination,

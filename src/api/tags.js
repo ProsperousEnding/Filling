@@ -1,11 +1,11 @@
-import api from './index'
+import { tags as tagsAPI } from './index'
 
 /**
  * 获取标签列表
  * @returns {Promise}
  */
 export function getTagList() {
-  return api.get('/tags')
+  return tagsAPI.getTagList()
 }
 
 /**
@@ -14,7 +14,7 @@ export function getTagList() {
  * @returns {Promise}
  */
 export function getTagDetail(id) {
-  return api.get(`/tags/${id}`)
+  return tagsAPI.getTagDetail(id)
 }
 
 /**
@@ -26,13 +26,5 @@ export function getTagDetail(id) {
  * @returns {Promise}
  */
 export function getTagArticles(id, params) {
-  return api.get(`/tags/${id}/articles`, { params })
-}
-
-/**
- * 获取所有标签
- * @returns {Promise}
- */
-export function getAllTags() {
-  return api.get('/tags')
+  return tagsAPI.getTagArticles(id, params)
 } 

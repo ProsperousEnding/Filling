@@ -1,0 +1,16 @@
+# 网站基础配置
+title = "我的博客"
+description = "分享技术与生活"
+footer_text = "© 2024 我的博客. All rights reserved."
+
+[features]
+show_category_count = true
+show_tag_count = true
+show_read_time = true
+enable_comments = true
+sidebar_visible = true
+sidebar_position = "left"
+show_profile_in_sidebar = true
+
+[pagination]
+page_size = 10

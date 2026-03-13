@@ -83,7 +83,7 @@ onMounted(async () => {
 const fetchCategories = async () => {
   loading.value = true
   try {
-    const result = await categoryStore.fetchAllCategories()
+    const result = await categoryStore.fetchCategories()
     categories.value = result || []
   } catch (error) {
     console.error('获取分类列表失败:', error)

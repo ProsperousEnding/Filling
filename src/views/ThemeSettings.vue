@@ -1,7 +1,15 @@
 <template>
   <div class="container mx-auto px-4 py-8">
     <div class="max-w-4xl mx-auto">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 font-sf-pro">主题设置</h1>
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white font-sf-pro">主题设置</h1>
+        <button 
+          @click="exportAllConfigs"
+          class="px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm hover:bg-primary/20 transition-colors"
+        >
+          📤 导出所有配置
+        </button>
+      </div>
       
       <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
         <!-- 主题选择器标签页 -->
@@ -152,6 +160,7 @@ import { useConfigStore } from '../stores/config'
 import ThemeSelector from '../components/theme/ThemeSelector.vue'
 import ThemeCustomizer from '../components/theme/ThemeCustomizer.vue'
 import CustomStyle from '../components/theme/CustomStyle.vue'
+import { stringifyToml } from '../utils/tomlParser'
 
 const configStore = useConfigStore()
 const activeTab = ref('themes')
@@ -159,13 +168,107 @@ const customCSSInput = ref('')
 const customJSInput = ref('')
 
 // 保存自定义CSS
-const saveCustomCSS = () => {
-  configStore.setCustomCSS(customCSSInput.value)
+const saveCustomCSS = async () => {
+  try {
+    await configStore.setCustomCSS(customCSSInput.value)
+    alert('✅ CSS 配置已保存到 theme.toml 文件！')
+  } catch (error) {
+    alert('❌ 保存失败：' + error.message)
+  }
 }
 
 // 保存自定义JS
-const saveCustomJS = () => {
-  configStore.setCustomJS(customJSInput.value)
+const saveCustomJS = async () => {
+  try {
+    await configStore.setCustomJS(customJSInput.value)
+    alert('✅ JS 配置已保存到 theme.toml 文件！')
+  } catch (error) {
+    alert('❌ 保存失败：' + error.message)
+  }
+}
+
+// 导出所有配置为 TOML 格式
+const exportAllConfigs = () => {
+  // 导出网站配置
+  const siteConfig = {
+    title: configStore.blogTitle,
+    description: configStore.blogDescription,
+    footer_text: configStore.footerText,
+    features: {
+      show_category_count: configStore.showCategoryCount,
+      show_tag_count: configStore.showTagCount,
+      show_read_time: configStore.showReadTime,
+      enable_comments: configStore.enableComments,
+      sidebar_visible: configStore.sidebarVisible
+    },
+    pagination: {
+      page_size: configStore.pageSize
+    }
+  }
+  
+  // 导出个人信息配置
+  const profileConfig = {
+    display_name: configStore.userProfile.displayName,
+    username: configStore.userProfile.username,
+    tagline: configStore.userProfile.tagline,
+    bio: configStore.userProfile.bio,
+    avatar_url: configStore.userProfile.avatarUrl,
+    location: configStore.userProfile.location,
+    website: configStore.userProfile.website,
+    social_links: configStore.userProfile.socialLinks.map(link => ({
+      label: link.label,
+      url: link.url,
+      icon: link.icon
+    }))
+  }
+  
+  // 导出主题配置
+  const themeConfigObj = {
+    current_preset: configStore.currentThemePreset,
+    custom_css: configStore.customCSS,
+    custom_js: configStore.customJS,
+    presets: {}
+  }
+  
+  // 转换主题预设
+  Object.entries(configStore.themePresets).forEach(([name, preset]) => {
+    if (preset && name !== 'custom') {
+      themeConfigObj.presets[name] = {}
+      Object.entries(preset).forEach(([key, value]) => {
+        // 将驼峰命名转换为下划线命名
+        const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase()
+        themeConfigObj.presets[name][snakeKey] = value
+      })
+    }
+  })
+  
+  // 生成 TOML 字符串
+  const siteToml = '# 网站基础配置\n' + stringifyToml(siteConfig)
+  const profileToml = '# 个人信息配置\n' + stringifyToml(profileConfig)
+  const themeToml = '# 主题配置文件\n' + stringifyToml(themeConfigObj)
+  
+  // 显示导出内容
+  const exportContent = `
+=== site.toml ===
+${siteToml}
+
+=== profile.toml ===
+${profileToml}
+
+=== theme.toml ===
+${themeToml}
+`
+  
+  // 复制到剪贴板
+  navigator.clipboard.writeText(exportContent).then(() => {
+    alert('✅ 所有配置已复制到剪贴板！\n请分别粘贴到对应的 TOML 文件中。')
+  }).catch(() => {
+    // 如果复制失败，显示一个模态框
+    const modal = confirm('无法自动复制。是否在控制台查看配置内容？')
+    if (modal) {
+      console.log(exportContent)
+    }
+  })
 }
 
 // 初始化
