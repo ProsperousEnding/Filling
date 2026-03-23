@@ -57,4 +57,14 @@ export function getRelatedArticles(id, limit = 3) {
  */
 export function getArchiveArticles(year) {
   return mdArticles.getArchiveArticles(year)
-} 
+}
+
+/**
+ * ????????????????
+ * @param {string} id - ??ID
+ * @returns {Promise}
+ */
+export function recordArticleView(id) {
+  return mdArticles.recordArticleView(id)
+}
+

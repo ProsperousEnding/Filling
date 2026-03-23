@@ -41,6 +41,14 @@
             </svg>
           </router-link>
 
+          
+          <!-- Article editor -->
+          <router-link to="/settings/drafts" class="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all" title="Create/Edit Article">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 7.125V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75h10.875" />
+            </svg>
+          </router-link>
           <!-- 个人设置按钮 -->
           <router-link to="/settings/profile" class="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all" title="个人设置">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,6 +133,7 @@ const navItems = [
   { name: '分类', path: '/category' },
   { name: '标签', path: '/tag' },
   { name: '归档', path: '/archive' },
+  { name: 'Write', path: '/settings/drafts' },
 ]
 </script>
 

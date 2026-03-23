@@ -5,6 +5,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import fm from 'front-matter'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -17,6 +18,72 @@ export default function configApiPlugin() {
     configureServer(server) {
       const profilePath = () => path.join(configDir, 'profile.toml')
       const profileDefaultPath = () => path.join(configDir, 'profile_default.toml')
+      const articlesDir = path.resolve(__dirname, 'docs/articles')
+      const ensureArticlesDir = () => {
+        if (!fs.existsSync(articlesDir)) {
+          fs.mkdirSync(articlesDir, { recursive: true })
+        }
+      }
+      const normalizeArticleId = (value) => {
+        if (typeof value !== 'string') return ''
+        return value.trim().replace(/\.md$/i, '')
+      }
+      const isValidArticleId = (value) => /^[a-zA-Z0-9_-]+$/.test(value)
+      const articleFilePath = (id) => path.join(articlesDir, `${id}.md`)
+      const parseArticleMeta = (raw, fallbackId) => {
+        const parsed = fm(raw || '')
+        const attrs = parsed.attributes || {}
+        const normalizedTags = Array.isArray(attrs.tags)
+          ? attrs.tags.map(tag => String(tag))
+          : typeof attrs.tags === 'string'
+            ? attrs.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+            : []
+        return {
+          id: fallbackId,
+          title: attrs.title ? String(attrs.title) : fallbackId,
+          date: attrs.date ? String(attrs.date) : '',
+          author: attrs.author ? String(attrs.author) : '',
+          category: attrs.category ? String(attrs.category) : '',
+          tags: normalizedTags,
+          cover: attrs.cover ? String(attrs.cover) : '',
+          description: attrs.description ? String(attrs.description) : '',
+          views: Number.isFinite(Number(attrs.views)) ? Number(attrs.views) : 0
+        }
+      }
+      const invalidateArticleModule = (targetFilePath) => {
+        const relatedModules = server.moduleGraph.getModulesByFile(targetFilePath)
+        if (relatedModules) {
+          relatedModules.forEach(mod => mod && server.moduleGraph.invalidateModule(mod))
+        }
+        const rawId = targetFilePath.replace(/\\/g, '/') + '?raw'
+        const rawModule = server.moduleGraph.getModuleById(rawId)
+        if (rawModule) server.moduleGraph.invalidateModule(rawModule)
+      }
+      const invalidateArticle = (filePath, fileName) => {
+        invalidateArticleModule(filePath)
+
+        const articleRelatedFiles = [
+          path.resolve(__dirname, 'src/services/contentService.js'),
+          path.resolve(__dirname, 'src/api/markdownAdapter.js'),
+          path.resolve(__dirname, 'src/api/articles.js'),
+          path.resolve(__dirname, 'src/stores/article.js')
+        ]
+
+        articleRelatedFiles.forEach(targetPath => invalidateArticleModule(targetPath))
+
+        server.ws.send({
+          type: 'custom',
+          event: 'article-content-updated',
+          data: {
+            file: filePath,
+            fileName,
+            timestamp: Date.now()
+          }
+        })
+
+        // Trigger browser refresh so import.meta.glob eager caches are rebuilt.
+        server.ws.send({ type: 'full-reload' })
+      }
       const invalidateToml = (filePath) => {
         const relatedModules = server.moduleGraph.getModulesByFile(filePath)
         if (relatedModules) relatedModules.forEach(mod => mod && server.moduleGraph.invalidateModule(mod))
@@ -220,6 +287,203 @@ export default function configApiPlugin() {
           }
         })
       })
+      // ===== Article Markdown API =====
+      // List markdown files under docs/articles
+      server.middlewares.use('/api/article/list', (req, res) => {
+        if (req.method !== 'GET') {
+          res.statusCode = 405
+          res.end('Method Not Allowed')
+          return
+        }
+
+        try {
+          ensureArticlesDir()
+          const files = fs.readdirSync(articlesDir)
+            .filter(file => file.endsWith('.md'))
+
+          const articles = files.map(fileName => {
+            const id = fileName.replace(/\.md$/i, '')
+            const filePath = articleFilePath(id)
+            const content = fs.readFileSync(filePath, 'utf-8')
+            const stat = fs.statSync(filePath)
+            const meta = parseArticleMeta(content, id)
+
+            return {
+              ...meta,
+              fileName,
+              updatedAt: stat.mtime.toISOString()
+            }
+          }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ success: true, articles }))
+        } catch (error) {
+          console.error('Failed to list article files:', error)
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: error.message }))
+        }
+      })
+
+      // Read article markdown file
+      server.middlewares.use('/api/article/read', (req, res) => {
+        if (req.method !== 'GET') {
+          res.statusCode = 405
+          res.end('Method Not Allowed')
+          return
+        }
+
+        try {
+          const url = new URL(req.url, `http://${req.headers.host}`)
+          const articleId = normalizeArticleId(url.searchParams.get('id') || '')
+
+          if (!isValidArticleId(articleId)) {
+            res.statusCode = 400
+            res.end(JSON.stringify({ error: 'Invalid article ID' }))
+            return
+          }
+
+          const filePath = articleFilePath(articleId)
+          if (!fs.existsSync(filePath)) {
+            res.statusCode = 404
+            res.end(JSON.stringify({ error: 'Article file not found' }))
+            return
+          }
+
+          const content = fs.readFileSync(filePath, 'utf-8')
+          const parsed = fm(content)
+          const meta = parseArticleMeta(content, articleId)
+
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({
+            success: true,
+            id: articleId,
+            fileName: `${articleId}.md`,
+            content,
+            body: parsed.body || '',
+            frontmatter: meta
+          }))
+        } catch (error) {
+          console.error('Failed to read article file:', error)
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: error.message }))
+        }
+      })
+
+      // Create/update article markdown file
+      server.middlewares.use('/api/article/write', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end('Method Not Allowed')
+          return
+        }
+
+        let body = ''
+        req.on('data', chunk => { body += chunk.toString() })
+        req.on('end', () => {
+          try {
+            const data = JSON.parse(body || '{}')
+            const articleId = normalizeArticleId(data.id || '')
+            const originalId = normalizeArticleId(data.originalId || '')
+            const content = data.content
+
+            if (!isValidArticleId(articleId)) {
+              res.statusCode = 400
+              res.end(JSON.stringify({ error: 'Invalid article ID. Allowed: letters, numbers, -, _' }))
+              return
+            }
+
+            if (originalId && !isValidArticleId(originalId)) {
+              res.statusCode = 400
+              res.end(JSON.stringify({ error: 'Invalid original article ID' }))
+              return
+            }
+
+            if (typeof content !== 'string') {
+              res.statusCode = 400
+              res.end(JSON.stringify({ error: 'Invalid article content' }))
+              return
+            }
+
+            ensureArticlesDir()
+
+            const targetPath = articleFilePath(articleId)
+            const isRename = !!originalId && originalId !== articleId
+            const oldPath = isRename ? articleFilePath(originalId) : null
+
+            if (isRename && fs.existsSync(targetPath)) {
+              res.statusCode = 409
+              res.end(JSON.stringify({ error: 'Target article ID already exists' }))
+              return
+            }
+
+            if (isRename && oldPath && fs.existsSync(oldPath)) {
+              fs.unlinkSync(oldPath)
+              invalidateArticle(oldPath, `${originalId}.md`)
+            }
+
+            fs.writeFileSync(targetPath, content, 'utf-8')
+            invalidateArticle(targetPath, `${articleId}.md`)
+
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({
+              success: true,
+              id: articleId,
+              fileName: `${articleId}.md`,
+              message: 'Article saved'
+            }))
+          } catch (error) {
+            console.error('Failed to write article file:', error)
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: error.message }))
+          }
+        })
+      })
+
+      // Delete article markdown file
+      server.middlewares.use('/api/article/delete', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end('Method Not Allowed')
+          return
+        }
+
+        let body = ''
+        req.on('data', chunk => { body += chunk.toString() })
+        req.on('end', () => {
+          try {
+            const data = JSON.parse(body || '{}')
+            const articleId = normalizeArticleId(data.id || '')
+
+            if (!isValidArticleId(articleId)) {
+              res.statusCode = 400
+              res.end(JSON.stringify({ error: 'Invalid article ID' }))
+              return
+            }
+
+            const filePath = articleFilePath(articleId)
+            if (!fs.existsSync(filePath)) {
+              res.statusCode = 404
+              res.end(JSON.stringify({ error: 'Article file not found' }))
+              return
+            }
+
+            fs.unlinkSync(filePath)
+            invalidateArticle(filePath, `${articleId}.md`)
+
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({
+              success: true,
+              id: articleId,
+              message: 'Article deleted'
+            }))
+          } catch (error) {
+            console.error('Failed to delete article file:', error)
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: error.message }))
+          }
+        })
+      })
+
 
       // ===== 专用 Profile 接口 =====
       // 读取 profile.toml

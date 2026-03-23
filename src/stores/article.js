@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getArticleList, getArticleDetail, getHotArticles, getLatestArticles, getArchiveArticles, getRelatedArticles } from '../api/articles'
+import { getArticleList, getArticleDetail, getHotArticles, getLatestArticles, getArchiveArticles, getRelatedArticles, recordArticleView } from '../api/articles'
 
 export const useArticleStore = defineStore('article', {
   state: () => ({
@@ -97,6 +97,32 @@ export const useArticleStore = defineStore('article', {
     },
     
     // 清除当前文章
+    async incrementArticleView(id) {
+      try {
+        const updated = await recordArticleView(id)
+        if (!updated) return null
+
+        if (this.currentArticle && this.currentArticle.id === updated.id) {
+          this.currentArticle = updated
+        }
+
+        const patchList = (list) => {
+          if (!Array.isArray(list)) return list
+          return list.map(item => (item.id === updated.id ? updated : item))
+        }
+
+        this.articles = patchList(this.articles)
+        this.hotArticles = patchList(this.hotArticles)
+        this.latestArticles = patchList(this.latestArticles)
+
+        return updated
+      } catch (error) {
+        console.error('incrementArticleView failed:', error)
+        return null
+      }
+    },
+
+    // Clear current article
     clearCurrentArticle() {
       this.currentArticle = null
     }

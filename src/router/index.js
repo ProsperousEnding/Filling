@@ -12,6 +12,7 @@ const ThemeSettings = () => import('../views/ThemeSettings.vue')
 const ProfileSettings = () => import('../views/settings/ProfileSettings.vue')
 const PersonalLogs = () => import('../views/settings/PersonalLogs.vue')
 const ArticleDrafts = () => import('../views/settings/ArticleDrafts.vue')
+const ArticleEditor = () => import('../views/settings/ArticleEditor.vue')
 
 const routes = [
   {
@@ -110,6 +111,22 @@ const routes = [
     component: ArticleDrafts,
     meta: {
       title: '文章草稿'
+    }
+  },
+  {
+    path: '/settings/articles/new',
+    name: 'ArticleEditorCreate',
+    component: ArticleEditor,
+    meta: {
+      title: 'Create Article'
+    }
+  },
+  {
+    path: '/settings/articles/:id/edit',
+    name: 'ArticleEditorEdit',
+    component: ArticleEditor,
+    meta: {
+      title: 'Edit Article'
     }
   }
 ]

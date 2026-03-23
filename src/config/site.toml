@@ -14,3 +14,11 @@ show_profile_in_sidebar = true
 
 [pagination]
 page_size = 10
+
+[analytics]
+
+[analytics.umami]
+enabled = false
+script_url = "https://umami.example.com/script.js"
+website_id = ""
+host_url = ""

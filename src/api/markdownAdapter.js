@@ -7,7 +7,8 @@ export const articles = {
   getHotArticles: (limit) => Promise.resolve(contentService.getHotArticles(limit)),
   getLatestArticles: (limit) => Promise.resolve(contentService.getLatestArticles(limit)),
   getRelatedArticles: (id, limit) => Promise.resolve(contentService.getRelatedArticles(id, limit)),
-  getArchiveArticles: (year) => Promise.resolve({ data: contentService.getArchiveArticles(year) })
+  getArchiveArticles: (year) => Promise.resolve({ data: contentService.getArchiveArticles(year) }),
+  recordArticleView: (id) => Promise.resolve(contentService.recordArticleView(id))
 }
 
 export const categories = {

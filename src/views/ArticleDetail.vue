@@ -180,6 +180,11 @@ const fetchArticleDetail = async () => {
     // 获取文章详情
     const articleData = await articleStore.fetchArticleDetail(articleId.value)
     article.value = articleData
+
+    const updatedArticle = await articleStore.incrementArticleView(articleId.value)
+    if (updatedArticle) {
+      article.value = updatedArticle
+    }
     
     // 获取相关文章
     if (article.value) {

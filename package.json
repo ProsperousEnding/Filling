@@ -35,9 +35,10 @@
   },
   "dependencies": {
     "axios": "1.12.0",
-    "md5": "^2.3.0",
     "front-matter": "^4.0.2",
+    "md5": "^2.3.0",
     "pinia": "^2.1.7",
+    "vditor": "^3.11.2",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },

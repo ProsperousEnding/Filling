@@ -7,11 +7,18 @@ const markdown = new MarkdownIt({
   typographer: true
 })
 
-// 以原始文本形式导入所有 Markdown 文章
 const articleFiles = import.meta.glob('/docs/articles/*.md', {
   eager: true,
   as: 'raw'
 })
+
+const VIEW_STORAGE_KEY = 'filling:article-runtime-views'
+const VIEW_TOUCH_STORAGE_KEY = 'filling:article-view-touch'
+const VIEW_DEDUP_MS = 30 * 60 * 1000
+
+const baseViewCountMap = new Map()
+const runtimeViewCounts = readStorageObject(VIEW_STORAGE_KEY)
+const runtimeViewTouch = readStorageObject(VIEW_TOUCH_STORAGE_KEY)
 
 function toSlugId(input) {
   if (!input || typeof input !== 'string') return ''
@@ -21,6 +28,55 @@ function toSlugId(input) {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
+}
+
+function safeParseObject(raw) {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed
+    }
+  } catch {
+    return {}
+  }
+  return {}
+}
+
+function readStorageObject(key) {
+  if (typeof window === 'undefined' || !window.localStorage) return {}
+  try {
+    return safeParseObject(window.localStorage.getItem(key))
+  } catch {
+    return {}
+  }
+}
+
+function writeStorageObject(key, value) {
+  if (typeof window === 'undefined' || !window.localStorage) return
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value || {}))
+  } catch {
+    // Ignore storage quota/security errors.
+  }
+}
+
+function getRuntimeViewCount(articleId) {
+  const value = Number(runtimeViewCounts[articleId])
+  if (!Number.isFinite(value) || value < 0) return 0
+  return Math.floor(value)
+}
+
+function getBaseViewCount(articleId) {
+  const value = Number(baseViewCountMap.get(articleId))
+  if (!Number.isFinite(value) || value < 0) return 0
+  return Math.floor(value)
+}
+
+function syncArticleViewCount(article) {
+  if (!article) return article
+  article.views = getBaseViewCount(article.id) + getRuntimeViewCount(article.id)
+  return article
 }
 
 function normalizeArticle([path, rawContent]) {
@@ -39,6 +95,12 @@ function normalizeArticle([path, rawContent]) {
     ? frontmatter.tags.map(tag => ({ id: toSlugId(String(tag)), name: String(tag) }))
     : []
 
+  const baseViews = Number.isFinite(Number(frontmatter.views)) && Number(frontmatter.views) >= 0
+    ? Math.floor(Number(frontmatter.views))
+    : 0
+
+  baseViewCountMap.set(fileName, baseViews)
+
   return {
     id: fileName,
     slug: fileName,
@@ -52,17 +114,20 @@ function normalizeArticle([path, rawContent]) {
     summary: frontmatter.summary || frontmatter.description || '',
     content: html,
     createdAt: frontmatter.date || null,
-    views: typeof frontmatter.views === 'number' ? frontmatter.views : 0
+    views: baseViews + getRuntimeViewCount(fileName)
   }
 }
 
 function buildAllArticles() {
   const articles = Object.entries(articleFiles).map(normalizeArticle)
-  // 按日期降序
   return articles.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
 }
 
 const allArticles = buildAllArticles()
+
+function syncAllArticleViews() {
+  allArticles.forEach(syncArticleViewCount)
+}
 
 function aggregateCategories() {
   const map = new Map()
@@ -103,8 +168,8 @@ function aggregateTags() {
 }
 
 function paginate(list, page = 1, pageSize = 10) {
-  const p = Math.max(1, parseInt(page))
-  const s = Math.max(1, parseInt(pageSize))
+  const p = Math.max(1, parseInt(page, 10))
+  const s = Math.max(1, parseInt(pageSize, 10))
   const start = (p - 1) * s
   const end = start + s
   return {
@@ -116,8 +181,9 @@ function paginate(list, page = 1, pageSize = 10) {
 }
 
 const contentService = {
-  // 列表（支持分类/标签筛选）
   getArticleList(params = {}) {
+    syncAllArticleViews()
+
     const page = params.page ?? 1
     const pageSize = params.pageSize ?? 10
     const categoryId = params.category ? toSlugId(String(params.category)) : null
@@ -134,36 +200,65 @@ const contentService = {
     return paginate(filtered, page, pageSize)
   },
 
-  // 详情
   getArticleDetail(id) {
-    return allArticles.find(article => article.id === String(id) || article.slug === String(id)) || null
+    const article = allArticles.find(item => item.id === String(id) || item.slug === String(id)) || null
+    if (!article) return null
+    return syncArticleViewCount(article)
   },
 
-  // 热门
+  recordArticleView(id) {
+    const article = this.getArticleDetail(id)
+    if (!article) return null
+
+    if (typeof window === 'undefined') {
+      return article
+    }
+
+    const key = article.id
+    const now = Date.now()
+    const lastViewAt = Number(runtimeViewTouch[key])
+
+    if (Number.isFinite(lastViewAt) && now - lastViewAt < VIEW_DEDUP_MS) {
+      return article
+    }
+
+    runtimeViewTouch[key] = now
+    runtimeViewCounts[key] = getRuntimeViewCount(key) + 1
+
+    writeStorageObject(VIEW_TOUCH_STORAGE_KEY, runtimeViewTouch)
+    writeStorageObject(VIEW_STORAGE_KEY, runtimeViewCounts)
+
+    return syncArticleViewCount(article)
+  },
+
   getHotArticles(limit = 5) {
+    syncAllArticleViews()
     return [...allArticles].sort((a, b) => b.views - a.views).slice(0, limit)
   },
 
-  // 最新
   getLatestArticles(limit = 5) {
+    syncAllArticleViews()
     return allArticles.slice(0, limit)
   },
 
-  // 相关文章
   getRelatedArticles(id, limit = 3) {
+    syncAllArticleViews()
     const current = this.getArticleDetail(id)
     if (!current) return []
+
     const related = allArticles.filter(article => {
       if (article.id === current.id) return false
       const sameCategory = article.category && current.category && article.category.id === current.category.id
       const sharedTag = Array.isArray(article.tags) && Array.isArray(current.tags) && article.tags.some(tag => current.tags.some(ct => ct.id === tag.id))
       return sameCategory || sharedTag
     })
+
     return related.slice(0, limit)
   },
 
-  // 归档
   getArchiveArticles(year) {
+    syncAllArticleViews()
+
     const groups = new Map()
     allArticles.forEach(article => {
       const date = article.date ? new Date(article.date) : null
@@ -174,7 +269,7 @@ const contentService = {
     })
 
     if (year) {
-      const targetYear = parseInt(year)
+      const targetYear = parseInt(year, 10)
       return groups.get(targetYear) || []
     }
 
@@ -195,7 +290,9 @@ const contentService = {
     const categoryId = toSlugId(String(id))
     return aggregateCategories().find(category => category.id === categoryId) || null
   },
+
   getCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
+    syncAllArticleViews()
     const categoryId = toSlugId(String(id))
     const filtered = allArticles.filter(article => article.category && article.category.id === categoryId)
     return paginate(filtered, params.page, params.pageSize)
@@ -205,23 +302,27 @@ const contentService = {
     const tagId = toSlugId(String(id))
     return aggregateTags().find(tag => tag.id === tagId) || null
   },
+
   getTagArticles(id, params = { page: 1, pageSize: 10 }) {
+    syncAllArticleViews()
     const tagId = toSlugId(String(id))
     const filtered = allArticles.filter(article => Array.isArray(article.tags) && article.tags.some(tag => tag.id === tagId))
     return paginate(filtered, params.page, params.pageSize)
   },
 
   searchArticles(query) {
+    syncAllArticleViews()
     if (!query || typeof query !== 'string') return []
+
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
     return allArticles.filter(article => {
       const title = (article.title || '').toLowerCase()
       const content = (article.content || '').toLowerCase()
       const description = (article.description || '').toLowerCase()
       const summary = (article.summary || '').toLowerCase()
-      return terms.some(term => 
-        title.includes(term) || 
-        content.includes(term) || 
+      return terms.some(term =>
+        title.includes(term) ||
+        content.includes(term) ||
         description.includes(term) ||
         summary.includes(term)
       )

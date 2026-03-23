@@ -81,6 +81,10 @@ export const useConfigStore = defineStore('config', {
     showReadTime: siteConfig.features?.show_read_time,
     enableComments: siteConfig.features?.enable_comments,
     showProfileInSidebar: (siteConfig.features?.show_profile_in_sidebar ?? true),
+    umamiEnabled: (siteConfig.analytics?.umami?.enabled ?? false),
+    umamiScriptUrl: siteConfig.analytics?.umami?.script_url || '',
+    umamiWebsiteId: siteConfig.analytics?.umami?.website_id || '',
+    umamiHostUrl: siteConfig.analytics?.umami?.host_url || '',
     userProfile: {
       displayName: profileConfig.display_name,
       username: profileConfig.username,
@@ -342,6 +346,14 @@ export const useConfigStore = defineStore('config', {
           },
           pagination: {
             page_size: this.pageSize
+          },
+          analytics: {
+            umami: {
+              enabled: this.umamiEnabled,
+              script_url: this.umamiScriptUrl || '',
+              website_id: this.umamiWebsiteId || '',
+              host_url: this.umamiHostUrl || ''
+            }
           }
         },
         theme: {
@@ -516,6 +528,14 @@ export const useConfigStore = defineStore('config', {
           },
           pagination: {
             page_size: this.pageSize
+          },
+          analytics: {
+            umami: {
+              enabled: this.umamiEnabled,
+              script_url: this.umamiScriptUrl || '',
+              website_id: this.umamiWebsiteId || '',
+              host_url: this.umamiHostUrl || ''
+            }
           }
         }
         
@@ -591,6 +611,10 @@ export const useConfigStore = defineStore('config', {
         this.showReadTime = siteConfig.features?.show_read_time
         this.enableComments = siteConfig.features?.enable_comments
         this.showProfileInSidebar = (siteConfig.features?.show_profile_in_sidebar ?? true)
+        this.umamiEnabled = (siteConfig.analytics?.umami?.enabled ?? false)
+        this.umamiScriptUrl = siteConfig.analytics?.umami?.script_url || ''
+        this.umamiWebsiteId = siteConfig.analytics?.umami?.website_id || ''
+        this.umamiHostUrl = siteConfig.analytics?.umami?.host_url || ''
       }
       
       // 更新个人信息配置 - 直接使用 TOML 配置文件的值
