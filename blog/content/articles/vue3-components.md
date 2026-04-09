@@ -6,7 +6,6 @@ category: CSS
 tags: [Tailwind, CSS, 前端]
 cover: https://picsum.photos/id/2/800/450
 description: 掌握Tailwind CSS的高级使用技巧和自定义配置方法
-views: 156
 ---
 
 # Tailwind CSS高级技巧

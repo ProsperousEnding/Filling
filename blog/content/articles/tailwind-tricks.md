@@ -6,7 +6,6 @@ category: CSS
 tags: [Tailwind, 技巧]
 cover: https://picsum.photos/id/10/800/450
 description: 一些常用的 Tailwind CSS 技巧示例
-views: 12
 ---
 
 # Tailwind 实用技巧
