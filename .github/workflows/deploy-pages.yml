@@ -1,0 +1,98 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Resolve Pages environment
+        id: pages_env
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          PAGES_BASE_PATH: ${{ vars.PAGES_BASE_PATH }}
+          PAGES_SITE_URL: ${{ vars.PAGES_SITE_URL }}
+        run: |
+          repo_name="${REPOSITORY#*/}"
+          owner="${REPOSITORY_OWNER,,}"
+          repo_name_lc="${repo_name,,}"
+
+          if [[ -n "$PAGES_BASE_PATH" ]]; then
+            base_path="$PAGES_BASE_PATH"
+          elif [[ "$repo_name_lc" == "${owner}.github.io" ]]; then
+            base_path="/"
+          else
+            base_path="/${repo_name}/"
+          fi
+
+          if [[ "$base_path" != "/" ]]; then
+            base_path="/${base_path#/}"
+            base_path="${base_path%/}/"
+          fi
+
+          if [[ -n "$PAGES_SITE_URL" ]]; then
+            site_url="${PAGES_SITE_URL%/}"
+          else
+            site_url="https://${owner}.github.io"
+          fi
+
+          echo "base_path=$base_path" >> "$GITHUB_OUTPUT"
+          echo "site_url=$site_url" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site
+        env:
+          VITE_BASE_PATH: ${{ steps.pages_env.outputs.base_path }}
+          VITE_SITE_URL: ${{ steps.pages_env.outputs.site_url }}
+        run: pnpm build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    if: github.ref_name == github.event.repository.default_branch
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,24 @@
+# 友情链接配置
+# 只有在 site.toml 中启用了 source = "friend-links" 的菜单模块时才会展示
+
+[[friend_links]]
+# 友链名称
+name = "Vue.js"
+
+# 友链地址
+url = "https://vuejs.org/"
+
+# 简短描述
+description = "The Progressive JavaScript Framework"
+
+[[friend_links]]
+name = "Vite"
+url = "https://vite.dev/"
+description = "Next Generation Frontend Tooling"
+
+[[friend_links]]
+name = "Pinia"
+url = "https://pinia.vuejs.org/"
+description = "The intuitive store for Vue"
+
+# 继续新增时，按同样格式继续追加 [[friend_links]] 即可

@@ -1,107 +1,209 @@
-# Vue博客框架
+# Filling Blog Framework
 
-这是一个基于Vue3的可集成博客框架，旨在提供一个易于集成、可定制的博客解决方案，支持各类网站轻松添加博客功能。
+一个基于 Vue 3、Pinia、Vite 的静态博客框架，内容来源于 `blog/content`，站点行为来源于 `blog/config`。
 
-## 技术栈
+## 特性
 
-- **核心框架**: Vue 3
-- **开发语言**: JavaScript
-- **状态管理**: Pinia
-- **路由管理**: Vue Router
-- **HTTP客户端**: Axios
-- **CSS框架**: Tailwind CSS
-
-## 主要功能
-
-- 文章列表展示
-- 文章详情页
-- 分类/标签系统
-- 评论系统
-- 搜索功能
-- 归档功能
-- 响应式设计
-- 自定义主题
-- Markdown支持
-- 代码高亮
+- Markdown 内容驱动，支持文章和自定义内容目录
+- 内置首页、文章、分类、标签、归档、搜索页面
+- 菜单与页面组件配置化，可通过 `list / card / grid / timeline / context` 切换展现
+- 支持主题自定义 CSS / JS
+- 支持静态导出与 GitHub Pages 自动部署
 
 ## 快速开始
 
-### 安装
+```bash
+pnpm install
+pnpm dev
+```
+
+常用命令：
 
 ```bash
-npm install vue-blog-framework
+pnpm dev
+pnpm build
+pnpm build:lib
+pnpm build:content-index
 ```
 
-### 基本使用
+## 项目结构
 
-#### 作为Vue插件使用
-
-```javascript
-import { createApp } from 'vue'
-import App from './App.vue'
-import VueBlog from 'vue-blog-framework'
-import 'vue-blog-framework/style.css'
-
-const app = createApp(App)
-app.use(VueBlog, {
-  // 配置选项
-  apiBaseUrl: 'https://api.example.com',
-  theme: 'light',
-  pageSize: 10
-})
-app.mount('#app')
+```text
+blog/
+  config/
+    site.toml
+    profile.toml
+    theme.toml
+    links.toml
+  content/
+    about.md
+    articles/
+    projects/
+public/
+  icons/
+  themes/
+src/
+  framework/
+  site/
+scripts/
 ```
 
-#### 使用组件
+## 内容约定
 
-```javascript
-import { BlogContainer } from 'vue-blog-framework'
-import 'vue-blog-framework/style.css'
+- `blog/content/articles`：文章目录，会生成文章详情页，并参与文章列表、搜索、分类、标签、归档
+- `blog/content/<自定义目录>`：可作为菜单页的数据源，例如 `projects`
+- `blog/content/about.md`：可作为 `context` 类型页面的正文源文件
 
-export default {
-  components: {
-    BlogContainer
-  },
-  setup() {
-    return {
-      blogConfig: {
-        apiBaseUrl: 'https://api.example.com',
-        theme: 'dark',
-        pageSize: 8
-      }
-    }
-  }
-}
+## 配置文件
+
+### `blog/config/site.toml`
+
+控制站点标题、布局、路由、分页、菜单、页脚。
+
+关键点：
+
+- `site_url` 填站点根域名，不要带仓库子路径
+- `[[menus.pages]]` 控制页面和页面组件
+- `[[menus.header]]` / `[[menus.mobile_header]]` 控制顶部菜单
+- `[[menus.sidebar]]` 控制侧边栏菜单模块
+
+页面组件说明：
+
+- `context`：渲染单个 Markdown 文件，配 `file`
+- `list`：渲染目录内容，配 `folder`
+- `card`：渲染目录内容卡片列表，配 `folder`
+- `grid`：渲染目录内容网格，配 `folder`
+- `timeline`：渲染目录内容时间线，配 `folder`
+
+内置页面键：
+
+- `home`
+- `articles`
+- `categories`
+- `tags`
+- `archive`
+
+自定义页面示例：
+
+```toml
+[[menus.pages]]
+key = "about"
+title = "关于"
+component = "context"
+file = "about.md"
+
+[[menus.pages]]
+key = "projects"
+title = "项目"
+component = "grid"
+folder = "projects"
 ```
 
-```html
-<template>
-  <BlogContainer :config="blogConfig">
-    <!-- 自定义内容 -->
-  </BlogContainer>
-</template>
+### `blog/config/profile.toml`
+
+控制侧边栏个人信息。
+
+- `display_name`：展示名称
+- `username`：用户名，会显示为 `@username`
+- `tagline`：副标题
+- `bio`：个人简介
+- `avatar_url`：头像地址，可填远程 URL 或 `public/` 下相对路径
+- `location` / `website`：侧边栏资料信息
+
+### `blog/config/theme.toml`
+
+控制当前主题与主题资源文件。
+
+- `current_preset`：当前启用的主题
+- `css_file` / `js_file`：全局兜底主题资源
+- `[presets.xxx]`：主题预设
+
+资源路径写法：
+
+- 相对于 `public/`
+- 例如 `themes/default.css`
+- 不要写外部 URL
+
+### `blog/config/links.toml`
+
+控制友情链接数据。只有在侧边栏菜单使用 `source = "friend-links"` 时才会展示。
+
+## 菜单系统
+
+顶部菜单渲染器：
+
+- `header-pill`
+- `header-stack`
+
+侧边栏渲染器：
+
+- `sidebar-link`
+- `sidebar-article`
+
+菜单数据源：
+
+- `blog-nav`
+- `categories`
+- `tags`
+- `latest-articles`
+- `friend-links`
+- `custom`
+
+示例：
+
+```toml
+[[menus.header]]
+renderer = "header-pill"
+source = "blog-nav"
+items = ["home", "articles", "categories", "tags", "archive", "about", "projects"]
+
+[[menus.sidebar]]
+title = "友情链接"
+renderer = "sidebar-link"
+source = "friend-links"
 ```
 
-## 开发
+## GitHub Pages 部署
 
-```bash
-# 安装依赖
-npm install
+仓库已经包含 GitHub Actions 工作流：
 
-# 启动开发服务器
-npm run dev
+- `.github/workflows/deploy-pages.yml`
 
-# 构建演示应用
-npm run build
+使用方法：
 
-# 构建库
-npm run build:lib
+1. 推送代码到 GitHub 仓库
+2. 打开 `Settings > Pages`
+3. 将 `Build and deployment` 的 `Source` 设置为 `GitHub Actions`
+4. 推送到默认分支后会自动构建并部署
+
+工作流会自动处理：
+
+- 安装依赖
+- 计算 GitHub Pages 的 `base path`
+- 注入正确的 `site_url`
+- 生成 `dist`
+- 上传并部署到 GitHub Pages
+
+可选仓库变量：
+
+- `PAGES_BASE_PATH`：手动指定站点子路径
+- `PAGES_SITE_URL`：手动指定站点根域名
+
+## 主题资源
+
+可将主题文件放到：
+
+- `public/themes/*.css`
+- `public/themes/*.js`
+
+然后在 `blog/config/theme.toml` 中切换：
+
+```toml
+current_preset = "ocean"
 ```
 
-## 贡献
+## 构建说明
 
-欢迎提交Issue和Pull Request。
-
-## 许可证
-
-[MIT](LICENSE)
+- `pnpm build` 会先执行 Vite 构建，再生成静态 HTML
+- 构建产物位于 `dist/`
+- 静态导出会额外生成 `404.html`、`sitemap.xml`、`robots.txt`、`rss.xml`、`.nojekyll`

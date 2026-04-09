@@ -1,0 +1,32 @@
+# 个人信息配置
+# 会展示在侧边栏的个人卡片中
+
+# 展示名称，优先于 username 显示
+display_name = "Filling"
+
+# 用户名，会显示为 @prosperousEnding
+username = "prosperousEnding"
+
+# 副标题，不填时会回退显示站点 description
+tagline = "this is a tagline"
+
+# 头像地址
+# 支持:
+# - 远程 URL，例如 "https://example.com/avatar.png"
+# - public/ 下相对路径，例如 "icons/avatar.png"
+avatar_url = "123"
+
+# 个人简介
+# bio = "专注于前端工程化、静态博客和内容系统。"
+
+# 地理位置
+# location = "Hangzhou, China"
+
+# 个人网站
+# website = "https://example.com"
+
+# 预留社交链接配置
+# 当前框架已支持读取该字段，后续可继续扩展展示
+# [[social_links]]
+# name = "GitHub"
+# url = "https://github.com/your-name"

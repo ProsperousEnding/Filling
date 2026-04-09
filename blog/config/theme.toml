@@ -1,0 +1,33 @@
+# 主题配置文件
+
+# 当前启用的主题预设
+# 对应下方 [presets.xxx] 的名字
+current_preset = "default"
+
+# 可选：全局兜底主题资源
+# 当 current_preset 未命中，或你只想直接指定一套 CSS / JS 时可以启用
+# 路径相对于 public/，不要写外部 URL
+# css_file = "themes/default.css"
+# js_file = "themes/default.js"
+
+[presets]
+
+[presets.default]
+# 默认主题
+css_file = "themes/default.css"
+js_file = "themes/default.js"
+
+[presets.ocean]
+# 海洋主题
+css_file = "themes/ocean.css"
+js_file = "themes/ocean.js"
+
+[presets.forest]
+# 森林主题
+css_file = "themes/forest.css"
+js_file = "themes/forest.js"
+
+# 新增主题示例：
+# [presets.sunset]
+# css_file = "themes/sunset.css"
+# js_file = "themes/sunset.js"
