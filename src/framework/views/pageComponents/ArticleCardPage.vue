@@ -1,0 +1,52 @@
+<template>
+  <div class="article-card-page">
+    <h1 class="theme-page-title text-3xl font-bold mb-8">{{ title }}</h1>
+
+    <ArticleGrid
+      :articles="articles"
+      :total="total"
+      :loading="loading"
+      :current-page="currentPage"
+      :page-size="pageSize"
+      variant="card"
+      @page-change="handlePageChange"
+    />
+  </div>
+</template>
+
+<script setup>
+import ArticleGrid from '../../components/core/ArticleGrid.vue'
+
+defineProps({
+  title: {
+    type: String,
+    default: ''
+  },
+  articles: {
+    type: Array,
+    default: () => []
+  },
+  total: {
+    type: Number,
+    default: 0
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  currentPage: {
+    type: Number,
+    default: 1
+  },
+  pageSize: {
+    type: Number,
+    default: 10
+  }
+})
+
+const emit = defineEmits(['page-change'])
+
+function handlePageChange(page) {
+  emit('page-change', page)
+}
+</script>
