@@ -2,7 +2,7 @@
   <ul class="sidebar-nav-list sidebar-nav-list-latest">
     <li v-for="item in normalizedItems" :key="item.key">
       <component
-        :is="item.external ? 'a' : 'router-link'"
+        :is="item.external ? 'a' : RouterLink"
         :to="item.external ? undefined : item.to"
         :href="item.external ? item.href : undefined"
         class="sidebar-nav-item sidebar-nav-item-article"
@@ -32,6 +32,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import MeasuredText from '../../core/MeasuredText.vue'
 
 const props = defineProps({
@@ -71,6 +72,7 @@ const normalizedItems = computed(() => (
 
 .sidebar-nav-item {
   color: rgb(71 85 105);
+  cursor: pointer;
   transition: color 0.18s ease, background-color 0.18s ease;
 }
 

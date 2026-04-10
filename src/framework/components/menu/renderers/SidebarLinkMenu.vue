@@ -2,7 +2,7 @@
   <ul class="sidebar-nav-list" :class="{ 'sidebar-nav-list-tags': variant === 'tags' }">
     <li v-for="item in normalizedItems" :key="item.key">
       <component
-        :is="item.external ? 'a' : 'router-link'"
+        :is="item.external ? 'a' : RouterLink"
         :to="item.external ? undefined : item.to"
         :href="item.external ? item.href : undefined"
         class="sidebar-nav-item"
@@ -24,6 +24,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const props = defineProps({
   items: {
@@ -80,6 +81,7 @@ const normalizedItems = computed(() => (
   display: flex;
   align-items: center;
   justify-content: space-between;
+  cursor: pointer;
   gap: 0.5rem;
   min-height: 1.8rem;
   padding: 0;

@@ -2,7 +2,7 @@
   <nav class="site-header-nav hidden md:flex items-center">
     <div class="site-header-nav-shell rounded-full px-1 py-1 flex items-center">
       <component
-        :is="item.external ? 'a' : 'router-link'"
+        :is="item.external ? 'a' : RouterLink"
         v-for="item in normalizedItems"
         :key="item.key"
         :to="item.external ? undefined : item.to"
@@ -20,6 +20,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const props = defineProps({
   items: {
@@ -69,7 +70,12 @@ function isActive(item) {
 }
 
 .site-header-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   color: rgb(71 85 105);
+  white-space: nowrap;
 }
 
 .site-header-nav-link:hover {

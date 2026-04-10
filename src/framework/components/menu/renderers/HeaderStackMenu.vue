@@ -1,7 +1,7 @@
 <template>
   <nav class="site-mobile-nav-list flex flex-col space-y-2">
     <component
-      :is="item.external ? 'a' : 'router-link'"
+      :is="item.external ? 'a' : RouterLink"
       v-for="item in normalizedItems"
       :key="item.key"
       :to="item.external ? undefined : item.to"
@@ -18,6 +18,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const props = defineProps({
   items: {
@@ -43,6 +44,9 @@ const normalizedItems = computed(() => (
 
 <style scoped>
 .site-mobile-nav-link {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
   color: rgb(71 85 105);
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(226, 232, 240, 0.85);
