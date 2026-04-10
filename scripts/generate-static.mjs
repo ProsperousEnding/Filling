@@ -2009,10 +2009,11 @@ function injectHead(template, {
   imageUrl,
   ogType,
   robots,
-  themeCssHref
+  themeCssHref,
+  includeStaticPreview = false
 }) {
   const headTags = [
-    STATIC_STYLE,
+    includeStaticPreview ? STATIC_STYLE : '',
     description ? `<meta name="description" content="${escapeAttribute(description)}" />` : '',
     `<meta property="og:title" content="${escapeAttribute(title)}" />`,
     description ? `<meta property="og:description" content="${escapeAttribute(description)}" />` : '',
@@ -2025,7 +2026,9 @@ function injectHead(template, {
     imageUrl ? `<meta name="twitter:image" content="${escapeAttribute(imageUrl)}" />` : '',
     absoluteUrl ? `<link rel="canonical" href="${escapeAttribute(absoluteUrl)}" />` : '',
     robots ? `<meta name="robots" content="${escapeAttribute(robots)}" />` : '',
-    themeCssHref ? `<link rel="stylesheet" href="${escapeAttribute(themeCssHref)}" id="vue-blog-static-theme" />` : ''
+    includeStaticPreview && themeCssHref
+      ? `<link rel="stylesheet" href="${escapeAttribute(themeCssHref)}" id="vue-blog-static-theme" />`
+      : ''
   ].filter(Boolean).join('\n    ')
 
   const nextTemplate = template.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`)
@@ -2070,20 +2073,23 @@ function renderPage(route, context) {
   const imageUrl = route.imageUrl
     ? (/^(https?:)?\/\//i.test(route.imageUrl) ? route.imageUrl : buildAbsoluteUrl(site.site_url || site.url, basePath, route.imageUrl))
     : ''
-  const content = renderLayout({
-    site,
-    profile,
-    content: route.content,
-    latestArticles,
-    categories,
-    tags,
-    friendLinks,
-    menus,
-    routePatterns,
-    basePath,
-    sidebarPosition,
-    sidebarVisible
-  })
+  const includeStaticPreview = route.staticPreview === true
+  const content = includeStaticPreview
+    ? renderLayout({
+      site,
+      profile,
+      content: route.content,
+      latestArticles,
+      categories,
+      tags,
+      friendLinks,
+      menus,
+      routePatterns,
+      basePath,
+      sidebarPosition,
+      sidebarVisible
+    })
+    : ''
 
   const withHead = injectHead(context.template, {
     title: pageTitle,
@@ -2092,7 +2098,8 @@ function renderPage(route, context) {
     imageUrl,
     ogType: route.ogType || 'website',
     robots: route.robots || '',
-    themeCssHref
+    themeCssHref,
+    includeStaticPreview
   })
 
   return replaceAppRoot(withHead, content)
@@ -2553,6 +2560,7 @@ async function write404(template, context) {
     pageTitle: '页面未找到',
     description: '您访问的页面不存在。',
     robots: 'noindex,follow',
+    staticPreview: true,
     content: `
       <header class="ssg-page-header">
         <h1 class="ssg-page-title">页面未找到</h1>
