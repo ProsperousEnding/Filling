@@ -127,11 +127,11 @@ file = "about.md"
 
 # 自定义目录页
 # component = "list" / "card" / "grid" / "timeline" 时使用 folder
-[[menus.pages]]
-key = "projects"
-title = "项目"
-component = "list"
-folder = "projects"
+# [[menus.pages]]
+# key = "projects"
+# title = "项目"
+# component = "list"
+# folder = "projects"
 
 # 顶部菜单示例
 # renderer 可选:

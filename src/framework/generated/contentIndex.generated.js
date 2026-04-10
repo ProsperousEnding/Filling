@@ -69,34 +69,6 @@ const contentIndex = {
   ],
   "entries": [
     {
-      "id": "page-item:projects:a",
-      "kind": "entry",
-      "iconKind": "entry",
-      "title": "A标签用法",
-      "description": "a标签技巧示例",
-      "excerpt": "a标签技巧示例",
-      "createdAt": "2026-11-11",
-      "category": {
-        "id": "html",
-        "name": "HTML"
-      },
-      "tags": [
-        {
-          "id": "a",
-          "name": "A"
-        },
-        {
-          "id": "技巧",
-          "name": "技巧"
-        }
-      ],
-      "cover": "https://picsum.photos/id/10/800/450",
-      "to": "/projects/a",
-      "sectionTitle": "项目",
-      "sectionPath": "/projects",
-      "sourcePath": "/blog/content/projects/a.md"
-    },
-    {
       "id": "article:tailwind-tricks",
       "kind": "article",
       "iconKind": "article",

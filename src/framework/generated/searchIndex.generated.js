@@ -113,13 +113,13 @@ const searchIndex = {
         }
       ],
       "cover": "https://picsum.photos/id/10/800/450",
-      "to": "/projects/a",
-      "sectionTitle": "项目",
-      "sectionPath": "/projects",
+      "to": "",
+      "sectionTitle": "projects",
+      "sectionPath": "",
       "sourcePath": "/blog/content/projects/a.md",
       "plainText": "a标签技巧示例 a标签技巧示例正文",
       "titleHaystack": "a标签用法",
-      "metaHaystack": "a标签技巧示例 a标签技巧示例 html a 技巧 项目",
+      "metaHaystack": "a标签技巧示例 a标签技巧示例 html a 技巧 projects",
       "contentHaystack": "a标签技巧示例 a标签技巧示例正文"
     }
   ]
