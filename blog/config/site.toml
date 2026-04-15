@@ -8,7 +8,7 @@
 # - 自定义域名: "https://blog.example.com"
 # - GitHub Pages 根域名: "https://your-name.github.io"
 # GitHub Pages workflow 会在 CI 构建时自动覆盖成对应的 Pages URL
-site_url = "https://example.com"
+site_url = "https://filling.initzo.com"
 
 [header.leading_visual]
 # 是否显示左上角视觉元素
