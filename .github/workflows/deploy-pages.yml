@@ -46,9 +46,17 @@ jobs:
           repo_name="${REPOSITORY#*/}"
           owner="${REPOSITORY_OWNER,,}"
           repo_name_lc="${repo_name,,}"
+          github_pages_host="${owner}.github.io"
+          pages_site_host=""
+
+          if [[ -n "$PAGES_SITE_URL" ]]; then
+            pages_site_host="$(printf '%s' "$PAGES_SITE_URL" | sed -E 's#^https?://([^/]+).*$#\1#' | tr '[:upper:]' '[:lower:]')"
+          fi
 
           if [[ -n "$PAGES_BASE_PATH" ]]; then
             base_path="$PAGES_BASE_PATH"
+          elif [[ -n "$pages_site_host" && "$pages_site_host" != "$github_pages_host" ]]; then
+            base_path="/"
           elif [[ "$repo_name_lc" == "${owner}.github.io" ]]; then
             base_path="/"
           else

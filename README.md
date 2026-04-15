@@ -189,6 +189,14 @@ source = "friend-links"
 - `PAGES_BASE_PATH`：手动指定站点子路径
 - `PAGES_SITE_URL`：手动指定站点根域名
 
+如果你给 GitHub Pages 绑定了 Cloudflare 或其他自定义域名：
+
+- `PAGES_SITE_URL` 请设置成你的正式域名，例如 `https://blog.example.com`
+- `PAGES_BASE_PATH` 通常应该设置为 `/`
+- 不要继续使用仓库子路径（例如 `/Filling/`），否则构建产物会去请求 `/Filling/assets/*`，在根域名部署下会直接 404
+
+如果仍然使用 GitHub 默认地址 `https://<user>.github.io/<repo>/` 访问，则保留仓库子路径即可，不需要改成 `/`
+
 ## 主题资源
 
 可将主题文件放到：
