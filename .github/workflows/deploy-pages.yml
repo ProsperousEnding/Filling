@@ -47,10 +47,18 @@ jobs:
           owner="${REPOSITORY_OWNER,,}"
           repo_name_lc="${repo_name,,}"
           github_pages_host="${owner}.github.io"
+          cname_host=""
           pages_site_host=""
+
+          if [[ -f "CNAME" ]]; then
+            cname_host="$(tr -d '\r' < CNAME | head -n 1 | xargs)"
+            cname_host="${cname_host,,}"
+          fi
 
           if [[ -n "$PAGES_SITE_URL" ]]; then
             pages_site_host="$(printf '%s' "$PAGES_SITE_URL" | sed -E 's#^https?://([^/]+).*$#\1#' | tr '[:upper:]' '[:lower:]')"
+          elif [[ -n "$cname_host" ]]; then
+            pages_site_host="$cname_host"
           fi
 
           if [[ -n "$PAGES_BASE_PATH" ]]; then
@@ -70,6 +78,8 @@ jobs:
 
           if [[ -n "$PAGES_SITE_URL" ]]; then
             site_url="${PAGES_SITE_URL%/}"
+          elif [[ -n "$cname_host" ]]; then
+            site_url="https://${cname_host}"
           else
             site_url="https://${owner}.github.io"
           fi
