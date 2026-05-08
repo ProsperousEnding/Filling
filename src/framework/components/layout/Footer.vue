@@ -26,12 +26,19 @@
       <div v-if="config.footerNote" class="site-footer-note mt-6 text-center text-sm">
         <p>{{ config.footerNote }}</p>
       </div>
+
+      <TrustedHtmlBlock
+        v-if="config.footerSnippetHtml"
+        :html="config.footerSnippetHtml"
+        class="site-footer-snippet mt-4 text-center text-sm"
+      />
     </div>
   </footer>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import TrustedHtmlBlock from '../core/TrustedHtmlBlock.vue'
 import { useConfigStore } from '../../stores/config'
 
 // 获取配置store
@@ -66,3 +73,27 @@ const friendLinks = computed(() => (
     : []
 ))
 </script> 
+
+<style scoped>
+.site-footer-snippet {
+  color: rgb(100 116 139);
+  line-height: 1.8;
+}
+
+.site-footer-snippet :deep(a) {
+  color: rgb(37 99 235);
+  text-decoration: none;
+}
+
+.site-footer-snippet :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.site-footer-snippet :deep(p) {
+  margin: 0;
+}
+
+.site-footer-snippet :deep(p + p) {
+  margin-top: 0.55rem;
+}
+</style>

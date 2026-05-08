@@ -1,0 +1,29 @@
+# 站点公告配置
+# 支持在页面头部下方展示一条全站公告
+
+# 是否启用公告
+enabled = true
+
+# 可选：用于控制关闭状态缓存
+# 修改 id 后，已关闭的公告会重新展示
+# id = "spring-release"
+
+# 公告标题
+# title = "站点更新"
+
+# 公告正文
+# content = "现在支持站点公告、个人社交链接，以及文章更新时间和许可协议信息。"
+
+# 可选：按钮文案
+# link_text = "查看说明"
+
+# 可选：跳转地址
+# 仅支持以 / 开头的站内路径，或显式写出的 https:// / mailto: / tel:
+# link_url = "/about"
+
+# 是否允许用户手动关闭
+# dismissible = true
+
+# 公告样式
+# 可选值: "info" | "success" | "warning"
+# variant = "info"

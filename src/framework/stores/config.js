@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { loadAllConfigs } from '../config/configLoader'
 import { configureBlogRoutePatterns, normalizeBlogRoutePatterns } from '../router/routeManifest'
 import { normalizeMenuConfig } from '../utils/menuConfig'
+import { normalizeSidebarLayout } from '../utils/sidebarLayout'
 import { normalizeThemeAssetPath } from '../utils/themeAsset'
 
 const DEFAULT_SITE_CONFIG = {
@@ -10,6 +11,8 @@ const DEFAULT_SITE_CONFIG = {
   site_url: '',
   footer_text: '',
   footer_note: '',
+  footer_html: '',
+  footer_snippet_html: '',
   header: {
     leading_visual: {
       visible: true,
@@ -27,7 +30,8 @@ const DEFAULT_SITE_CONFIG = {
   },
   footer: {
     text: '',
-    note: ''
+    note: '',
+    snippet_html: ''
   },
   features: {
     sidebar_visible: true,
@@ -35,8 +39,11 @@ const DEFAULT_SITE_CONFIG = {
     show_category_count: true,
     show_tag_count: true,
     show_read_time: true,
-    show_profile_in_sidebar: true
+    show_profile_in_sidebar: true,
+    show_outdated_notice: false,
+    outdated_threshold_days: 365
   },
+  sidebar: {},
   routing: {},
   menus: {},
   pagination: {
@@ -66,16 +73,78 @@ const DEFAULT_LINKS_CONFIG = {
   friend_links: []
 }
 
+const DEFAULT_ANNOUNCEMENT_CONFIG = {
+  enabled: false,
+  id: '',
+  title: '',
+  content: '',
+  link_text: '',
+  link_url: '',
+  dismissible: true,
+  variant: 'info'
+}
+
+const DEFAULT_COMMENT_CONFIG = {
+  enabled: false,
+  provider: 'giscus',
+  title: '评论',
+  description: '',
+  not_ready_text: '评论系统尚未完成配置。',
+  giscus: {
+    repo: '',
+    repo_id: '',
+    category: '',
+    category_id: '',
+    mapping: 'pathname',
+    term: '',
+    strict: false,
+    reactions_enabled: true,
+    emit_metadata: false,
+    input_position: 'top',
+    lang: 'zh-CN',
+    loading: 'lazy',
+    theme: 'light',
+    dark_theme: 'dark_dimmed'
+  },
+  utterances: {
+    repo: '',
+    issue_term: 'pathname',
+    issue_number: '',
+    label: '',
+    theme: 'github-light',
+    dark_theme: 'github-dark',
+    crossorigin: 'anonymous'
+  }
+}
+
+const DEFAULT_SPONSOR_CONFIG = {
+  enabled: false,
+  title: '支持作者',
+  description: '',
+  button_text: '',
+  button_url: '',
+  button_note: '',
+  methods: []
+}
+
 const SIDEBAR_POSITION_VALUES = new Set(['left', 'right', 'hidden'])
+const GISCUS_MAPPING_VALUES = new Set(['pathname', 'url', 'title', 'og:title', 'specific'])
+const GISCUS_INPUT_POSITION_VALUES = new Set(['top', 'bottom'])
+const GISCUS_LOADING_VALUES = new Set(['lazy', 'eager'])
+const COMMENT_PROVIDER_VALUES = new Set(['giscus', 'utterances'])
+const UTTERANCES_CROSSORIGIN_VALUES = new Set(['anonymous', 'use-credentials'])
 const RAW_SITE_CONFIG_KEYS = new Set([
   'title',
   'description',
   'site_url',
   'footer_text',
   'footer_note',
+  'footer_html',
+  'footer_snippet_html',
   'header',
   'footer',
   'features',
+  'sidebar',
   'routing',
   'menus',
   'pagination'
@@ -97,6 +166,24 @@ const RAW_THEME_CONFIG_KEYS = new Set([
   'presets'
 ])
 const RAW_LINKS_CONFIG_KEYS = new Set(['friend_links'])
+const RAW_COMMENT_CONFIG_KEYS = new Set([
+  'enabled',
+  'provider',
+  'title',
+  'description',
+  'not_ready_text',
+  'giscus',
+  'utterances'
+])
+const RAW_SPONSOR_CONFIG_KEYS = new Set([
+  'enabled',
+  'title',
+  'description',
+  'button_text',
+  'button_url',
+  'button_note',
+  'methods'
+])
 
 let reloadSeq = 0
 
@@ -134,7 +221,33 @@ function normalizeSocialLinks(socialLinks = []) {
 
   return socialLinks
     .filter(link => isPlainObject(link))
-    .map(link => toCamelCase(link))
+    .map((link, index) => {
+      const normalizedLink = toCamelCase(link)
+      const name = String(normalizedLink.name || normalizedLink.label || normalizedLink.title || '').trim()
+      const rawUrl = String(normalizedLink.url || normalizedLink.href || '').trim()
+      const url = normalizeProfileLinkUrl(rawUrl)
+
+      if (!name || !url) {
+        return null
+      }
+
+      return {
+        id: String(normalizedLink.id || `social-link-${index}-${name.toLowerCase().replace(/\s+/g, '-')}`).trim(),
+        name,
+        url
+      }
+    })
+    .filter(Boolean)
+}
+
+function normalizeStringList(values = []) {
+  if (!Array.isArray(values)) {
+    return []
+  }
+
+  return values
+    .map(value => String(value || '').trim())
+    .filter(Boolean)
 }
 
 function normalizeFriendLinks(friendLinks = []) {
@@ -146,10 +259,18 @@ function normalizeFriendLinks(friendLinks = []) {
     .filter(link => isPlainObject(link))
     .map((link, index) => {
       const name = String(link.name || '').trim()
-      const url = String(link.url || '').trim()
+      const url = normalizeProfileLinkUrl(link.url)
       const description = String(link.description || '').trim()
+      const avatarUrl = normalizeFriendLinkAssetPath(
+        link.avatar_url || link.logo_url || link.image_url || link.icon_url || link.avatar || link.logo || link.image
+      )
+      const location = String(link.location || '').trim()
+      const note = String(link.note || '').trim()
+      const weight = Number.parseInt(link.weight, 10)
+      const enabled = typeof link.enabled === 'boolean' ? link.enabled : true
+      const tags = normalizeStringList(link.tags || link.badges)
 
-      if (!name || !url) {
+      if (!enabled || !name || !url) {
         return null
       }
 
@@ -157,10 +278,19 @@ function normalizeFriendLinks(friendLinks = []) {
         id: `friend-link-${index}-${name.toLowerCase().replace(/\s+/g, '-')}`,
         name,
         url,
-        description
+        description,
+        avatarUrl,
+        location,
+        note,
+        weight: Number.isFinite(weight) ? weight : 0,
+        tags
       }
     })
     .filter(Boolean)
+    .sort((left, right) => (
+      right.weight - left.weight
+      || left.name.localeCompare(right.name, 'zh-CN')
+    ))
 }
 
 function normalizeSidebarPosition(position) {
@@ -177,6 +307,51 @@ function normalizeSidebarPosition(position) {
   return SIDEBAR_POSITION_VALUES.has(normalized)
     ? normalized
     : DEFAULT_SITE_CONFIG.features.sidebar_position
+}
+
+function normalizeFeatureBoolean(value, fallback = false) {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+function normalizePositiveFeatureInteger(value, fallback) {
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function normalizeProfileLinkUrl(value) {
+  const normalizedValue = String(value || '').trim()
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(normalizedValue)) {
+    return normalizedValue
+  }
+
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedValue)) {
+    return ''
+  }
+
+  return `https://${normalizedValue}`
+}
+
+function normalizeFriendLinkAssetPath(value) {
+  const normalizedValue = String(value || '').trim()
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  if (/^(https?:)?\/\//i.test(normalizedValue) || normalizedValue.startsWith('data:')) {
+    return normalizedValue
+  }
+
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedValue)) {
+    return ''
+  }
+
+  return normalizedValue.replace(/^\.?\//, '')
 }
 
 function normalizeProfile(profile = {}) {
@@ -204,16 +379,315 @@ function normalizeThemePresets(presets = {}) {
   }, {})
 }
 
-function normalizeFooterConfig(footer = {}) {
-  if (!isPlainObject(footer)) {
+function normalizeAnnouncementVariant(value) {
+  const normalizedValue = String(value || '').trim().toLowerCase()
+
+  if (normalizedValue === 'success' || normalizedValue === 'warning') {
+    return normalizedValue
+  }
+
+  return DEFAULT_ANNOUNCEMENT_CONFIG.variant
+}
+
+function normalizeAnnouncementLink(value) {
+  const normalizedValue = String(value || '').trim()
+
+  if (!normalizedValue) {
     return {
-      ...DEFAULT_SITE_CONFIG.footer
+      url: '',
+      external: false
+    }
+  }
+
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(normalizedValue)) {
+    return {
+      url: normalizedValue,
+      external: true
+    }
+  }
+
+  if (!normalizedValue.startsWith('/') || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedValue)) {
+    return {
+      url: '',
+      external: false
     }
   }
 
   return {
+    url: normalizedValue,
+    external: false
+  }
+}
+
+function normalizeSponsorMethods(methods = []) {
+  if (!Array.isArray(methods)) {
+    return []
+  }
+
+  return methods
+    .filter(method => isPlainObject(method))
+    .map((method, index) => {
+      const normalizedMethod = toCamelCase(method)
+      const name = String(normalizedMethod.name || normalizedMethod.label || normalizedMethod.title || '').trim()
+      const accountName = String(
+        normalizedMethod.accountName
+        || normalizedMethod.account
+        || normalizedMethod.payee
+        || ''
+      ).trim()
+      const note = String(normalizedMethod.note || normalizedMethod.description || '').trim()
+      const imageUrl = normalizeFriendLinkAssetPath(
+        normalizedMethod.imageUrl
+        || normalizedMethod.qrCodeUrl
+        || normalizedMethod.qrUrl
+        || normalizedMethod.image
+        || normalizedMethod.qrCode
+        || normalizedMethod.qr
+      )
+      const link = normalizeAnnouncementLink(
+        normalizedMethod.linkUrl
+        || normalizedMethod.url
+        || normalizedMethod.href
+      )
+      const weight = Number.parseInt(normalizedMethod.weight, 10)
+      const enabled = typeof normalizedMethod.enabled === 'boolean'
+        ? normalizedMethod.enabled
+        : true
+
+      if (!enabled || (!name && !accountName && !note && !imageUrl && !link.url)) {
+        return null
+      }
+
+      return {
+        id: String(normalizedMethod.id || `sponsor-method-${index}`).trim(),
+        name: name || accountName || `赞助方式 ${index + 1}`,
+        accountName,
+        note,
+        imageUrl,
+        linkUrl: link.url,
+        external: link.external,
+        weight: Number.isFinite(weight) ? weight : 0
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => (
+      right.weight - left.weight
+      || left.name.localeCompare(right.name, 'zh-CN')
+    ))
+}
+
+function normalizeSponsorConfig(sponsor = {}) {
+  const merged = {
+    ...DEFAULT_SPONSOR_CONFIG,
+    ...(isPlainObject(sponsor) ? sponsor : {})
+  }
+  const buttonLink = normalizeAnnouncementLink(merged.button_url)
+  const methods = normalizeSponsorMethods(merged.methods)
+  const title = String(merged.title || '').trim() || DEFAULT_SPONSOR_CONFIG.title
+  const description = String(merged.description || '').trim()
+  const buttonText = String(merged.button_text || '').trim()
+  const buttonNote = String(merged.button_note || '').trim()
+  const enabled = merged.enabled === true && Boolean(buttonLink.url || methods.length > 0)
+
+  return {
+    enabled,
+    title,
+    description,
+    buttonText,
+    buttonUrl: buttonLink.url,
+    buttonExternal: buttonLink.external,
+    buttonNote,
+    methods
+  }
+}
+
+function normalizeAnnouncement(announcement = {}) {
+  const merged = {
+    ...DEFAULT_ANNOUNCEMENT_CONFIG,
+    ...(isPlainObject(announcement) ? announcement : {})
+  }
+  const title = String(merged.title || '').trim()
+  const content = String(merged.content || '').trim()
+  const linkText = String(merged.link_text || '').trim()
+  const link = normalizeAnnouncementLink(merged.link_url)
+
+  return {
+    enabled: merged.enabled === true && Boolean(title || content),
+    id: String(merged.id || '').trim(),
+    title,
+    content,
+    linkText,
+    linkUrl: link.url,
+    external: link.external,
+    dismissible: merged.dismissible !== false,
+    variant: normalizeAnnouncementVariant(merged.variant)
+  }
+}
+
+function normalizeCommentProvider(value) {
+  const normalizedValue = String(value || '').trim().toLowerCase()
+
+  return COMMENT_PROVIDER_VALUES.has(normalizedValue)
+    ? normalizedValue
+    : DEFAULT_COMMENT_CONFIG.provider
+}
+
+function normalizeGiscusMapping(value) {
+  const normalizedValue = String(value || '').trim().toLowerCase()
+
+  if (normalizedValue === 'og:title') {
+    return 'og:title'
+  }
+
+  return GISCUS_MAPPING_VALUES.has(normalizedValue)
+    ? normalizedValue
+    : DEFAULT_COMMENT_CONFIG.giscus.mapping
+}
+
+function normalizeGiscusInputPosition(value) {
+  const normalizedValue = String(value || '').trim().toLowerCase()
+
+  return GISCUS_INPUT_POSITION_VALUES.has(normalizedValue)
+    ? normalizedValue
+    : DEFAULT_COMMENT_CONFIG.giscus.input_position
+}
+
+function normalizeGiscusLoading(value) {
+  const normalizedValue = String(value || '').trim().toLowerCase()
+
+  return GISCUS_LOADING_VALUES.has(normalizedValue)
+    ? normalizedValue
+    : DEFAULT_COMMENT_CONFIG.giscus.loading
+}
+
+function normalizeGiscusConfig(config = {}) {
+  const merged = {
+    ...DEFAULT_COMMENT_CONFIG.giscus,
+    ...(isPlainObject(config) ? config : {})
+  }
+  const repo = String(merged.repo || '').trim()
+  const repoId = String(merged.repo_id || merged.repoId || '').trim()
+  const category = String(merged.category || '').trim()
+  const categoryId = String(merged.category_id || merged.categoryId || '').trim()
+  const mapping = normalizeGiscusMapping(merged.mapping)
+  const term = String(merged.term || '').trim()
+  const theme = String(merged.theme || '').trim() || DEFAULT_COMMENT_CONFIG.giscus.theme
+  const darkTheme = String(merged.dark_theme || merged.darkTheme || '').trim() || DEFAULT_COMMENT_CONFIG.giscus.dark_theme
+  const lang = String(merged.lang || '').trim() || DEFAULT_COMMENT_CONFIG.giscus.lang
+  const loading = normalizeGiscusLoading(merged.loading)
+  const requiresTerm = mapping === 'specific'
+  const ready = Boolean(repo && repoId && category && categoryId && (!requiresTerm || term))
+
+  return {
+    repo,
+    repoId,
+    category,
+    categoryId,
+    mapping,
+    term,
+    strict: typeof merged.strict === 'boolean'
+      ? merged.strict
+      : DEFAULT_COMMENT_CONFIG.giscus.strict,
+    reactionsEnabled: typeof merged.reactions_enabled === 'boolean'
+      ? merged.reactions_enabled
+      : typeof merged.reactionsEnabled === 'boolean'
+        ? merged.reactionsEnabled
+        : DEFAULT_COMMENT_CONFIG.giscus.reactions_enabled,
+    emitMetadata: typeof merged.emit_metadata === 'boolean'
+      ? merged.emit_metadata
+      : typeof merged.emitMetadata === 'boolean'
+        ? merged.emitMetadata
+        : DEFAULT_COMMENT_CONFIG.giscus.emit_metadata,
+    inputPosition: normalizeGiscusInputPosition(merged.input_position || merged.inputPosition),
+    lang,
+    loading,
+    theme,
+    darkTheme,
+    ready
+  }
+}
+
+function normalizeUtterancesCrossorigin(value) {
+  const normalizedValue = String(value || '').trim().toLowerCase()
+
+  return UTTERANCES_CROSSORIGIN_VALUES.has(normalizedValue)
+    ? normalizedValue
+    : DEFAULT_COMMENT_CONFIG.utterances.crossorigin
+}
+
+function normalizeUtterancesConfig(config = {}) {
+  const merged = {
+    ...DEFAULT_COMMENT_CONFIG.utterances,
+    ...(isPlainObject(config) ? config : {})
+  }
+  const repo = String(merged.repo || '').trim()
+  const issueTerm = String(merged.issue_term || merged.issueTerm || '').trim() || DEFAULT_COMMENT_CONFIG.utterances.issue_term
+  const issueNumber = String(merged.issue_number || merged.issueNumber || '').trim()
+  const label = String(merged.label || '').trim()
+  const theme = String(merged.theme || '').trim() || DEFAULT_COMMENT_CONFIG.utterances.theme
+  const darkTheme = String(merged.dark_theme || merged.darkTheme || '').trim() || DEFAULT_COMMENT_CONFIG.utterances.dark_theme
+  const ready = Boolean(repo && (issueNumber || issueTerm))
+
+  return {
+    repo,
+    issueTerm,
+    issueNumber,
+    label,
+    theme,
+    darkTheme,
+    crossorigin: normalizeUtterancesCrossorigin(merged.crossorigin),
+    ready
+  }
+}
+
+function normalizeCommentConfig(comment = {}) {
+  const merged = {
+    ...DEFAULT_COMMENT_CONFIG,
+    ...(isPlainObject(comment) ? comment : {})
+  }
+  const provider = normalizeCommentProvider(merged.provider)
+  const giscus = normalizeGiscusConfig(merged.giscus)
+  const utterances = normalizeUtterancesConfig(merged.utterances)
+  const enabled = merged.enabled === true
+  const title = String(merged.title || '').trim() || DEFAULT_COMMENT_CONFIG.title
+  const description = String(merged.description || '').trim()
+  const notReadyText = String(merged.not_ready_text || merged.notReadyText || '').trim()
+    || DEFAULT_COMMENT_CONFIG.not_ready_text
+  const providerReady = provider === 'giscus'
+    ? giscus.ready
+    : utterances.ready
+
+  return {
+    enabled,
+    provider,
+    title,
+    description,
+    notReadyText,
+    ready: enabled && providerReady,
+    giscus,
+    utterances
+  }
+}
+
+function normalizeFooterConfig(footer = {}) {
+  if (!isPlainObject(footer)) {
+    return normalizeFooterConfig(DEFAULT_SITE_CONFIG.footer)
+  }
+
+  const mergedFooter = {
     ...DEFAULT_SITE_CONFIG.footer,
     ...footer
+  }
+
+  return {
+    text: String(mergedFooter.text || '').trim(),
+    note: String(mergedFooter.note || '').trim(),
+    snippetHtml: String(
+      mergedFooter.snippet_html
+      || mergedFooter.snippetHtml
+      || mergedFooter.html
+      || ''
+    ).trim()
   }
 }
 
@@ -310,7 +784,7 @@ function normalizeMenusConfig(menus = {}) {
   return normalizeMenuConfig(menus)
 }
 
-function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {} } = {}) {
+function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {}, announcement = {}, comment = {}, sponsor = {} } = {}) {
   const mergedSite = {
     ...DEFAULT_SITE_CONFIG,
     ...site,
@@ -318,8 +792,25 @@ function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {} 
     footer: normalizeFooterConfig(site.footer),
     features: {
       ...DEFAULT_SITE_CONFIG.features,
-      ...(site.features || {})
+      ...(site.features || {}),
+      show_read_time: normalizeFeatureBoolean(
+        site.features?.show_read_time,
+        DEFAULT_SITE_CONFIG.features.show_read_time
+      ),
+      show_profile_in_sidebar: normalizeFeatureBoolean(
+        site.features?.show_profile_in_sidebar,
+        DEFAULT_SITE_CONFIG.features.show_profile_in_sidebar
+      ),
+      show_outdated_notice: normalizeFeatureBoolean(
+        site.features?.show_outdated_notice,
+        DEFAULT_SITE_CONFIG.features.show_outdated_notice
+      ),
+      outdated_threshold_days: normalizePositiveFeatureInteger(
+        site.features?.outdated_threshold_days,
+        DEFAULT_SITE_CONFIG.features.outdated_threshold_days
+      )
     },
+    sidebar: isPlainObject(site.sidebar) ? site.sidebar : DEFAULT_SITE_CONFIG.sidebar,
     pagination: {
       ...DEFAULT_SITE_CONFIG.pagination,
       ...(site.pagination || {})
@@ -356,14 +847,21 @@ function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {} 
     headerConfig: mergedSite.header,
     footerText: mergedSite.footer.text || mergedSite.footer_text,
     footerNote: mergedSite.footer.note || mergedSite.footer_note,
+    footerSnippetHtml: mergedSite.footer.snippetHtml || mergedSite.footer_snippet_html || mergedSite.footer_html,
     friendLinks: normalizeFriendLinks(mergedLinks.friend_links),
     showCategoryCount: mergedSite.features.show_category_count,
     showTagCount: mergedSite.features.show_tag_count,
     showReadTime: mergedSite.features.show_read_time,
+    showOutdatedNotice: mergedSite.features.show_outdated_notice,
+    outdatedThresholdDays: mergedSite.features.outdated_threshold_days,
     showProfileInSidebar: mergedSite.features.show_profile_in_sidebar,
+    sidebarLayout: normalizeSidebarLayout(mergedSite.sidebar),
     routePatterns: normalizeRoutingConfig(mergedSite.routing),
     menus: normalizeMenusConfig(mergedSite.menus),
     userProfile: normalizeProfile(profile),
+    announcement: normalizeAnnouncement(announcement),
+    commentConfig: normalizeCommentConfig(comment),
+    sponsorConfig: normalizeSponsorConfig(sponsor),
     currentThemePreset,
     themePresets,
     themeCSSFile: normalizeThemeAssetPath(activeThemePreset?.cssFile || mergedTheme.css_file || ''),
@@ -385,7 +883,7 @@ function normalizeRuntimeConfigInput(config = {}) {
     return config
   }
 
-  const hasNamespacedConfig = ['site', 'profile', 'theme', 'links']
+  const hasNamespacedConfig = ['site', 'profile', 'theme', 'links', 'announcement', 'comment', 'sponsor']
     .some(key => Object.prototype.hasOwnProperty.call(config, key))
 
   if (hasNamespacedConfig) {
@@ -393,7 +891,10 @@ function normalizeRuntimeConfigInput(config = {}) {
       site: config.site,
       profile: config.profile,
       theme: config.theme,
-      links: config.links
+      links: config.links,
+      announcement: config.announcement,
+      comment: config.comment,
+      sponsor: config.sponsor
     })
   }
 
@@ -401,18 +902,24 @@ function normalizeRuntimeConfigInput(config = {}) {
   const profile = pickConfigSubset(config, RAW_PROFILE_CONFIG_KEYS)
   const theme = pickConfigSubset(config, RAW_THEME_CONFIG_KEYS)
   const links = pickConfigSubset(config, RAW_LINKS_CONFIG_KEYS)
+  const comment = pickConfigSubset(config, RAW_COMMENT_CONFIG_KEYS)
+  const sponsor = pickConfigSubset(config, RAW_SPONSOR_CONFIG_KEYS)
 
   if (
     Object.keys(site).length > 0 ||
     Object.keys(profile).length > 0 ||
     Object.keys(theme).length > 0 ||
-    Object.keys(links).length > 0
+    Object.keys(links).length > 0 ||
+    Object.keys(comment).length > 0 ||
+    Object.keys(sponsor).length > 0
   ) {
     return normalizeConfigState({
       site,
       profile,
       theme,
-      links
+      links,
+      comment,
+      sponsor
     })
   }
 
@@ -509,7 +1016,10 @@ export const useConfigStore = defineStore('config', {
         site: configs?.site || {},
         profile: configs?.profile || {},
         theme: configs?.theme || {},
-        links: configs?.links || {}
+        links: configs?.links || {},
+        announcement: configs?.announcement || {},
+        comment: configs?.comment || {},
+        sponsor: configs?.sponsor || {}
       }))
     },
 

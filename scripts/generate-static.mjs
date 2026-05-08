@@ -28,6 +28,7 @@ import {
   resolveHeaderMenuGroups,
   resolveSidebarMenuSections
 } from '../src/framework/utils/menuConfig.js'
+import { normalizeSidebarLayout, resolveSidebarSections } from '../src/framework/utils/sidebarLayout.js'
 import {
   normalizeMenuContentPath,
   parseMenuCollectionDetail,
@@ -38,6 +39,7 @@ import {
   resolveBuiltInPageComponentKey,
   resolveMenuPageComponentKey
 } from '../src/framework/utils/pageComponentConfig.js'
+import { resolveOutdatedNotice } from '../src/framework/utils/articleMeta.js'
 import { normalizeThemeAssetPath } from '../src/framework/utils/themeAsset.js'
 import { applyConfigEnvOverrides } from '../src/framework/config/configEnvOverrides.js'
 import { parseToml } from '../src/framework/utils/tomlParser.js'
@@ -47,6 +49,9 @@ const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url))
 const DIST_DIR = path.join(ROOT_DIR, 'dist')
 const CONFIG_DIR = path.join(ROOT_DIR, 'blog', 'config')
 const ARTICLES_DIR = path.join(ROOT_DIR, 'blog', 'content', 'articles')
+const GISCUS_MAPPING_VALUES = new Set(['pathname', 'url', 'title', 'og:title', 'specific'])
+const GISCUS_INPUT_POSITION_VALUES = new Set(['top', 'bottom'])
+const GISCUS_LOADING_VALUES = new Set(['lazy', 'eager'])
 
 const STATIC_STYLE = `
 <style id="vue-blog-static-preview">
@@ -145,6 +150,94 @@ const STATIC_STYLE = `
     padding: 32px 0 56px;
   }
 
+  .ssg-announcement {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    width: min(1120px, calc(100vw - 32px));
+    margin: 0 auto 22px;
+    padding: 16px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(191, 219, 254, 0.95);
+    background:
+      radial-gradient(circle at top right, rgba(191, 219, 254, 0.45), transparent 32%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.94));
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+  }
+
+  .ssg-announcement[data-variant='success'] {
+    border-color: rgba(167, 243, 208, 0.92);
+    background:
+      radial-gradient(circle at top right, rgba(167, 243, 208, 0.36), transparent 32%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(240, 253, 244, 0.94));
+  }
+
+  .ssg-announcement[data-variant='warning'] {
+    border-color: rgba(253, 230, 138, 0.96);
+    background:
+      radial-gradient(circle at top right, rgba(253, 230, 138, 0.34), transparent 32%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 251, 235, 0.94));
+  }
+
+  .ssg-announcement-copy {
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ssg-announcement-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.1rem;
+    min-height: 1.8rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--ssg-accent);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .ssg-announcement[data-variant='success'] .ssg-announcement-badge {
+    background: rgba(16, 185, 129, 0.12);
+    color: rgb(5, 150, 105);
+  }
+
+  .ssg-announcement[data-variant='warning'] .ssg-announcement-badge {
+    background: rgba(245, 158, 11, 0.14);
+    color: rgb(217, 119, 6);
+  }
+
+  .ssg-announcement-title {
+    display: block;
+    color: var(--ssg-text);
+    font-size: 0.94rem;
+    line-height: 1.5;
+  }
+
+  .ssg-announcement-text {
+    margin: 2px 0 0;
+    color: var(--ssg-text-soft);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .ssg-announcement-link {
+    color: var(--ssg-accent);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .ssg-announcement-link:hover {
+    text-decoration: underline;
+  }
+
   .ssg-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 300px;
@@ -182,6 +275,7 @@ const STATIC_STYLE = `
     font-size: clamp(1.8rem, 3vw, 2.5rem);
     line-height: 1.12;
     letter-spacing: -0.03em;
+    overflow-wrap: anywhere;
   }
 
   .ssg-page-description {
@@ -214,6 +308,7 @@ const STATIC_STYLE = `
     font-size: 1.06rem;
     font-weight: 700;
     letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
   }
 
   .ssg-meta,
@@ -221,6 +316,7 @@ const STATIC_STYLE = `
   .ssg-summary,
   .ssg-footer-copy,
   .ssg-footer-note,
+  .ssg-footer-snippet,
   .ssg-sidebar-copy,
   .ssg-sidebar-meta {
     color: var(--ssg-text-muted);
@@ -237,6 +333,7 @@ const STATIC_STYLE = `
 
   .ssg-summary {
     margin: 12px 0 0;
+    overflow-wrap: anywhere;
   }
 
   .ssg-cover {
@@ -252,6 +349,463 @@ const STATIC_STYLE = `
   .ssg-prose {
     color: var(--ssg-text);
     line-height: 1.85;
+  }
+
+  .ssg-license-card {
+    margin-top: 28px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid var(--ssg-line);
+    background: var(--ssg-panel-muted);
+  }
+
+  .ssg-license-label {
+    color: var(--ssg-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .ssg-license-link {
+    display: inline-flex;
+    margin-top: 6px;
+    color: var(--ssg-text);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  a.ssg-license-link:hover {
+    color: var(--ssg-accent);
+    text-decoration: underline;
+  }
+
+  .ssg-outdated-card {
+    margin: 0 0 28px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(253, 230, 138, 0.95);
+    background: linear-gradient(180deg, rgba(255, 251, 235, 0.98), rgba(254, 249, 195, 0.78));
+  }
+
+  .ssg-outdated-label {
+    color: rgb(180, 83, 9);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .ssg-outdated-copy {
+    margin: 8px 0 0;
+    color: rgb(120, 53, 15);
+    line-height: 1.8;
+  }
+
+  .ssg-comments-shell {
+    margin-top: 28px;
+    padding: 18px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--ssg-line);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+  }
+
+  .ssg-comments-kicker {
+    margin: 0 0 8px;
+    color: var(--ssg-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .ssg-comments-title {
+    margin: 0;
+    color: var(--ssg-text);
+    font-size: 1.24rem;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+  }
+
+  .ssg-comments-description {
+    margin: 10px 0 0;
+    color: var(--ssg-text-soft);
+    line-height: 1.75;
+  }
+
+  .ssg-sponsor-shell {
+    margin-top: 28px;
+    padding: 18px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--ssg-line);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+  }
+
+  .ssg-sponsor-kicker {
+    margin: 0 0 8px;
+    color: var(--ssg-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .ssg-sponsor-title {
+    margin: 0;
+    color: var(--ssg-text);
+    font-size: 1.24rem;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+  }
+
+  .ssg-sponsor-description {
+    margin: 10px 0 0;
+    color: var(--ssg-text-soft);
+    line-height: 1.75;
+  }
+
+  .ssg-sponsor-layout {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .ssg-sponsor-layout.has-methods {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+  }
+
+  .ssg-sponsor-primary {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.9));
+    border: 1px solid rgba(226, 232, 240, 0.95);
+  }
+
+  .ssg-sponsor-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    background: var(--ssg-text);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.16);
+  }
+
+  .ssg-sponsor-button:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  .ssg-sponsor-note {
+    margin: 0;
+    color: var(--ssg-text-muted);
+    line-height: 1.7;
+  }
+
+  .ssg-sponsor-methods {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+
+  .ssg-sponsor-method {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+    text-decoration: none;
+    text-align: center;
+    color: inherit;
+  }
+
+  .ssg-sponsor-method:hover {
+    text-decoration: none;
+    border-color: rgba(148, 163, 184, 0.5);
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .ssg-sponsor-method-image-shell {
+    width: 100%;
+    max-width: 152px;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 16px;
+    background: white;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+  }
+
+  .ssg-sponsor-method-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ssg-sponsor-method-title {
+    margin: 0;
+    color: var(--ssg-text);
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .ssg-sponsor-method-account {
+    margin: 0;
+    color: var(--ssg-text-soft);
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+
+  .ssg-sponsor-method-note {
+    margin: 0;
+    color: var(--ssg-text-muted);
+    font-size: 0.84rem;
+    line-height: 1.65;
+  }
+
+  .ssg-friends-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: 1fr;
+  }
+
+  .ssg-friend-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid var(--ssg-line);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.05);
+  }
+
+  .ssg-friend-card:hover {
+    border-color: rgba(37, 99, 235, 0.22);
+    box-shadow: 0 22px 36px rgba(15, 23, 42, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .ssg-friend-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .ssg-friend-avatar-shell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(219, 234, 254, 0.76), rgba(239, 246, 255, 0.96));
+    border: 1px solid rgba(191, 219, 254, 0.95);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .ssg-friend-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ssg-friend-avatar-fallback {
+    color: var(--ssg-accent);
+    font-size: 1.35rem;
+    font-weight: 700;
+  }
+
+  .ssg-friend-title {
+    margin: 0;
+    color: var(--ssg-text);
+    font-size: 1.02rem;
+    line-height: 1.35;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  .ssg-friend-host {
+    margin: 4px 0 0;
+    color: var(--ssg-text-muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .ssg-friend-description {
+    margin: 0;
+    color: var(--ssg-text-soft);
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+  }
+
+  .ssg-friend-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ssg-friend-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+    padding: 0.18rem 0.58rem;
+    border-radius: 999px;
+    background: rgba(239, 246, 255, 0.95);
+    color: var(--ssg-accent);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .ssg-friend-details {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ssg-friend-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-top: auto;
+    width: 100%;
+    color: var(--ssg-accent);
+    font-size: 0.84rem;
+    font-weight: 600;
+  }
+
+  .ssg-friends-application {
+    display: grid;
+    gap: 18px;
+    margin-top: 22px;
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid var(--ssg-line);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.95));
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.05);
+  }
+
+  .ssg-friends-application-kicker {
+    margin: 0 0 8px;
+    color: var(--ssg-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .ssg-friends-application-title {
+    margin: 0;
+    color: var(--ssg-text);
+    font-size: 1.2rem;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+  }
+
+  .ssg-friends-application-description {
+    margin: 10px 0 0;
+    color: var(--ssg-text-soft);
+    line-height: 1.8;
+  }
+
+  .ssg-friends-application-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  .ssg-friends-application-panel {
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(226, 232, 240, 0.92);
+    background: rgba(248, 250, 252, 0.82);
+  }
+
+  .ssg-friends-application-panel-title {
+    margin: 0 0 12px;
+    color: var(--ssg-text);
+    font-size: 0.96rem;
+    line-height: 1.4;
+    font-weight: 700;
+  }
+
+  .ssg-friends-application-list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding-left: 18px;
+    color: var(--ssg-text-soft);
+    line-height: 1.75;
+  }
+
+  .ssg-friends-application-list li::marker {
+    color: var(--ssg-accent);
+  }
+
+  .ssg-friends-application-template {
+    margin: 0;
+    padding: 16px 18px;
+    overflow-x: auto;
+    border-radius: 18px;
+    border: 1px solid rgba(191, 219, 254, 0.85);
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.92), rgba(248, 250, 252, 0.98));
+    color: rgb(30, 41, 59);
+    font-size: 0.86rem;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .ssg-friends-application-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .ssg-friends-application-contact-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--ssg-accent);
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .ssg-friends-application-contact-link:hover {
+    background: rgba(37, 99, 235, 0.14);
+    text-decoration: none;
+  }
+
+  .ssg-friends-application-contact-copy {
+    margin: 0;
+    color: var(--ssg-text-soft);
+    line-height: 1.75;
   }
 
   .ssg-prose h1,
@@ -306,6 +860,8 @@ const STATIC_STYLE = `
     color: var(--ssg-accent);
     text-decoration: none;
     font-size: 0.92rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .ssg-chip-current {
@@ -381,6 +937,37 @@ const STATIC_STYLE = `
     padding: 18px;
   }
 
+  .ssg-sidebar-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(248, 250, 252, 0.95);
+    border: 1px solid rgba(226, 232, 240, 0.92);
+  }
+
+  .ssg-sidebar-search-icon {
+    color: var(--ssg-text-muted);
+    font-size: 0.92rem;
+    line-height: 1;
+  }
+
+  .ssg-sidebar-search-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--ssg-text-soft);
+    font: inherit;
+    outline: none;
+  }
+
+  .ssg-sidebar-search-input::placeholder {
+    color: var(--ssg-text-muted);
+  }
+
   .ssg-sidebar-title {
     margin: 0 0 12px;
     font-size: 0.98rem;
@@ -407,6 +994,52 @@ const STATIC_STYLE = `
     margin-top: 4px;
   }
 
+  .ssg-sidebar-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .ssg-sidebar-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(248, 250, 252, 0.95);
+    border: 1px solid rgba(226, 232, 240, 0.92);
+    color: var(--ssg-text-muted);
+    text-decoration: none;
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .ssg-sidebar-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .ssg-sidebar-social {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(219, 234, 254, 0.5);
+    border: 1px solid rgba(191, 219, 254, 0.92);
+    color: var(--ssg-accent);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .ssg-sidebar-social:hover,
+  .ssg-sidebar-meta-pill:hover {
+    text-decoration: none;
+    border-color: rgba(147, 197, 253, 0.96);
+  }
+
   .ssg-avatar {
     width: 72px;
     height: 72px;
@@ -429,6 +1062,27 @@ const STATIC_STYLE = `
     display: flex;
     flex-wrap: wrap;
     gap: 10px 16px;
+  }
+
+  .ssg-footer-snippet {
+    padding: 0 24px 20px;
+  }
+
+  .ssg-footer-snippet p {
+    margin: 0;
+  }
+
+  .ssg-footer-snippet p + p {
+    margin-top: 0.55rem;
+  }
+
+  .ssg-footer-snippet a {
+    color: var(--ssg-accent);
+    text-decoration: none;
+  }
+
+  .ssg-footer-snippet a:hover {
+    text-decoration: underline;
   }
 
   .ssg-archive-year {
@@ -505,6 +1159,8 @@ const STATIC_STYLE = `
 
   .ssg-configured-item {
     display: block;
+    min-width: 0;
+    width: 100%;
     padding: 18px 20px;
     border-radius: 18px;
     text-decoration: none;
@@ -540,6 +1196,7 @@ const STATIC_STYLE = `
     color: var(--ssg-accent);
     font-size: 0.78rem;
     font-weight: 700;
+    overflow-wrap: anywhere;
   }
 
   .ssg-configured-media {
@@ -563,12 +1220,14 @@ const STATIC_STYLE = `
     font-size: 1.08rem;
     line-height: 1.45;
     letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
   }
 
   .ssg-configured-description {
     margin: 10px 0 0;
     color: var(--ssg-text-soft);
     line-height: 1.75;
+    overflow-wrap: anywhere;
   }
 
   .ssg-configured-timeline-item {
@@ -597,11 +1256,13 @@ const STATIC_STYLE = `
     font-weight: 700;
     letter-spacing: 0.04em;
     box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+    overflow-wrap: anywhere;
   }
 
   .ssg-configured-timeline-card {
     position: relative;
     display: block;
+    min-width: 0;
     padding: 18px 20px;
     border-radius: 18px;
     border: 1px solid var(--ssg-line);
@@ -636,6 +1297,11 @@ const STATIC_STYLE = `
       align-items: flex-start;
     }
 
+    .ssg-announcement {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
     .ssg-layout,
     .ssg-layout.is-sidebar-left {
       grid-template-columns: minmax(0, 1fr);
@@ -649,6 +1315,33 @@ const STATIC_STYLE = `
 
     .ssg-configured-grid {
       grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+    .ssg-sponsor-layout.has-methods {
+      grid-template-columns: 1fr;
+    }
+
+    .ssg-friends-grid {
+      gap: 16px;
+    }
+
+    .ssg-friend-card {
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .ssg-friend-avatar-shell {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+    }
+
+    .ssg-friends-application {
+      padding: 20px;
+    }
+
+    .ssg-friends-application-contact-link {
+      width: 100%;
     }
 
     .ssg-configured-timeline::before {
@@ -672,9 +1365,68 @@ const STATIC_STYLE = `
     }
   }
 
-  @media (min-width: 768px) {
+  @media (max-width: 640px) {
+    .ssg-content {
+      padding: 20px 16px;
+    }
+
+    .ssg-page-header {
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+    }
+
+    .ssg-configured-item,
+    .ssg-configured-timeline-card {
+      padding: 15px 16px;
+    }
+
+    .ssg-configured-media {
+      margin: -15px -16px 14px;
+    }
+
+    .ssg-configured-title {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .ssg-configured-description {
+      margin-top: 8px;
+      font-size: 0.94rem;
+      line-height: 1.72;
+    }
+
+    .ssg-configured-meta {
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+
+    .ssg-configured-timeline-item {
+      padding-left: 34px;
+    }
+
+    .ssg-configured-timeline-stamp {
+      max-width: 100%;
+      white-space: normal;
+      line-height: 1.45;
+    }
+
+    .ssg-configured-timeline-card::before {
+      left: -18px;
+      width: 18px;
+    }
+  }
+
+  @media (min-width: 960px) {
     .ssg-configured-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ssg-friends-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .ssg-friends-application-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
   }
 </style>
@@ -894,18 +1646,24 @@ async function loadTomlConfig(name) {
 }
 
 async function loadConfigs() {
-  const [site, profile, theme, links] = await Promise.all([
+  const [site, profile, theme, links, announcement, comment, sponsor] = await Promise.all([
     loadTomlConfig('site'),
     loadTomlConfig('profile'),
     loadTomlConfig('theme'),
-    loadTomlConfig('links')
+    loadTomlConfig('links'),
+    loadTomlConfig('announcement'),
+    loadTomlConfig('comment'),
+    loadTomlConfig('sponsor')
   ])
 
   return applyConfigEnvOverrides({
     site,
     profile,
     theme,
-    links
+    links,
+    announcement,
+    comment,
+    sponsor
   }, process.env)
 }
 
@@ -941,6 +1699,7 @@ async function loadArticles() {
       ...article,
       date: normalizeDateValue(article.date),
       createdAt: normalizeDateValue(article.createdAt),
+      updatedAt: normalizeDateValue(article.updatedAt),
       author: article.author?.name || ''
     }
   }))
@@ -1027,21 +1786,361 @@ function normalizeFriendLinks(friendLinks = []) {
   return friendLinks
     .map((link, index) => {
       const name = toTrimmedString(link?.name)
-      const url = toTrimmedString(link?.url)
+      const url = normalizeProfileLinkUrl(link?.url)
       const description = toTrimmedString(link?.description)
+      const avatarUrl = normalizeFriendLinkAssetPath(
+        link?.avatar_url || link?.logo_url || link?.image_url || link?.icon_url || link?.avatar || link?.logo || link?.image
+      )
+      const location = toTrimmedString(link?.location)
+      const note = toTrimmedString(link?.note)
+      const weight = Number.parseInt(link?.weight, 10)
+      const enabled = typeof link?.enabled === 'boolean' ? link.enabled : true
+      const tags = Array.isArray(link?.tags || link?.badges)
+        ? (link.tags || link.badges).map(tag => toTrimmedString(tag)).filter(Boolean)
+        : []
 
-      if (!name || !url) {
+      if (!enabled || !name || !url) {
         return null
       }
 
       return {
         id: `friend-link-${index}`,
         name,
-        url: /^https?:\/\//i.test(url) ? url : `https://${url}`,
-        description
+        url,
+        description,
+        avatarUrl,
+        location,
+        note,
+        weight: Number.isFinite(weight) ? weight : 0,
+        tags
       }
     })
     .filter(Boolean)
+    .sort((left, right) => (
+      right.weight - left.weight
+      || left.name.localeCompare(right.name, 'zh-CN')
+    ))
+}
+
+function normalizeProfileLinkUrl(value) {
+  const normalizedValue = toTrimmedString(value)
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(normalizedValue)) {
+    return normalizedValue
+  }
+
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedValue)) {
+    return ''
+  }
+
+  return `https://${normalizedValue}`
+}
+
+function normalizeFriendLinkAssetPath(value) {
+  const normalizedValue = toTrimmedString(value)
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  if (/^(https?:)?\/\//i.test(normalizedValue) || normalizedValue.startsWith('data:')) {
+    return normalizedValue
+  }
+
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedValue)) {
+    return ''
+  }
+
+  return normalizedValue.replace(/^\.?\//, '')
+}
+
+function normalizeSocialLinks(links = []) {
+  if (!Array.isArray(links)) {
+    return []
+  }
+
+  return links
+    .map((link, index) => {
+      const name = toTrimmedString(link?.name || link?.label || link?.title)
+      const url = normalizeProfileLinkUrl(link?.url || link?.href)
+
+      if (!name || !url) {
+        return null
+      }
+
+      return {
+        id: toTrimmedString(link?.id) || `social-link-${index}`,
+        name,
+        url
+      }
+    })
+    .filter(Boolean)
+}
+
+function normalizeAnnouncementLink(value) {
+  const normalizedValue = toTrimmedString(value)
+
+  if (!normalizedValue) {
+    return {
+      url: '',
+      external: false
+    }
+  }
+
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(normalizedValue)) {
+    return {
+      url: normalizedValue,
+      external: true
+    }
+  }
+
+  if (!normalizedValue.startsWith('/') || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedValue)) {
+    return {
+      url: '',
+      external: false
+    }
+  }
+
+  return {
+    url: normalizedValue,
+    external: false
+  }
+}
+
+function normalizeAnnouncementConfig(config = {}) {
+  const title = toTrimmedString(config?.title)
+  const content = toTrimmedString(config?.content)
+  const linkText = toTrimmedString(config?.link_text)
+  const link = normalizeAnnouncementLink(config?.link_url)
+  const variant = ['success', 'warning'].includes(toTrimmedString(config?.variant).toLowerCase())
+    ? toTrimmedString(config?.variant).toLowerCase()
+    : 'info'
+
+  return {
+    enabled: config?.enabled === true && Boolean(title || content),
+    title,
+    content,
+    linkText,
+    linkUrl: link.url,
+    external: link.external,
+    dismissible: config?.dismissible !== false,
+    variant
+  }
+}
+
+function normalizeCommentProvider(value) {
+  const normalizedValue = toTrimmedString(value).toLowerCase()
+
+  return normalizedValue === 'utterances' || normalizedValue === 'giscus'
+    ? normalizedValue
+    : 'giscus'
+}
+
+function normalizeGiscusMapping(value) {
+  const normalizedValue = toTrimmedString(value).toLowerCase()
+
+  if (normalizedValue === 'og:title') {
+    return 'og:title'
+  }
+
+  return GISCUS_MAPPING_VALUES.has(normalizedValue)
+    ? normalizedValue
+    : 'pathname'
+}
+
+function normalizeGiscusInputPosition(value) {
+  const normalizedValue = toTrimmedString(value).toLowerCase()
+
+  return GISCUS_INPUT_POSITION_VALUES.has(normalizedValue)
+    ? normalizedValue
+    : 'top'
+}
+
+function normalizeGiscusLoading(value) {
+  const normalizedValue = toTrimmedString(value).toLowerCase()
+
+  return GISCUS_LOADING_VALUES.has(normalizedValue)
+    ? normalizedValue
+    : 'lazy'
+}
+
+function normalizeUtterancesCrossorigin(value) {
+  const normalizedValue = toTrimmedString(value).toLowerCase()
+
+  return normalizedValue === 'use-credentials'
+    ? 'use-credentials'
+    : 'anonymous'
+}
+
+function normalizeCommentConfig(config = {}) {
+  const provider = normalizeCommentProvider(config?.provider)
+  const giscus = typeof config?.giscus === 'object' && config.giscus
+    ? config.giscus
+    : {}
+  const utterances = typeof config?.utterances === 'object' && config.utterances
+    ? config.utterances
+    : {}
+  const mapping = normalizeGiscusMapping(giscus.mapping)
+  const term = toTrimmedString(giscus.term)
+  const giscusReady = Boolean(
+    toTrimmedString(giscus.repo)
+    && toTrimmedString(giscus.repo_id || giscus.repoId)
+    && toTrimmedString(giscus.category)
+    && toTrimmedString(giscus.category_id || giscus.categoryId)
+    && (mapping !== 'specific' || term)
+  )
+  const utterancesReady = Boolean(
+    toTrimmedString(utterances.repo)
+    && (
+      toTrimmedString(utterances.issue_number || utterances.issueNumber)
+      || toTrimmedString(utterances.issue_term || utterances.issueTerm)
+    )
+  )
+  const ready = provider === 'utterances' ? utterancesReady : giscusReady
+
+  return {
+    enabled: config?.enabled === true,
+    provider,
+    title: toTrimmedString(config?.title) || '评论',
+    description: toTrimmedString(config?.description),
+    notReadyText: toTrimmedString(config?.not_ready_text || config?.notReadyText) || '评论系统尚未完成配置。',
+    ready: config?.enabled === true && ready,
+    giscus: {
+      repo: toTrimmedString(giscus.repo),
+      repoId: toTrimmedString(giscus.repo_id || giscus.repoId),
+      category: toTrimmedString(giscus.category),
+      categoryId: toTrimmedString(giscus.category_id || giscus.categoryId),
+      mapping,
+      term,
+      strict: typeof giscus.strict === 'boolean' ? giscus.strict : false,
+      reactionsEnabled: typeof giscus.reactions_enabled === 'boolean'
+        ? giscus.reactions_enabled
+        : typeof giscus.reactionsEnabled === 'boolean'
+          ? giscus.reactionsEnabled
+          : true,
+      emitMetadata: typeof giscus.emit_metadata === 'boolean'
+        ? giscus.emit_metadata
+        : typeof giscus.emitMetadata === 'boolean'
+          ? giscus.emitMetadata
+          : false,
+      inputPosition: normalizeGiscusInputPosition(giscus.input_position || giscus.inputPosition),
+      lang: toTrimmedString(giscus.lang) || 'zh-CN',
+      loading: normalizeGiscusLoading(giscus.loading),
+      theme: toTrimmedString(giscus.theme) || 'light',
+      darkTheme: toTrimmedString(giscus.dark_theme || giscus.darkTheme) || 'dark_dimmed'
+    },
+    utterances: {
+      repo: toTrimmedString(utterances.repo),
+      issueTerm: toTrimmedString(utterances.issue_term || utterances.issueTerm) || 'pathname',
+      issueNumber: toTrimmedString(utterances.issue_number || utterances.issueNumber),
+      label: toTrimmedString(utterances.label),
+      theme: toTrimmedString(utterances.theme) || 'github-light',
+      darkTheme: toTrimmedString(utterances.dark_theme || utterances.darkTheme) || 'github-dark',
+      crossorigin: normalizeUtterancesCrossorigin(utterances.crossorigin)
+    }
+  }
+}
+
+function normalizeSponsorMethods(methods = []) {
+  if (!Array.isArray(methods)) {
+    return []
+  }
+
+  return methods
+    .map((method, index) => {
+      const name = toTrimmedString(method?.name || method?.label || method?.title)
+      const accountName = toTrimmedString(method?.account_name || method?.accountName || method?.account || method?.payee)
+      const note = toTrimmedString(method?.note || method?.description)
+      const imageUrl = normalizeFriendLinkAssetPath(
+        method?.image_url
+        || method?.imageUrl
+        || method?.qr_code_url
+        || method?.qrCodeUrl
+        || method?.qr_url
+        || method?.qrUrl
+        || method?.image
+        || method?.qr_code
+        || method?.qrCode
+        || method?.qr
+      )
+      const link = normalizeAnnouncementLink(method?.link_url || method?.linkUrl || method?.url || method?.href)
+      const enabled = typeof method?.enabled === 'boolean' ? method.enabled : true
+      const weight = Number.parseInt(method?.weight, 10)
+
+      if (!enabled || (!name && !accountName && !note && !imageUrl && !link.url)) {
+        return null
+      }
+
+      return {
+        id: toTrimmedString(method?.id) || `sponsor-method-${index}`,
+        name: name || accountName || `赞助方式 ${index + 1}`,
+        accountName,
+        note,
+        imageUrl,
+        linkUrl: link.url,
+        external: link.external,
+        weight: Number.isFinite(weight) ? weight : 0
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => (
+      right.weight - left.weight
+      || left.name.localeCompare(right.name, 'zh-CN')
+    ))
+}
+
+function normalizeSponsorConfig(config = {}) {
+  const buttonLink = normalizeAnnouncementLink(config?.button_url || config?.buttonUrl)
+  const methods = normalizeSponsorMethods(config?.methods)
+  const description = toTrimmedString(config?.description)
+
+  return {
+    enabled: config?.enabled === true && Boolean(buttonLink.url || methods.length > 0),
+    title: toTrimmedString(config?.title) || '支持作者',
+    description,
+    buttonText: toTrimmedString(config?.button_text || config?.buttonText) || '前往支持',
+    buttonUrl: buttonLink.url,
+    buttonExternal: buttonLink.external,
+    buttonNote: toTrimmedString(config?.button_note || config?.buttonNote),
+    methods
+  }
+}
+
+function normalizeLicenseRecord(license) {
+  if (!license || typeof license !== 'object') {
+    return null
+  }
+
+  const name = toTrimmedString(license.name)
+  const url = normalizeAnnouncementLink(license.url).url
+
+  if (!name && !url) {
+    return null
+  }
+
+  return {
+    name: name || url,
+    url
+  }
+}
+
+function shouldShowUpdatedAt(updatedAt, createdAt) {
+  const updatedDate = new Date(updatedAt)
+  const createdDate = new Date(createdAt)
+
+  if (Number.isNaN(updatedDate.getTime())) {
+    return false
+  }
+
+  if (!Number.isNaN(createdDate.getTime()) && updatedDate.getTime() === createdDate.getTime()) {
+    return false
+  }
+
+  return true
 }
 
 function resolveProfileAvatar(basePath, value) {
@@ -1435,12 +2534,104 @@ function renderArchiveYearDetail(archiveGroup, archiveGroups, basePath, variant 
   `
 }
 
-function renderArticleDetail(article, relatedArticles, basePath) {
+function renderCommentSection(commentConfig) {
+  if (!commentConfig?.enabled) {
+    return ''
+  }
+
+  const placeholderText = commentConfig.ready
+    ? '评论区会在客户端通过 Giscus 加载。'
+    : (commentConfig.notReadyText || '评论系统尚未完成配置。')
+
+  return `
+    <section class="ssg-comments-shell">
+      <p class="ssg-comments-kicker">评论</p>
+      <h2 class="ssg-comments-title">${escapeHtml(commentConfig.title || '评论')}</h2>
+      ${commentConfig.description ? `<p class="ssg-comments-description">${escapeHtml(commentConfig.description)}</p>` : ''}
+      <div class="ssg-empty">${escapeHtml(placeholderText)}</div>
+    </section>
+  `
+}
+
+function renderSponsorSection(sponsorConfig, basePath) {
+  if (!sponsorConfig?.enabled) {
+    return ''
+  }
+
+  const methods = Array.isArray(sponsorConfig.methods) ? sponsorConfig.methods : []
+  const showPrimary = Boolean(sponsorConfig.buttonUrl || sponsorConfig.buttonNote)
+  const layoutClass = methods.length > 0 ? ' has-methods' : ''
+  const primaryButton = sponsorConfig.buttonUrl
+    ? sponsorConfig.buttonExternal
+      ? `<a class="ssg-sponsor-button" href="${escapeAttribute(sponsorConfig.buttonUrl)}" target="_blank" rel="noreferrer">${escapeHtml(sponsorConfig.buttonText || '前往支持')}</a>`
+      : `<a class="ssg-sponsor-button" href="${escapeAttribute(resolveInternalHref(basePath, sponsorConfig.buttonUrl))}">${escapeHtml(sponsorConfig.buttonText || '前往支持')}</a>`
+    : ''
+  const primaryMarkup = showPrimary
+    ? `
+      <div class="ssg-sponsor-primary">
+        ${primaryButton}
+        ${sponsorConfig.buttonNote ? `<p class="ssg-sponsor-note">${escapeHtml(sponsorConfig.buttonNote)}</p>` : ''}
+      </div>
+    `
+    : ''
+  const methodsMarkup = methods.length > 0
+    ? `
+      <div class="ssg-sponsor-methods">
+        ${methods.map((method) => {
+          const tag = method.linkUrl ? 'a' : 'div'
+          const href = method.linkUrl
+            ? method.external
+              ? ` href="${escapeAttribute(method.linkUrl)}" target="_blank" rel="noreferrer"`
+              : ` href="${escapeAttribute(resolveInternalHref(basePath, method.linkUrl))}"`
+            : ''
+          const imageUrl = resolveStaticAssetUrl(basePath, method.imageUrl)
+
+          return `
+            <${tag} class="ssg-sponsor-method"${href}>
+              ${imageUrl
+                ? `
+                  <div class="ssg-sponsor-method-image-shell">
+                    <img class="ssg-sponsor-method-image" src="${escapeAttribute(imageUrl)}" alt="${escapeAttribute(`${method.name} 二维码`)}" />
+                  </div>
+                `
+                : ''}
+              <h3 class="ssg-sponsor-method-title">${escapeHtml(method.name)}</h3>
+              ${method.accountName ? `<p class="ssg-sponsor-method-account">${escapeHtml(method.accountName)}</p>` : ''}
+              ${method.note ? `<p class="ssg-sponsor-method-note">${escapeHtml(method.note)}</p>` : ''}
+            </${tag}>
+          `
+        }).join('')}
+      </div>
+    `
+    : ''
+
+  return `
+    <section class="ssg-sponsor-shell">
+      <p class="ssg-sponsor-kicker">赞助</p>
+      <h2 class="ssg-sponsor-title">${escapeHtml(sponsorConfig.title || '支持作者')}</h2>
+      ${sponsorConfig.description ? `<p class="ssg-sponsor-description">${escapeHtml(sponsorConfig.description)}</p>` : ''}
+      <div class="ssg-sponsor-layout${layoutClass}">
+        ${primaryMarkup}
+        ${methodsMarkup}
+      </div>
+    </section>
+  `
+}
+
+function renderArticleDetail(article, relatedArticles, basePath, site = {}, commentConfig = {}, sponsorConfig = {}) {
   const cover = article.cover
     ? `<img class="ssg-cover" src="${escapeAttribute(article.cover)}" alt="${escapeAttribute(article.title)}" />`
     : ''
+  const showUpdatedAt = shouldShowUpdatedAt(article.updatedAt, article.createdAt || article.date)
+  const outdatedNotice = resolveOutdatedNotice(article, {
+    showOutdatedNotice: site.features?.show_outdated_notice,
+    outdatedThresholdDays: site.features?.outdated_threshold_days
+  })
+  const license = normalizeLicenseRecord(article.license)
   const meta = renderMetaParts([
     `<span>${escapeHtml(formatDateLabel(article.createdAt || article.date))}</span>`,
+    showUpdatedAt ? `<span>更新于 ${escapeHtml(formatDateLabel(article.updatedAt))}</span>` : '',
+    site.features?.show_read_time && article.readTime ? `<span>约 ${escapeHtml(String(article.readTime))} 分钟阅读</span>` : '',
     article.category
       ? `<a class="ssg-category" href="${escapeAttribute(resolveInternalHref(basePath, resolveCollectionHref('category', article.category.id)))}">${escapeHtml(article.category.name)}</a>`
       : '',
@@ -1459,6 +2650,16 @@ function renderArticleDetail(article, relatedArticles, basePath) {
       </section>
     `
     : ''
+  const licenseMarkup = license
+    ? `
+      <section class="ssg-license-card">
+        <div class="ssg-license-label">许可协议</div>
+        ${license.url
+          ? `<a class="ssg-license-link" href="${escapeAttribute(license.url)}"${/^(https?:\/\/|mailto:|tel:)/i.test(license.url) ? ' target="_blank" rel="noreferrer"' : ''}>${escapeHtml(license.name)}</a>`
+          : `<span class="ssg-license-link">${escapeHtml(license.name)}</span>`}
+      </section>
+    `
+    : ''
 
   return `
     <article>
@@ -1468,10 +2669,154 @@ function renderArticleDetail(article, relatedArticles, basePath) {
         ${article.excerpt ? `<p class="ssg-page-description">${escapeHtml(article.excerpt)}</p>` : ''}
       </header>
       ${cover}
+      ${outdatedNotice
+        ? `
+          <section class="ssg-outdated-card">
+            <div class="ssg-outdated-label">内容提醒</div>
+            <p class="ssg-outdated-copy">
+              这篇文章最后${outdatedNotice.referenceKind === 'updated' ? '更新' : '发布'}于 ${escapeHtml(formatDateLabel(outdatedNotice.referenceAt))}，距今已超过 ${escapeHtml(String(outdatedNotice.thresholdDays))} 天，部分内容可能已经过时，请结合当前版本或官方文档核实。
+            </p>
+          </section>
+        `
+        : ''}
       <div class="ssg-prose">${article.content}</div>
       ${tags ? `<section style="margin-top: 28px;">${tags}</section>` : ''}
+      ${licenseMarkup}
+      ${renderSponsorSection(sponsorConfig, basePath)}
+      ${renderCommentSection(commentConfig)}
       ${related}
     </article>
+  `
+}
+
+function resolveStaticAssetUrl(basePath, value) {
+  const normalizedValue = toTrimmedString(value)
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  if (/^(https?:)?\/\//i.test(normalizedValue) || normalizedValue.startsWith('data:')) {
+    return normalizedValue
+  }
+
+  return withBasePath(basePath, normalizedValue.replace(/^\.?\//, ''))
+}
+
+function getHostnameLabel(value) {
+  const normalizedValue = toTrimmedString(value)
+
+  try {
+    const url = new URL(normalizedValue)
+    return url.hostname.replace(/^www\./i, '')
+  } catch {
+    return normalizedValue.replace(/^https?:\/\//i, '').replace(/\/+$/, '')
+  }
+}
+
+function renderFriendLinksPage(friendLinks, basePath, emptyText = '还没有配置友情链接。') {
+  if (!Array.isArray(friendLinks) || friendLinks.length === 0) {
+    return `<div class="ssg-empty">${escapeHtml(emptyText)}</div>`
+  }
+
+  return `
+    <div class="ssg-friends-grid">
+      ${friendLinks.map((link) => {
+        const avatarUrl = resolveStaticAssetUrl(basePath, link.avatarUrl)
+        const details = [toTrimmedString(link.location), toTrimmedString(link.note)].filter(Boolean)
+        const tags = Array.isArray(link.tags) ? link.tags : []
+
+        return `
+          <a class="ssg-friend-card" href="${escapeAttribute(link.url)}" target="_blank" rel="noreferrer">
+            <div class="ssg-friend-head">
+              <div class="ssg-friend-avatar-shell">
+                ${avatarUrl
+                  ? `<img class="ssg-friend-avatar" src="${escapeAttribute(avatarUrl)}" alt="${escapeAttribute(`${link.name} logo`)}" />`
+                  : `<span class="ssg-friend-avatar-fallback">${escapeHtml(String(link.name || '?').charAt(0).toUpperCase())}</span>`}
+              </div>
+              <div>
+                <h2 class="ssg-friend-title">${escapeHtml(link.name)}</h2>
+                <p class="ssg-friend-host">${escapeHtml(getHostnameLabel(link.url))}</p>
+              </div>
+            </div>
+            ${link.description ? `<p class="ssg-friend-description">${escapeHtml(link.description)}</p>` : ''}
+            ${tags.length > 0
+              ? `<div class="ssg-friend-tags">${tags.map(tag => `<span class="ssg-friend-tag">${escapeHtml(tag)}</span>`).join('')}</div>`
+              : ''}
+            ${details.length > 0
+              ? `<ul class="ssg-friend-details">${details.map(detail => `<li class="ssg-sidebar-meta">${escapeHtml(detail)}</li>`).join('')}</ul>`
+              : ''}
+            <span class="ssg-friend-action">访问站点</span>
+          </a>
+        `
+      }).join('')}
+    </div>
+  `
+}
+
+function renderFriendApplicationSection(application = {}) {
+  if (!application?.enabled) {
+    return ''
+  }
+
+  const title = toTrimmedString(application.title) || '申请交换友链'
+  const description = toTrimmedString(application.description)
+  const requirements = Array.isArray(application.requirements)
+    ? application.requirements.map(item => toTrimmedString(item)).filter(Boolean)
+    : []
+  const submissionFields = Array.isArray(application.submissionFields)
+    ? application.submissionFields.map(item => toTrimmedString(item)).filter(Boolean)
+    : []
+  const template = toTrimmedString(application.template)
+  const contactLabel = toTrimmedString(application.contactLabel)
+  const contactUrl = toTrimmedString(application.contactUrl)
+
+  return `
+    <section class="ssg-friends-application">
+      <div>
+        <p class="ssg-friends-application-kicker">交换友链</p>
+        <h2 class="ssg-friends-application-title">${escapeHtml(title)}</h2>
+        ${description ? `<p class="ssg-friends-application-description">${escapeHtml(description)}</p>` : ''}
+      </div>
+      ${requirements.length > 0 || submissionFields.length > 0
+        ? `
+          <div class="ssg-friends-application-grid">
+            ${requirements.length > 0
+              ? `
+                <div class="ssg-friends-application-panel">
+                  <h3 class="ssg-friends-application-panel-title">申请条件</h3>
+                  <ul class="ssg-friends-application-list">
+                    ${requirements.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+                  </ul>
+                </div>
+              `
+              : ''}
+            ${submissionFields.length > 0
+              ? `
+                <div class="ssg-friends-application-panel">
+                  <h3 class="ssg-friends-application-panel-title">提交信息</h3>
+                  <ul class="ssg-friends-application-list">
+                    ${submissionFields.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+                  </ul>
+                </div>
+              `
+              : ''}
+          </div>
+        `
+        : ''}
+      ${template ? `<pre class="ssg-friends-application-template">${escapeHtml(template)}</pre>` : ''}
+      ${contactUrl
+        ? `
+          <div class="ssg-friends-application-contact">
+            <a class="ssg-friends-application-contact-link" href="${escapeAttribute(contactUrl)}"${/^(https?:\/\/|mailto:|tel:)/i.test(contactUrl) ? ' target="_blank" rel="noreferrer"' : ''}>
+              ${escapeHtml(contactLabel || '联系我申请友链')}
+            </a>
+          </div>
+        `
+        : contactLabel
+          ? `<div class="ssg-friends-application-contact"><p class="ssg-friends-application-contact-copy">${escapeHtml(contactLabel)}</p></div>`
+          : ''}
+    </section>
   `
 }
 
@@ -1598,6 +2943,13 @@ function createStaticArchiveOverviewItems(items = []) {
 
 async function loadStaticMenuPageSource(page, componentKey) {
   const normalizedComponentKey = resolveMenuPageComponentKey(componentKey)
+
+  if (normalizedComponentKey === 'friends') {
+    return {
+      items: [],
+      records: []
+    }
+  }
 
   if (normalizedComponentKey === 'context') {
     const relativeFilePath = normalizeMenuContentPath(page?.file, { kind: 'file' })
@@ -1771,6 +3123,20 @@ function renderMenuPage(page, basePath) {
       : '<div class="ssg-empty">这个页面还没有配置时间线内容。</div>'
   }
 
+  if (component === 'friends') {
+    const introMarkup = contentHtml
+      ? `<div class="ssg-configured-copy ssg-prose">${contentHtml}</div>`
+      : contentBlocks.length > 0
+        ? `<div class="ssg-configured-copy">${contentBlocks.map(block => `<p>${escapeHtml(block)}</p>`).join('')}</div>`
+        : ''
+
+    return `
+      ${introMarkup}
+      ${renderFriendLinksPage(page?.friendLinks, basePath, page?.emptyText || '还没有配置友情链接。')}
+      ${renderFriendApplicationSection(page?.application)}
+    `
+  }
+
   if (component === 'grid') {
     return items.length > 0
       ? `<div class="ssg-configured-grid">${items.map(item => renderMenuPageItem(item, basePath)).join('')}</div>`
@@ -1886,19 +3252,44 @@ function renderSidebar(data) {
     friendLinks,
     basePath,
     menus,
-    routePatterns
+    routePatterns,
+    sidebarLayout,
+    isArticlePage
   } = data
+  const activeSidebarSections = resolveSidebarSections(sidebarLayout, {
+    article: isArticlePage === true
+  })
   const displayName = toTrimmedString(profile.display_name) || toTrimmedString(profile.username) || toTrimmedString(site.title)
-  const displayUsername = toTrimmedString(profile.username)
+  const displayUsername = toTrimmedString(profile.username).replace(/^@+/, '')
   const tagline = toTrimmedString(profile.tagline) || toTrimmedString(site.description)
+  const bio = toTrimmedString(profile.bio)
+  const location = toTrimmedString(profile.location)
+  const website = normalizeProfileLinkUrl(profile.website)
+  const socialLinks = normalizeSocialLinks(profile.social_links)
   const avatar = resolveProfileAvatar(basePath, profile.avatar_url)
-  const profileCard = (displayName || tagline || avatar)
+  const profileMeta = [
+    location ? `<span class="ssg-sidebar-meta-pill">${escapeHtml(location)}</span>` : '',
+    website ? `<a class="ssg-sidebar-meta-pill" href="${escapeAttribute(website)}" target="_blank" rel="noreferrer">${escapeHtml(website.replace(/^https?:\/\//i, '').replace(/\/+$/, ''))}</a>` : ''
+  ].filter(Boolean).join('')
+  const socialMarkup = socialLinks.length > 0
+    ? `
+      <div class="ssg-sidebar-socials">
+        ${socialLinks.map(link => `
+          <a class="ssg-sidebar-social" href="${escapeAttribute(link.url)}" target="_blank" rel="noreferrer">${escapeHtml(link.name)}</a>
+        `).join('')}
+      </div>
+    `
+    : ''
+  const profileCard = site.features?.show_profile_in_sidebar !== false && (displayName || tagline || avatar || bio || profileMeta || socialMarkup)
     ? `
       <section class="ssg-sidebar-card">
         ${avatar ? `<img class="ssg-avatar" src="${escapeAttribute(avatar)}" alt="${escapeAttribute(displayName || 'avatar')}" />` : ''}
         ${displayName ? `<h2 class="ssg-sidebar-title">${escapeHtml(displayName)}</h2>` : ''}
-        ${displayUsername ? `<div class="ssg-sidebar-meta">@${escapeHtml(displayUsername.replace(/^@+/, ''))}</div>` : ''}
+        ${displayUsername ? `<div class="ssg-sidebar-meta">@${escapeHtml(displayUsername)}</div>` : ''}
         ${tagline ? `<p class="ssg-sidebar-copy">${escapeHtml(tagline)}</p>` : ''}
+        ${bio ? `<p class="ssg-sidebar-copy">${escapeHtml(bio)}</p>` : ''}
+        ${profileMeta ? `<div class="ssg-sidebar-meta-row">${profileMeta}</div>` : ''}
+        ${socialMarkup}
       </section>
     `
     : ''
@@ -1912,16 +3303,48 @@ function renderSidebar(data) {
     showTagCount: site.features?.show_tag_count,
     formatArticleMeta: (article) => formatDateLabel(article.createdAt || article.date)
   })
+  const menuMarkup = menuSections.length > 0
+    ? menuSections.map(section => renderStaticSidebarSection(section, basePath)).join('')
+    : `
+      <section class="ssg-sidebar-card">
+        <p class="ssg-empty">暂无侧边栏内容</p>
+      </section>
+    `
 
-  return [
-    profileCard,
-    ...menuSections.map(section => renderStaticSidebarSection(section, basePath))
-  ].filter(Boolean).join('')
+  return activeSidebarSections.map((sectionKey) => {
+    if (sectionKey === 'profile') {
+      return profileCard
+    }
+
+    if (sectionKey === 'search') {
+      return `
+        <section class="ssg-sidebar-card">
+          <div class="ssg-sidebar-search" role="search" aria-label="站内搜索">
+            <span class="ssg-sidebar-search-icon" aria-hidden="true">⌕</span>
+            <input class="ssg-sidebar-search-input" type="text" placeholder="搜索文章..." disabled />
+          </div>
+        </section>
+      `
+    }
+
+    if (sectionKey === 'menu') {
+      return menuMarkup
+    }
+
+    return ''
+  }).filter(Boolean).join('')
 }
 
 function renderFooter(site, friendLinks) {
   const footerText = toTrimmedString(site.footer?.text || site.footer_text)
   const footerNote = toTrimmedString(site.footer?.note || site.footer_note)
+  const footerSnippetHtml = toTrimmedString(
+    site.footer?.snippetHtml
+    || site.footer?.snippet_html
+    || site.footer?.html
+    || site.footer_snippet_html
+    || site.footer_html
+  )
   const linksMarkup = friendLinks.length > 0
     ? `
       <div class="ssg-footer-links">
@@ -1941,13 +3364,45 @@ function renderFooter(site, friendLinks) {
         </div>
         ${linksMarkup}
       </div>
+      ${footerSnippetHtml ? `<div class="ssg-footer-snippet">${footerSnippetHtml}</div>` : ''}
     </footer>
+  `
+}
+
+function renderAnnouncement(basePath, announcement) {
+  if (!announcement?.enabled) {
+    return ''
+  }
+
+  const badge = announcement.variant === 'success'
+    ? '更新'
+    : announcement.variant === 'warning'
+      ? '提醒'
+      : '公告'
+  const linkMarkup = announcement.linkUrl && announcement.linkText
+    ? announcement.external
+      ? `<a class="ssg-announcement-link" href="${escapeAttribute(announcement.linkUrl)}" target="_blank" rel="noreferrer">${escapeHtml(announcement.linkText)}</a>`
+      : `<a class="ssg-announcement-link" href="${escapeAttribute(resolveInternalHref(basePath, announcement.linkUrl))}">${escapeHtml(announcement.linkText)}</a>`
+    : ''
+
+  return `
+    <section class="ssg-announcement" data-variant="${escapeAttribute(announcement.variant || 'info')}">
+      <div class="ssg-announcement-copy">
+        <span class="ssg-announcement-badge">${escapeHtml(badge)}</span>
+        <div>
+          ${announcement.title ? `<strong class="ssg-announcement-title">${escapeHtml(announcement.title)}</strong>` : ''}
+          ${announcement.content ? `<p class="ssg-announcement-text">${escapeHtml(announcement.content)}</p>` : ''}
+        </div>
+      </div>
+      ${linkMarkup}
+    </section>
   `
 }
 
 function renderLayout({
   site,
   profile,
+  announcement,
   content,
   latestArticles,
   categories,
@@ -1957,10 +3412,13 @@ function renderLayout({
   routePatterns,
   basePath,
   sidebarPosition,
-  sidebarVisible
+  sidebarVisible,
+  sidebarLayout,
+  isArticlePage
 }) {
   const brandTitle = toTrimmedString(site.title) || toTrimmedString(profile.display_name) || 'Blog'
   const brandDescription = toTrimmedString(site.description) || toTrimmedString(profile.tagline)
+  const announcementMarkup = renderAnnouncement(basePath, announcement)
   const headerMenuGroups = resolveHeaderMenuGroups(menus, {
     routePatterns
   })
@@ -1980,6 +3438,7 @@ function renderLayout({
         </div>
       </header>
       <main class="ssg-main">
+        ${announcementMarkup}
         <div class="ssg-container ssg-layout ${showSidebar && sidebarPosition === 'left' ? 'is-sidebar-left' : ''}">
           <section class="ssg-content">
             ${content}
@@ -1993,7 +3452,9 @@ function renderLayout({
             friendLinks,
             menus,
             routePatterns,
-            basePath
+            basePath,
+            sidebarLayout,
+            isArticlePage
           })}</aside>` : ''}
         </div>
       </main>
@@ -2065,7 +3526,8 @@ function renderPage(route, context) {
     themeCssHref
   } = context
   const sidebarPosition = toTrimmedString(site.features?.sidebar_position || 'right').toLowerCase() || 'right'
-  const sidebarVisible = sidebarPosition !== 'hidden'
+  const sidebarVisible = sidebarPosition !== 'hidden' && site.features?.sidebar_visible !== false
+  const sidebarLayout = normalizeSidebarLayout(site.sidebar)
   const siteTitle = toTrimmedString(site.title) || toTrimmedString(profile.display_name) || 'Blog'
   const pageTitle = route.pageTitle ? `${route.pageTitle} - ${siteTitle}` : siteTitle
   const description = route.description || toTrimmedString(site.description) || toTrimmedString(profile.tagline)
@@ -2073,11 +3535,12 @@ function renderPage(route, context) {
   const imageUrl = route.imageUrl
     ? (/^(https?:)?\/\//i.test(route.imageUrl) ? route.imageUrl : buildAbsoluteUrl(site.site_url || site.url, basePath, route.imageUrl))
     : ''
-  const includeStaticPreview = route.staticPreview === true
+  const includeStaticPreview = route.staticPreview !== false
   const content = includeStaticPreview
     ? renderLayout({
       site,
       profile,
+      announcement: context.announcement,
       content: route.content,
       latestArticles,
       categories,
@@ -2087,7 +3550,9 @@ function renderPage(route, context) {
       routePatterns,
       basePath,
       sidebarPosition,
-      sidebarVisible
+      sidebarVisible,
+      sidebarLayout,
+      isArticlePage: route.isArticlePage === true
     })
     : ''
 
@@ -2120,7 +3585,7 @@ function getRelatedArticles(currentArticle, articles) {
 }
 
 async function createPageRoutes(context) {
-  const { articles, categories, tags, archive, basePath, pageSize, routePatterns, menus } = context
+  const { site, articles, categories, tags, archive, friendLinks, basePath, pageSize, routePatterns, menus } = context
   const articlePages = paginateItems(articles, pageSize)
   const homePage = resolveMenuPage('home', menus, routePatterns)
   const articlesPageConfig = resolveMenuPage('articles', menus, routePatterns)
@@ -2401,12 +3866,13 @@ async function createPageRoutes(context) {
   articles.forEach((article) => {
     routes.push({
       path: getArticlePath(article),
+      isArticlePage: true,
       pageTitle: article.title,
       description: article.description || article.summary || article.excerpt,
       ogType: 'article',
       imageUrl: article.cover,
-      lastmod: article.createdAt || article.date,
-      content: renderArticleDetail(article, getRelatedArticles(article, articles), basePath)
+      lastmod: article.updatedAt || article.createdAt || article.date,
+      content: renderArticleDetail(article, getRelatedArticles(article, articles), basePath, site, context.comment, context.sponsor)
     })
   })
 
@@ -2414,7 +3880,7 @@ async function createPageRoutes(context) {
     const pageVariant = resolveMenuPageVariant(page)
     const loadedSource = await loadStaticMenuPageSource(page, pageVariant)
     const usesFileSource = pageVariant === 'context' && Boolean(page.file)
-    const usesFolderSource = pageVariant !== 'context' && Boolean(page.folder)
+    const usesFolderSource = pageVariant !== 'context' && pageVariant !== 'friends' && Boolean(page.folder)
     const resolvedPage = {
       ...page,
       component: pageVariant,
@@ -2424,6 +3890,7 @@ async function createPageRoutes(context) {
       contentHtml: usesFileSource
         ? (loadedSource.contentHtml || '')
         : '',
+      friendLinks: pageVariant === 'friends' ? friendLinks : [],
       items: usesFolderSource
         ? (Array.isArray(loadedSource.items) ? loadedSource.items : [])
         : Array.isArray(page.items) ? page.items : []
@@ -2602,6 +4069,9 @@ async function main() {
     template,
     site: configs.site,
     profile: configs.profile,
+    announcement: normalizeAnnouncementConfig(configs.announcement),
+    comment: normalizeCommentConfig(configs.comment),
+    sponsor: normalizeSponsorConfig(configs.sponsor),
     articles,
     contentEntries,
     latestArticles,

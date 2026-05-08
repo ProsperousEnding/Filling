@@ -78,7 +78,13 @@ a {
 }
 
 :root .theme-layout {
-  align-items: flex-start;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  :root .theme-layout {
+    align-items: flex-start;
+  }
 }
 
 :root .theme-page-title,

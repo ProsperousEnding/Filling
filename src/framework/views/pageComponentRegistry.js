@@ -1,3 +1,4 @@
+import FriendLinksPage from './pageComponents/FriendLinksPage.vue'
 import MenuPageCardPage from './pageComponents/MenuPageCardPage.vue'
 import MenuPageContextPage from './pageComponents/MenuPageContextPage.vue'
 import MenuPageGridPage from './pageComponents/MenuPageGridPage.vue'
@@ -15,7 +16,8 @@ const MENU_PAGE_COMPONENTS = Object.freeze({
   list: MenuPageListPage,
   card: MenuPageCardPage,
   grid: MenuPageGridPage,
-  timeline: MenuPageTimelinePage
+  timeline: MenuPageTimelinePage,
+  friends: FriendLinksPage
 })
 
 export function resolveBuiltInPageComponent(pageKey, requestedComponent) {

@@ -7,8 +7,9 @@ export function parseToml(tomlString) {
   const result = createTomlObject()
   let currentSection = result
 
-  for (let line of lines) {
-    line = stripInlineComment(line).trim()
+  for (let index = 0; index < lines.length; index += 1) {
+    const rawLine = lines[index]
+    let line = stripInlineComment(rawLine).trim()
 
     // 跳过空行和注释
     if (!line || line.startsWith('#')) continue
@@ -59,40 +60,26 @@ export function parseToml(tomlString) {
     }
 
     // 处理键值对
-    const equalIndex = line.indexOf('=')
+    const equalIndex = rawLine.indexOf('=')
     if (equalIndex > 0) {
       if (!currentSection) {
         continue
       }
 
-      const key = line.slice(0, equalIndex).trim()
-      let value = line.slice(equalIndex + 1).trim()
+      const key = rawLine.slice(0, equalIndex).trim()
+      let value = rawLine.slice(equalIndex + 1).trim()
 
       if (!key || isUnsafeTomlKey(key)) {
         continue
       }
 
-      // 解析值
-      if (value.startsWith('"') && value.endsWith('"')) {
-        // 字符串值
-        value = value.slice(1, -1)
-      } else if (value === 'true') {
-        value = true
-      } else if (value === 'false') {
-        value = false
-      } else if (!isNaN(value)) {
-        // 数字值
-        value = parseFloat(value)
-      } else if (value.startsWith('[') && value.endsWith(']')) {
-        // 数组值
-        const arrayContent = value.slice(1, -1)
-        value = arrayContent.split(',').map(item => {
-          item = item.trim()
-          if (item.startsWith('"') && item.endsWith('"')) {
-            return item.slice(1, -1)
-          }
-          return item
-        }).filter(item => item)
+      if (value.startsWith('"""') || value.startsWith("'''")) {
+        const delimiter = value.slice(0, 3)
+        const parsedMultiline = parseMultilineTomlString(lines, index, value, delimiter)
+        value = parsedMultiline.value
+        index = parsedMultiline.nextIndex
+      } else {
+        value = parseTomlValue(value)
       }
 
       currentSection[key] = value
@@ -130,6 +117,76 @@ function stripInlineComment(line) {
   }
 
   return line
+}
+
+function parseMultilineTomlString(lines, startIndex, rawValue, delimiter) {
+  const openingContent = rawValue.slice(3)
+  const inlineClosingIndex = openingContent.indexOf(delimiter)
+
+  if (inlineClosingIndex >= 0) {
+    return {
+      value: openingContent.slice(0, inlineClosingIndex),
+      nextIndex: startIndex
+    }
+  }
+
+  const collectedLines = [openingContent]
+  let nextIndex = startIndex
+
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const currentLine = lines[index]
+    const closingIndex = currentLine.indexOf(delimiter)
+
+    if (closingIndex >= 0) {
+      collectedLines.push(currentLine.slice(0, closingIndex))
+      nextIndex = index
+      break
+    }
+
+    collectedLines.push(currentLine)
+    nextIndex = index
+  }
+
+  return {
+    value: collectedLines.join('\n'),
+    nextIndex
+  }
+}
+
+function parseTomlValue(rawValue) {
+  const value = stripInlineComment(String(rawValue || '').trim()).trim()
+
+  if (value.startsWith('"') && value.endsWith('"')) {
+    return value.slice(1, -1)
+  }
+
+  if (value === 'true') {
+    return true
+  }
+
+  if (value === 'false') {
+    return false
+  }
+
+  if (!Number.isNaN(Number(value)) && value !== '') {
+    return parseFloat(value)
+  }
+
+  if (value.startsWith('[') && value.endsWith(']')) {
+    const arrayContent = value.slice(1, -1)
+    return arrayContent
+      .split(',')
+      .map(item => {
+        const normalizedItem = item.trim()
+        if (normalizedItem.startsWith('"') && normalizedItem.endsWith('"')) {
+          return normalizedItem.slice(1, -1)
+        }
+        return normalizedItem
+      })
+      .filter(item => item)
+  }
+
+  return value
 }
 
 function createTomlObject() {

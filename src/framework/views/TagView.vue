@@ -13,8 +13,8 @@
     <div v-else>
       <!-- 标签标题 -->
       <div class="theme-page-header mb-8">
-        <h1 class="theme-page-title text-3xl font-bold mb-2">
-          <span class="theme-badge px-3 py-1 rounded-full text-sm font-medium">
+        <h1 class="theme-page-title tag-view-title text-3xl font-bold mb-2">
+          <span class="tag-view-badge theme-badge px-3 py-1 rounded-full text-sm font-medium">
             # {{ tag ? tag.name : '标签' }}
           </span>
         </h1>
@@ -156,3 +156,24 @@ usePageMetadata({
   }
 })
 </script> 
+
+<style scoped>
+.tag-view-title {
+  display: flex;
+  align-items: flex-start;
+}
+
+.tag-view-badge {
+  display: inline-flex;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .tag-view-badge {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+}
+</style>

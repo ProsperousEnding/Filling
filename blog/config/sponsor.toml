@@ -1,0 +1,38 @@
+# 赞助配置
+# 会显示在文章详情页底部
+
+# 是否启用赞助区
+enabled = true
+# 模块标题
+title = "支持作者"
+
+# 模块描述
+description = "如果这篇内容对你有帮助，可以通过下面的方式支持继续更新。"
+
+# 主按钮文案与链接
+button_text = "前往支持"
+button_url = "https://buymeacoffee.com/your-name"
+
+# 按钮下方备注
+button_note = "也可以使用下方二维码方式赞助。"
+
+# 支付方式示例
+# [[methods]]
+# name = "微信赞赏"
+# account_name = "微信扫码"
+# image_url = "images/sponsor/wechat-pay.png"
+# note = "适合国内读者"
+# weight = 100
+
+# [[methods]]
+# name = "支付宝"
+# account_name = "支付宝扫码"
+# image_url = "images/sponsor/alipay.png"
+# note = "感谢支持"
+# weight = 90
+
+# 如果你更希望跳到独立赞助页，也可以配置外链或站内路径
+# [[methods]]
+# name = "GitHub Sponsors"
+# note = "在 GitHub 上长期支持"
+# link_url = "https://github.com/sponsors/your-name"

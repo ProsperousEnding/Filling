@@ -14,18 +14,18 @@
         v-for="tag in tags"
         :key="tag.id"
         :to="getTagRoute(tag)"
-        class="theme-grid-card rounded-2xl p-5 transition-shadow flex flex-col gap-3"
+        class="tag-summary-card theme-grid-card rounded-2xl p-5 transition-shadow flex flex-col gap-3"
       >
-        <div class="flex items-start justify-between gap-4">
-          <h2 class="theme-section-title text-lg font-bold">
+        <div class="tag-summary-head flex items-start justify-between gap-4">
+          <h2 class="tag-summary-title theme-section-title text-lg font-bold">
             #{{ tag.name }}
           </h2>
-          <span class="theme-muted-note text-sm shrink-0">
+          <span class="tag-summary-count theme-muted-note text-sm shrink-0">
             {{ tag.articleCount || 0 }} 篇
           </span>
         </div>
 
-        <p class="theme-page-description text-sm">
+        <p class="tag-summary-description theme-page-description text-sm">
           查看与“{{ tag.name }}”相关的文章内容。
         </p>
       </router-link>
@@ -59,3 +59,35 @@ defineProps({
   }
 })
 </script>
+
+<style scoped>
+.theme-page-status {
+  color: rgb(100 116 139);
+}
+
+.tag-summary-card {
+  min-width: 0;
+}
+
+.tag-summary-title,
+.tag-summary-description {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .tag-summary-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .tag-summary-title {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .tag-summary-count {
+    font-size: 0.82rem;
+  }
+}
+</style>

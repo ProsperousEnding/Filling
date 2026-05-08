@@ -47,10 +47,13 @@ export function menuPageUsesFileSource(page, componentKey) {
 }
 
 export function menuPageUsesFolderSource(page, componentKey) {
+  const normalizedComponentKey = normalizeComponentKey(componentKey)
+
   return Boolean(
     page
     && !page.builtIn
-    && normalizeComponentKey(componentKey) !== 'context'
+    && normalizedComponentKey !== 'context'
+    && normalizedComponentKey !== 'friends'
     && String(page.folder || '').trim()
   )
 }

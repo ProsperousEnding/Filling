@@ -31,7 +31,7 @@
         <div class="article-feed-card-overlay absolute inset-0"></div>
 
         <div class="absolute inset-0 z-10 flex flex-col justify-between p-4 sm:p-5 md:p-6">
-          <div class="flex items-start justify-between gap-4">
+          <div class="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
             <span
               v-if="getPrimaryBadge(item)"
               class="article-feed-category inline-block px-2 py-0.5 md:px-3 md:py-1 text-xs font-medium rounded-full transition-colors duration-200"
@@ -39,17 +39,17 @@
               {{ getPrimaryBadge(item) }}
             </span>
 
-            <div v-if="getHeroTags(item).length > 0" class="flex flex-wrap justify-end">
+            <div v-if="getHeroTags(item).length > 0" class="flex flex-wrap gap-1.5 sm:max-w-[70%] sm:justify-end">
               <span
                 v-for="tag in getHeroTags(item)"
                 :key="`${item.key}-${tag.label}`"
-                class="article-feed-tag ml-1 md:ml-2 mb-1 px-2 py-0.5 text-xs rounded-full transition-colors duration-200"
+                class="article-feed-tag px-2 py-0.5 text-xs rounded-full transition-colors duration-200"
               >
                 #{{ tag.label }}
               </span>
               <span
                 v-if="getRemainingHeroTagCount(item) > 0"
-                class="article-feed-tag-more text-xs ml-1 md:ml-2"
+                class="article-feed-tag-more text-xs"
               >
                 +{{ getRemainingHeroTagCount(item) }}
               </span>
@@ -57,19 +57,20 @@
           </div>
 
           <div class="mt-4 md:mt-6 mb-auto max-w-3xl">
-            <h2 class="article-feed-title text-lg md:text-xl leading-[1.32] font-semibold transition-colors duration-200">
+            <h2 class="article-feed-title text-base sm:text-lg md:text-xl leading-[1.32] font-semibold transition-colors duration-200">
               <span class="article-feed-title-link block">{{ item.title }}</span>
             </h2>
 
             <p
               v-if="item.description"
-              class="article-feed-excerpt text-xs md:text-sm leading-relaxed mt-1 md:mt-2 mb-2 md:mb-3 max-w-3xl"
+              class="article-feed-excerpt text-xs sm:text-sm leading-relaxed mt-1.5 md:mt-2 mb-2 md:mb-3 max-w-3xl"
+              :class="isSmallScreen ? 'line-clamp-1' : 'line-clamp-2'"
             >
               {{ item.description }}
             </p>
           </div>
 
-          <div class="article-feed-footer flex items-center justify-between gap-4">
+          <div class="article-feed-footer flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex flex-col">
               <div v-if="item.meta" class="article-feed-date-row flex items-center text-xs">
                 {{ item.meta }}
@@ -79,7 +80,7 @@
               </div>
             </div>
 
-            <span class="article-feed-read-link px-3 py-1 md:px-4 md:py-1.5 text-xs font-medium rounded-full transition-colors duration-300 flex items-center">
+            <span class="article-feed-read-link self-start px-3 py-1 md:px-4 md:py-1.5 text-xs font-medium rounded-full transition-colors duration-300 flex items-center">
               {{ getActionLabel(item) }}
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-3.5 md:w-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -90,9 +91,9 @@
       </template>
 
       <template v-else>
-        <div class="flex items-start justify-between gap-4">
+        <div class="menu-page-list-row flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div class="min-w-0 flex-1">
-            <div class="mb-3 flex items-center gap-3">
+            <div class="menu-page-list-meta-row mb-3 flex items-center gap-3">
               <span class="theme-icon-badge w-10 h-10 flex items-center justify-center rounded-full shrink-0">
                 <svg v-if="getItemIconKind(item) === 'tag'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -114,11 +115,11 @@
               <p v-if="item.meta" class="theme-muted-note text-sm">{{ item.meta }}</p>
             </div>
 
-            <h2 class="theme-section-title text-xl font-bold leading-tight">
+            <h2 class="menu-page-list-item-title theme-section-title text-xl font-bold leading-tight">
               {{ item.title }}
             </h2>
 
-            <p v-if="item.description" class="theme-page-description mt-2">
+            <p v-if="item.description" class="menu-page-list-item-description theme-page-description mt-2">
               {{ item.description }}
             </p>
 
@@ -133,7 +134,7 @@
             </ul>
           </div>
 
-          <span class="theme-muted-note text-sm shrink-0">
+          <span class="menu-page-list-item-footer theme-muted-note text-sm sm:shrink-0">
             {{ item.footer || getActionLabel(item) }}
           </span>
         </div>
@@ -150,6 +151,7 @@
 </template>
 
 <script setup>
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   getMenuItemActionLabel,
   getMenuItemCover,
@@ -170,7 +172,17 @@ defineProps({
   }
 })
 
-const HERO_TAG_LIMIT = 3
+const windowWidth = ref(1024)
+const isSmallScreen = computed(() => windowWidth.value < 640)
+const heroTagLimit = computed(() => (isSmallScreen.value ? 1 : 3))
+
+function syncWindowWidth() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  windowWidth.value = window.innerWidth
+}
 
 function resolveItemTag(item) {
   return resolveMenuItemTag(item)
@@ -193,11 +205,11 @@ function getPrimaryBadge(item) {
 }
 
 function getHeroTags(item) {
-  return getMenuItemTags(item, HERO_TAG_LIMIT)
+  return getMenuItemTags(item, heroTagLimit.value)
 }
 
 function getRemainingHeroTagCount(item) {
-  return getMenuItemRemainingTagCount(item, HERO_TAG_LIMIT)
+  return getMenuItemRemainingTagCount(item, heroTagLimit.value)
 }
 
 function getDetailLines(item) {
@@ -218,8 +230,8 @@ function getListItemClass(item) {
       'menu-page-list-item',
       'article-feed-card',
       'relative',
-      'h-52',
-      'sm:h-56',
+      'h-56',
+      'sm:h-60',
       'md:h-64',
       'rounded-lg',
       'md:rounded-xl',
@@ -239,4 +251,40 @@ function getListItemClass(item) {
     'transition-shadow'
   ]
 }
+
+onMounted(() => {
+  syncWindowWidth()
+  window.addEventListener('resize', syncWindowWidth)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', syncWindowWidth)
+})
 </script>
+
+<style scoped>
+.menu-page-list-row {
+  min-width: 0;
+}
+
+.menu-page-list-item-title,
+.menu-page-list-item-description,
+.menu-page-list-item-footer {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .menu-page-list-meta-row {
+    align-items: flex-start;
+  }
+
+  .menu-page-list-item-title {
+    font-size: 1.02rem;
+    line-height: 1.45;
+  }
+
+  .menu-page-list-item-footer {
+    font-size: 0.82rem;
+  }
+}
+</style>

@@ -154,6 +154,16 @@ function normalizePositiveInteger(value, fallback = 0) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
+function normalizeStringList(values = []) {
+  if (!Array.isArray(values)) {
+    return []
+  }
+
+  return values
+    .map(value => normalizeString(value))
+    .filter(Boolean)
+}
+
 function normalizeMenuSource(source, fallback = 'custom') {
   const normalizedSource = normalizeString(source)
 
@@ -316,6 +326,74 @@ function normalizeMenuPageItems(items = []) {
     .filter(Boolean)
 }
 
+function normalizeFriendApplicationConfig(application = {}) {
+  if (!isPlainObject(application)) {
+    return {
+      enabled: false,
+      title: '',
+      description: '',
+      requirements: [],
+      submissionFields: [],
+      template: '',
+      contactLabel: '',
+      contactUrl: ''
+    }
+  }
+
+  const normalizedApplication = toCamelCase(application)
+  const title = normalizeString(normalizedApplication.title || normalizedApplication.heading)
+  const description = normalizeString(
+    normalizedApplication.description
+    || normalizedApplication.summary
+    || normalizedApplication.content
+  )
+  const requirements = normalizeStringList(
+    normalizedApplication.requirements
+    || normalizedApplication.rules
+    || normalizedApplication.conditions
+  )
+  const submissionFields = normalizeStringList(
+    normalizedApplication.submissionFields
+    || normalizedApplication.fields
+    || normalizedApplication.items
+  )
+  const template = normalizeString(
+    normalizedApplication.template
+    || normalizedApplication.example
+    || normalizedApplication.sample
+  )
+  const contactLabel = normalizeString(
+    normalizedApplication.contactLabel
+    || normalizedApplication.ctaLabel
+    || normalizedApplication.actionText
+  )
+  const contactUrl = normalizeString(
+    normalizedApplication.contactUrl
+    || normalizedApplication.contact
+    || normalizedApplication.href
+    || normalizedApplication.target
+  )
+
+  return {
+    enabled: Boolean(
+      title
+      || description
+      || requirements.length > 0
+      || submissionFields.length > 0
+      || template
+      || contactLabel
+      || contactUrl
+    ),
+    title,
+    description,
+    requirements,
+    submissionFields,
+    template,
+    contactLabel,
+    contactUrl
+  }
+}
+
 function normalizeMenuPages(pages = []) {
   if (!Array.isArray(pages)) {
     return []
@@ -337,7 +415,8 @@ function normalizeMenuPages(pages = []) {
         content: normalizeString(normalizedEntry.content || normalizedEntry.body || normalizedEntry.text),
         items: normalizeMenuPageItems(normalizedEntry.items),
         file: normalizeMenuContentPath(normalizedEntry.file || normalizedEntry.sourceFile, 'file'),
-        folder: normalizeMenuContentPath(normalizedEntry.folder || normalizedEntry.sourceFolder, 'folder')
+        folder: normalizeMenuContentPath(normalizedEntry.folder || normalizedEntry.sourceFolder, 'folder'),
+        application: normalizeFriendApplicationConfig(normalizedEntry.application)
       }
     })
     .filter(entry => entry.key)

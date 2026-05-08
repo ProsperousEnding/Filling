@@ -69,6 +69,36 @@ export async function getThemeConfig() {
 }
 
 /**
+ * 获取公告配置
+ */
+export async function getAnnouncementConfig() {
+  if (!configCache.announcement) {
+    await loadAllConfigs()
+  }
+  return configCache.announcement || {}
+}
+
+/**
+ * 获取评论配置
+ */
+export async function getCommentConfig() {
+  if (!configCache.comment) {
+    await loadAllConfigs()
+  }
+  return configCache.comment || {}
+}
+
+/**
+ * 获取赞助配置
+ */
+export async function getSponsorConfig() {
+  if (!configCache.sponsor) {
+    await loadAllConfigs()
+  }
+  return configCache.sponsor || {}
+}
+
+/**
  * 清除配置缓存
  */
 export function clearConfigCache() {

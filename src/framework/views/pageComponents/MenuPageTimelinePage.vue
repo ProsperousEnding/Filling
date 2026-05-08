@@ -293,3 +293,44 @@ function getTimelineRowClass(item, index) {
   ]
 }
 </script>
+
+<style scoped>
+.menu-page-timeline-head,
+.menu-page-timeline-archive-head,
+.menu-page-timeline-details,
+.menu-page-timeline-action-row,
+.menu-page-timeline-directory-item {
+  min-width: 0;
+}
+
+.menu-page-timeline-archive-title,
+.menu-page-timeline-archive-description,
+.menu-page-timeline-directory-title,
+.menu-page-timeline :deep(.theme-section-title),
+.menu-page-timeline :deep(.theme-page-description),
+.menu-page-timeline :deep(.theme-inline-meta),
+.menu-page-timeline-action-row > span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .menu-page-timeline-action-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .menu-page-timeline-action {
+    align-self: flex-start;
+  }
+
+  .menu-page-timeline-archive-title {
+    font-size: 1.32rem;
+    line-height: 1.08;
+  }
+
+  .menu-page-timeline :deep(.theme-section-title) {
+    font-size: 1.05rem;
+    line-height: 1.42;
+  }
+}
+</style>

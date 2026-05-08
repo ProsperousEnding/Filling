@@ -138,8 +138,10 @@ function createContentIndexRecord({
   description,
   excerpt,
   createdAt,
+  updatedAt,
   category,
   tags,
+  license,
   cover,
   to,
   sectionTitle,
@@ -160,8 +162,15 @@ function createContentIndexRecord({
     description: normalizedDescription,
     excerpt: normalizedExcerpt,
     createdAt: normalizeDateField(createdAt) || null,
+    updatedAt: normalizeDateField(updatedAt) || null,
     category: normalizedCategory,
     tags: normalizedTags,
+    license: license && typeof license === 'object'
+      ? {
+        name: normalizeContentField(license.name),
+        url: normalizeContentField(license.url)
+      }
+      : null,
     cover: normalizeContentField(cover),
     to: normalizeContentField(to),
     sectionTitle: normalizeContentField(sectionTitle),
@@ -178,6 +187,7 @@ function createSearchIndexRecord(contentRecord, plainText, kindOverride = '') {
   )
   const normalizedCategory = normalizeNamedEntity(contentRecord?.category)
   const normalizedTags = normalizeNamedEntityList(contentRecord?.tags)
+  const normalizedLicense = normalizeNamedEntity(contentRecord?.license)
   const normalizedSectionTitle = normalizeContentField(contentRecord?.sectionTitle)
   const normalizedPlainText = normalizeContentField(plainText)
 
@@ -191,6 +201,7 @@ function createSearchIndexRecord(contentRecord, plainText, kindOverride = '') {
       normalizedDescription,
       normalizedExcerpt,
       normalizedCategory?.name,
+      normalizedLicense?.name,
       ...normalizedTags.map(tag => tag.name),
       normalizedSectionTitle
     ]
@@ -209,8 +220,10 @@ function createArticleContentRecord(article, routePatterns) {
     description: article.description,
     excerpt: article.excerpt,
     createdAt: article.createdAt || article.date,
+    updatedAt: article.updatedAt,
     category: article.category,
     tags: article.tags,
+    license: article.license,
     cover: article.cover,
     to: getArticlePath(article, routePatterns),
     sectionTitle: '',

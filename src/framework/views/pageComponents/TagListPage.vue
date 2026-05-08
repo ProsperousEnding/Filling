@@ -10,15 +10,15 @@
     </div>
 
     <div v-if="tags.length > 0">
-      <div class="flex flex-wrap gap-3 mb-12">
+      <div class="tag-pill-list flex flex-wrap gap-3 mb-12">
         <router-link
           v-for="tag in tags"
           :key="tag.id"
           :to="getTagRoute(tag)"
-          class="theme-tag-pill inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors"
+          class="tag-pill theme-tag-pill inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors"
           :class="getTagToneClass(tag.articleCount)"
         >
-          <span>{{ tag.name }}</span>
+          <span class="tag-pill-label">{{ tag.name }}</span>
           <span class="theme-tag-pill-count ml-2 px-2 py-0.5 rounded-full text-xs">
             {{ tag.articleCount || 0 }}
           </span>
@@ -40,10 +40,10 @@
               v-for="tag in group.tags"
               :key="tag.id"
               :to="getTagRoute(tag)"
-              class="theme-list-row flex items-center justify-between gap-4 rounded-2xl px-4 py-3 transition-shadow"
+              class="tag-list-row theme-list-row flex items-center justify-between gap-4 rounded-2xl px-4 py-3 transition-shadow"
             >
-              <span class="font-medium">{{ tag.name }}</span>
-              <span class="theme-muted-note text-sm">{{ tag.articleCount || 0 }} 篇</span>
+              <span class="tag-list-row-label font-medium">{{ tag.name }}</span>
+              <span class="tag-list-row-count theme-muted-note text-sm">{{ tag.articleCount || 0 }} 篇</span>
             </router-link>
           </div>
         </div>
@@ -112,3 +112,46 @@ function getTagToneClass(count) {
   return 'theme-tag-tone-accent'
 }
 </script>
+
+<style scoped>
+.theme-page-status {
+  color: rgb(100 116 139);
+}
+
+.tag-pill,
+.tag-list-row {
+  max-width: 100%;
+}
+
+.tag-pill-label,
+.tag-list-row-label {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .tag-pill-list {
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .tag-pill {
+    max-width: 100%;
+    padding: 0.6rem 0.9rem;
+  }
+
+  .tag-list-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .tag-list-row-label {
+    font-size: 0.98rem;
+    line-height: 1.45;
+  }
+
+  .tag-list-row-count {
+    font-size: 0.82rem;
+  }
+}
+</style>

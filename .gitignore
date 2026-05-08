@@ -36,3 +36,6 @@ package-lock.json
 *.backup2
 *-temp.js
 *-temp.vue
+
+# Local planning docs
+docs/firefly-config-roadmap.md

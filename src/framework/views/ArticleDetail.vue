@@ -45,6 +45,18 @@
             </svg>
             <span>{{ formatDate(article.createdAt) }}</span>
           </div>
+          <div v-if="displayUpdatedAt" class="article-detail-meta-item flex items-center mr-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m14.836 2A8.001 8.001 0 005.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-13.837-2m13.837 2H15" />
+            </svg>
+            <span>更新于 {{ formatDate(displayUpdatedAt) }}</span>
+          </div>
+          <div v-if="config.showReadTime && article.readTime" class="article-detail-meta-item flex items-center mr-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>约 {{ article.readTime }} 分钟阅读</span>
+          </div>
         </div>
       </header>
 
@@ -56,6 +68,18 @@
           class="w-full h-auto rounded-lg"
         />
       </div>
+
+      <section
+        v-if="outdatedNotice"
+        class="article-detail-outdated mb-8 rounded-2xl border border-amber-200 bg-amber-50/90 px-5 py-4 text-sm text-amber-900"
+      >
+        <p class="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700/80">内容提醒</p>
+        <p class="leading-7">
+          这篇文章最后{{ outdatedNotice.referenceKind === 'updated' ? '更新' : '发布' }}于
+          {{ formatDate(outdatedNotice.referenceAt) }}，距今已超过 {{ outdatedNotice.thresholdDays }} 天，
+          部分内容可能已经过时，请结合当前版本或官方文档核实。
+        </p>
+      </section>
 
       <!-- 文章内容 -->
       <div class="article-detail-content article-content prose prose-lg dark:prose-invert max-w-none mb-8" v-html="article.content"></div>
@@ -73,6 +97,25 @@
           </router-link>
         </div>
       </div>
+
+      <section
+        v-if="articleLicense"
+        class="article-detail-license mb-10 rounded-2xl border border-slate-200 bg-slate-50/90 px-5 py-4 text-sm text-slate-600"
+      >
+        <p class="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">许可协议</p>
+        <component
+          :is="articleLicense.url ? 'a' : 'span'"
+          :href="articleLicense.url || undefined"
+          :target="articleLicense.external ? '_blank' : undefined"
+          :rel="articleLicense.external ? 'noreferrer' : undefined"
+          class="font-medium text-slate-700"
+        >
+          {{ articleLicense.name }}
+        </component>
+      </section>
+
+      <SponsorSection />
+      <CommentSection :article="article" />
 
       <!-- 相关文章 -->
       <div class="article-detail-related mb-12" v-if="relatedArticles.length > 0">
@@ -109,7 +152,11 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import CommentSection from '../components/core/CommentSection.vue'
+import SponsorSection from '../components/core/SponsorSection.vue'
 import { useArticleStore } from '../stores/article'
+import { useConfigStore } from '../stores/config'
+import { resolveOutdatedNotice, shouldShowUpdatedAt } from '../utils/articleMeta'
 import { getArticleRoute, getCategoryRoute, getHomeRoute, getTagRoute } from '../utils/routeLinks'
 import { usePageMetadata } from '../composables/usePageMetadata'
 
@@ -120,6 +167,8 @@ const homeRoute = getHomeRoute()
 
 // 获取store
 const articleStore = useArticleStore()
+const configStore = useConfigStore()
+const config = configStore
 const articleRoute = (target) => getArticleRoute(target)
 
 // 状态
@@ -128,6 +177,45 @@ const relatedArticles = ref([])
 const loading = ref(true)
 const hasResolved = ref(false)
 let activeRequestId = 0
+const displayUpdatedAt = computed(() => {
+  const updatedAt = article.value?.updatedAt
+
+  if (!updatedAt) {
+    return ''
+  }
+
+  if (!shouldShowUpdatedAt(updatedAt, article.value?.createdAt || article.value?.date)) {
+    return ''
+  }
+
+  return updatedAt
+})
+const outdatedNotice = computed(() => (
+  resolveOutdatedNotice(article.value, {
+    showOutdatedNotice: config.showOutdatedNotice,
+    outdatedThresholdDays: config.outdatedThresholdDays
+  })
+))
+const articleLicense = computed(() => {
+  const license = article.value?.license
+
+  if (!license || typeof license !== 'object') {
+    return null
+  }
+
+  const name = String(license.name || '').trim()
+  const url = String(license.url || '').trim()
+
+  if (!name && !url) {
+    return null
+  }
+
+  return {
+    name: name || url,
+    url,
+    external: /^(https?:\/\/|mailto:|tel:)/i.test(url)
+  }
+})
 
 usePageMetadata({
   title: () => {

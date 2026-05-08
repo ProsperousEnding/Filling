@@ -4,6 +4,7 @@ import {
   getBlogPathPatterns,
   normalizeBlogRoutePatterns
 } from './routeManifest.js'
+import { resolveMenuPageComponentKey } from '../utils/pageComponentConfig.js'
 import { getCustomMenuPages } from '../utils/menuConfig.js'
 
 const Home = () => import('../views/Home.vue')
@@ -130,7 +131,16 @@ export function createBlogRoutes(routePatterns = getBlogPathPatterns(), menuConf
       }
     })),
     ...customMenuPages
-      .filter(page => !page.builtIn && String(page.folder || '').trim())
+      .filter((page) => {
+        const componentKey = resolveMenuPageComponentKey(page.component)
+
+        return (
+          !page.builtIn
+          && componentKey !== 'context'
+          && componentKey !== 'friends'
+          && String(page.folder || '').trim()
+        )
+      })
       .map(page => ({
         path: `${page.path}/:itemId`,
         name: `MenuPageItem:${page.key}`,

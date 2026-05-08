@@ -1,5 +1,6 @@
 # 友情链接配置
 # 只有在 site.toml 中启用了 source = "friend-links" 的菜单模块时才会展示
+# 也可以通过 [[menus.pages]] + component = "friends" 生成独立友链页
 
 [[friend_links]]
 # 友链名称
@@ -11,14 +12,37 @@ url = "https://vuejs.org/"
 # 简短描述
 description = "The Progressive JavaScript Framework"
 
+# 可选字段:
+# - avatar_url: 外链图片或 public/ 下的相对路径
+# - tags: 标签数组
+# - location: 站点领域 / 所在圈子
+# - note: 额外备注
+# - weight: 排序权重，越大越靠前
+tags = ["Vue", "Framework"]
+location = "Frontend"
+note = "渐进式框架"
+weight = 100
+
 [[friend_links]]
 name = "Vite"
 url = "https://vite.dev/"
 description = "Next Generation Frontend Tooling"
+tags = ["Build Tool", "DX"]
+location = "Tooling"
+weight = 90
 
 [[friend_links]]
 name = "Pinia"
 url = "https://pinia.vuejs.org/"
 description = "The intuitive store for Vue"
+tags = ["Vue", "State"]
+location = "Frontend"
+weight = 80
+
+# 不想展示某条友链时，可以显式关闭
+# [[friend_links]]
+# name = "Example"
+# url = "https://example.com"
+# enabled = false
 
 # 继续新增时，按同样格式继续追加 [[friend_links]] 即可

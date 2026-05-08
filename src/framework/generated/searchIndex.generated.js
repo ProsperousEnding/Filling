@@ -10,8 +10,10 @@ const searchIndex = {
       "description": "关于这个博客、我在做的事情，以及这里会持续记录的内容。",
       "excerpt": "关于这个博客、我在做的事情，以及这里会持续记录的内容。",
       "createdAt": null,
+      "updatedAt": null,
       "category": null,
       "tags": [],
+      "license": null,
       "cover": "https://picsum.photos/seed/%E5%85%B3%E4%BA%8E/1200/630.webp",
       "to": "/about",
       "sectionTitle": "",
@@ -30,6 +32,7 @@ const searchIndex = {
       "description": "一些常用的 Tailwind CSS 技巧示例",
       "excerpt": "一些常用的 Tailwind CSS 技巧示例",
       "createdAt": "2024-06-01T00:00:00.000Z",
+      "updatedAt": null,
       "category": {
         "id": "css",
         "name": "CSS"
@@ -44,15 +47,16 @@ const searchIndex = {
           "name": "技巧"
         }
       ],
+      "license": null,
       "cover": "https://picsum.photos/id/10/800/450",
       "to": "/article/tailwind-tricks",
       "sectionTitle": "",
       "sectionPath": "",
       "sourcePath": "/blog/content/articles/tailwind-tricks.md",
-      "plainText": "Tailwind 实用技巧 这是占位文章内容，用于验证本地 Markdown 渲染链是否正常工作。",
+      "plainText": "这是占位文章内容，用于验证本地 Markdown 渲染链是否正常工作。",
       "titleHaystack": "tailwind 实用技巧",
       "metaHaystack": "一些常用的 tailwind css 技巧示例 一些常用的 tailwind css 技巧示例 css tailwind 技巧",
-      "contentHaystack": "tailwind 实用技巧 这是占位文章内容，用于验证本地 markdown 渲染链是否正常工作。"
+      "contentHaystack": "这是占位文章内容，用于验证本地 markdown 渲染链是否正常工作。"
     },
     {
       "id": "article:vue3-components",
@@ -62,6 +66,7 @@ const searchIndex = {
       "description": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
       "excerpt": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
       "createdAt": "2024-03-15T00:00:00.000Z",
+      "updatedAt": null,
       "category": {
         "id": "css",
         "name": "CSS"
@@ -80,15 +85,16 @@ const searchIndex = {
           "name": "前端"
         }
       ],
+      "license": null,
       "cover": "https://picsum.photos/id/2/800/450",
       "to": "/article/vue3-components",
       "sectionTitle": "",
       "sectionPath": "",
       "sourcePath": "/blog/content/articles/vue3-components.md",
-      "plainText": "Tailwind CSS高级技巧 Tailwind CSS是一个功能强大的原子化CSS框架，它可以帮助开发者快速构建现代化的用户界面。 自定义配置 Tailwind的强大之处在于它的可配置性： // tailwind.config.js module.exports = { theme: { extend: { colors: { 'brand': '#3182ce', } } } } 响应式设计技巧 Tailwind的响应式前缀使得构建适配各种屏幕尺寸的界面变得简单： <div class=\"text-sm md:text-base lg:text-lg\"> 响应式文本大小 </div> 暗黑模式 Tailwind v2.0引入了原生的暗黑模式支持： <div class=\"bg-white dark:bg-gray-800 text-black dark:text-white\"> 自动适应暗黑模式 </div> 实用工具类 Tailwind 提供了大量的实用工具类，可以快速构建复杂的布局： Flexbox 布局 Grid 布局 间距控制 颜色系统 阴影效果 这些工具类让我们能够在不编写自定义CSS的情况下完成大部分设计工作。",
+      "plainText": "Tailwind CSS是一个功能强大的原子化CSS框架，它可以帮助开发者快速构建现代化的用户界面。 自定义配置 Tailwind的强大之处在于它的可配置性： // tailwind.config.js module.exports = { theme: { extend: { colors: { 'brand': '#3182ce', } } } } 响应式设计技巧 Tailwind的响应式前缀使得构建适配各种屏幕尺寸的界面变得简单： <div class=\"text-sm md:text-base lg:text-lg\"> 响应式文本大小 </div> 暗黑模式 Tailwind v2.0引入了原生的暗黑模式支持： <div class=\"bg-white dark:bg-gray-800 text-black dark:text-white\"> 自动适应暗黑模式 </div> 实用工具类 Tailwind 提供了大量的实用工具类，可以快速构建复杂的布局： Flexbox 布局 Grid 布局 间距控制 颜色系统 阴影效果 这些工具类让我们能够在不编写自定义CSS的情况下完成大部分设计工作。",
       "titleHaystack": "tailwind css高级技巧",
       "metaHaystack": "掌握tailwind css的高级使用技巧和自定义配置方法 掌握tailwind css的高级使用技巧和自定义配置方法 css tailwind css 前端",
-      "contentHaystack": "tailwind css高级技巧 tailwind css是一个功能强大的原子化css框架，它可以帮助开发者快速构建现代化的用户界面。 自定义配置 tailwind的强大之处在于它的可配置性： // tailwind.config.js module.exports = { theme: { extend: { colors: { 'brand': '#3182ce', } } } } 响应式设计技巧 tailwind的响应式前缀使得构建适配各种屏幕尺寸的界面变得简单： <div class=\"text-sm md:text-base lg:text-lg\"> 响应式文本大小 </div> 暗黑模式 tailwind v2.0引入了原生的暗黑模式支持： <div class=\"bg-white dark:bg-gray-800 text-black dark:text-white\"> 自动适应暗黑模式 </div> 实用工具类 tailwind 提供了大量的实用工具类，可以快速构建复杂的布局： flexbox 布局 grid 布局 间距控制 颜色系统 阴影效果 这些工具类让我们能够在不编写自定义css的情况下完成大部分设计工作。"
+      "contentHaystack": "tailwind css是一个功能强大的原子化css框架，它可以帮助开发者快速构建现代化的用户界面。 自定义配置 tailwind的强大之处在于它的可配置性： // tailwind.config.js module.exports = { theme: { extend: { colors: { 'brand': '#3182ce', } } } } 响应式设计技巧 tailwind的响应式前缀使得构建适配各种屏幕尺寸的界面变得简单： <div class=\"text-sm md:text-base lg:text-lg\"> 响应式文本大小 </div> 暗黑模式 tailwind v2.0引入了原生的暗黑模式支持： <div class=\"bg-white dark:bg-gray-800 text-black dark:text-white\"> 自动适应暗黑模式 </div> 实用工具类 tailwind 提供了大量的实用工具类，可以快速构建复杂的布局： flexbox 布局 grid 布局 间距控制 颜色系统 阴影效果 这些工具类让我们能够在不编写自定义css的情况下完成大部分设计工作。"
     },
     {
       "id": "page-item:projects:a",
@@ -98,6 +104,7 @@ const searchIndex = {
       "description": "a标签技巧示例",
       "excerpt": "a标签技巧示例",
       "createdAt": "2026-11-11",
+      "updatedAt": null,
       "category": {
         "id": "html",
         "name": "HTML"
@@ -112,6 +119,7 @@ const searchIndex = {
           "name": "技巧"
         }
       ],
+      "license": null,
       "cover": "https://picsum.photos/id/10/800/450",
       "to": "",
       "sectionTitle": "projects",

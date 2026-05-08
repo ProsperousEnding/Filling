@@ -52,8 +52,27 @@ sidebar_position = "right"
 # 是否显示文章阅读时长
 # show_read_time = true
 
+# 是否显示文章过期提醒
+# show_outdated_notice = false
+
+# 距离上次更新超过多少天后提示
+# outdated_threshold_days = 365
+
 # 是否在侧边栏显示个人资料卡片
 show_profile_in_sidebar = true
+
+[sidebar]
+# 侧边栏模块编排
+# 可选 section:
+# - "profile" 个人资料卡片
+# - "search"  搜索框
+# - "menu"    分类/标签/最新文章等菜单模块
+desktop_sections = ["profile", "search", "menu"]
+
+# 不配置时，文章页沿用对应的 desktop/mobile 默认顺序
+# article_desktop_sections = ["profile", "menu"]
+# mobile_sections = ["profile", "search", "menu"]
+# article_mobile_sections = ["profile", "search", "menu"]
 
 [routing]
 # 自定义站点路由
@@ -89,6 +108,7 @@ show_profile_in_sidebar = true
 # - "card"     渲染目录内容卡片，配 folder
 # - "grid"     渲染目录内容网格，配 folder
 # - "timeline" 渲染目录内容时间线，配 folder
+# - "friends"  渲染友情链接页面，读取 blog/config/links.toml
 #
 # file / folder 都相对于 blog/content
 
@@ -125,6 +145,43 @@ title = "关于"
 component = "context"
 file = "about.md"
 
+# 友情链接页
+[[menus.pages]]
+key = "friends"
+title = "友链"
+description = "一些会定期访问，也愿意推荐给别人的站点。"
+component = "friends"
+content = """
+这里收录一些我常读、常逛或愿意推荐给别人的站点。
+
+如果你希望交换友链，可以通过侧边栏社交链接联系我。
+"""
+
+[menus.pages.application]
+title = "申请交换友链"
+description = "如果你的站点长期更新、内容以原创为主，也欢迎来交换友链。"
+requirements = [
+  "站点可以稳定访问，尽量启用 HTTPS",
+  "内容以原创或高质量整理为主，长期维护",
+  "页面风格不限，但不要有大量影响阅读的广告或弹窗"
+]
+submission_fields = [
+  "站点名称",
+  "站点地址",
+  "一句话简介",
+  "头像或 Logo 地址",
+  "RSS 地址（可选）"
+]
+template = """
+站点名称：
+站点地址：
+站点简介：
+头像地址：
+RSS 地址：
+"""
+# contact_label = "通过 GitHub 联系我"
+# contact_url = "https://github.com/ProsperousEnding"
+
 # 自定义目录页
 # component = "list" / "card" / "grid" / "timeline" 时使用 folder
 # [[menus.pages]]
@@ -144,13 +201,13 @@ file = "about.md"
 # [[menus.header]]
 # renderer = "header-pill"
 # source = "blog-nav"
-# items = ["home", "articles", "categories", "tags", "archive", "about", "projects"]
+# items = ["home", "articles", "categories", "tags", "archive", "about", "friends", "projects"]
 
 # 移动端顶部菜单示例
 # [[menus.mobile_header]]
 # renderer = "header-stack"
 # source = "blog-nav"
-# items = ["home", "articles", "categories", "tags", "archive", "about", "projects"]
+# items = ["home", "articles", "categories", "tags", "archive", "about", "friends", "projects"]
 
 # 侧边栏菜单示例
 # renderer 可选:
@@ -198,3 +255,9 @@ text = "版权所有 © Filling"
 
 # 页脚备注
 note = "基于 Vue3 + Pinia + Tailwind CSS 构建"
+
+# 页脚 HTML 片段
+# 这里会按 HTML 原样注入，适合放备案链接、统计说明等可信内容
+# snippet_html = """
+# <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">京ICP备12345678号</a>
+# """

@@ -1,0 +1,82 @@
+# 评论配置
+# 当前支持:
+# - giscus
+# - utterances
+
+# 是否启用评论区
+enabled = true
+
+# 评论区标题
+title = "评论"
+
+# 标题下方的说明文案
+description = "欢迎通过 GitHub Discussions 留下你的看法。"
+
+# 当 enabled = true 但配置不完整时显示的文案
+not_ready_text = "请先在 GitHub 仓库启用 Discussions，并补全 giscus 分类配置。"
+
+# 当前可选:
+# - "giscus"
+# - "utterances"
+provider = "giscus"
+
+[giscus]
+# GitHub 仓库，格式: owner/repo
+repo = "ProsperousEnding/Filling"
+
+# 仓库 ID，可在 giscus 配置页生成
+repo_id = "R_kgDOOVO_Yw"
+
+# Discussion 分类名称
+category = "Announcements"
+
+# Discussion 分类 ID，可在 giscus 配置页生成
+category_id = "DIC_kwDOOVO_Y84C7C36"
+
+# 话题映射方式
+# 可选值:
+# - "pathname"
+# - "url"
+# - "title"
+# - "og:title"
+# - "specific"
+mapping = "pathname"
+
+# 当 mapping = "specific" 时使用
+# term = "my-article-thread"
+
+# 是否严格匹配 discussion
+strict = false
+
+# 是否启用 reactions
+reactions_enabled = true
+
+# 是否把 discussion 元数据同步到页面
+emit_metadata = false
+
+# 评论输入框位置
+# 可选值: "top" | "bottom"
+input_position = "bottom"
+
+# 评论区语言
+lang = "zh-CN"
+
+# 加载策略
+# 可选值: "lazy" | "eager"
+loading = "lazy"
+
+# 亮色主题
+theme = "light"
+
+# 暗色主题
+dark_theme = "dark_dimmed"
+
+# 使用 utterances 时启用
+# [utterances]
+# repo = "ProsperousEnding/Filling"
+# issue_term = "pathname"
+# # issue_number = "12"
+# label = "comment"
+# theme = "github-light"
+# dark_theme = "github-dark"
+# crossorigin = "anonymous"

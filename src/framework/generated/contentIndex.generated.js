@@ -30,6 +30,10 @@ const contentIndex = {
       "excerpt": "一些常用的 Tailwind CSS 技巧示例",
       "readTime": 1,
       "createdAt": "2024-06-01T00:00:00.000Z",
+      "updatedAt": null,
+      "license": null,
+      "outdatedThresholdDays": null,
+      "showOutdatedNotice": null,
       "sourcePath": "/blog/content/articles/tailwind-tricks.md"
     },
     {
@@ -64,6 +68,10 @@ const contentIndex = {
       "excerpt": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
       "readTime": 1,
       "createdAt": "2024-03-15T00:00:00.000Z",
+      "updatedAt": null,
+      "license": null,
+      "outdatedThresholdDays": null,
+      "showOutdatedNotice": null,
       "sourcePath": "/blog/content/articles/vue3-components.md"
     }
   ],
@@ -76,6 +84,7 @@ const contentIndex = {
       "description": "一些常用的 Tailwind CSS 技巧示例",
       "excerpt": "一些常用的 Tailwind CSS 技巧示例",
       "createdAt": "2024-06-01T00:00:00.000Z",
+      "updatedAt": null,
       "category": {
         "id": "css",
         "name": "CSS"
@@ -90,6 +99,7 @@ const contentIndex = {
           "name": "技巧"
         }
       ],
+      "license": null,
       "cover": "https://picsum.photos/id/10/800/450",
       "to": "/article/tailwind-tricks",
       "sectionTitle": "",
@@ -104,6 +114,7 @@ const contentIndex = {
       "description": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
       "excerpt": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
       "createdAt": "2024-03-15T00:00:00.000Z",
+      "updatedAt": null,
       "category": {
         "id": "css",
         "name": "CSS"
@@ -122,6 +133,7 @@ const contentIndex = {
           "name": "前端"
         }
       ],
+      "license": null,
       "cover": "https://picsum.photos/id/2/800/450",
       "to": "/article/vue3-components",
       "sectionTitle": "",
@@ -136,8 +148,10 @@ const contentIndex = {
       "description": "关于这个博客、我在做的事情，以及这里会持续记录的内容。",
       "excerpt": "关于这个博客、我在做的事情，以及这里会持续记录的内容。",
       "createdAt": null,
+      "updatedAt": null,
       "category": null,
       "tags": [],
+      "license": null,
       "cover": "https://picsum.photos/seed/%E5%85%B3%E4%BA%8E/1200/630.webp",
       "to": "/about",
       "sectionTitle": "",

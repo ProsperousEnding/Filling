@@ -6,7 +6,7 @@ const BUILT_IN_PAGE_DEFAULT_COMPONENTS = Object.freeze({
   archive: 'timeline'
 })
 
-const MENU_PAGE_COMPONENT_KEYS = Object.freeze(['context', 'list', 'card', 'grid', 'timeline'])
+const MENU_PAGE_COMPONENT_KEYS = Object.freeze(['context', 'list', 'card', 'grid', 'timeline', 'friends'])
 const MENU_PAGE_COMPONENT_KEY_SET = new Set(MENU_PAGE_COMPONENT_KEYS)
 
 function normalizeString(value) {

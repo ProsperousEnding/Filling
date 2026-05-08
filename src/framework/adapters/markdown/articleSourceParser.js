@@ -1,6 +1,7 @@
 import fm from 'front-matter'
 import MarkdownIt from 'markdown-it'
 import { resolveArticleCover } from '../../utils/articleCover.js'
+import { normalizeOptionalBoolean, normalizePositiveInteger } from '../../utils/articleMeta.js'
 
 const markdown = new MarkdownIt({
   html: false,
@@ -80,6 +81,145 @@ function createExcerpt(text, maxLength = 160) {
   return `${normalized.slice(0, maxLength).trim()}...`
 }
 
+function normalizeDateValue(input) {
+  if (input instanceof Date && Number.isFinite(input.getTime())) {
+    return input.toISOString()
+  }
+
+  const normalized = normalizeTextValue(input)
+  return normalized || null
+}
+
+function normalizeHeadingComparableText(input) {
+  return normalizeTextValue(input)
+    .replace(/\s+/g, ' ')
+    .replace(/[！!？?。.,，:：;；"'“”‘’`~()[\]{}<>《》【】]/g, '')
+    .toLowerCase()
+}
+
+function stripLeadingDuplicateTitleHeading(body, title) {
+  const normalizedBody = String(body || '').replace(/^\uFEFF/, '')
+  const comparableTitle = normalizeHeadingComparableText(title)
+
+  if (!normalizedBody || !comparableTitle) {
+    return normalizedBody
+  }
+
+  const headingMatch = normalizedBody.match(/^(\s*)#\s+(.+?)\s*(?:#+\s*)?(?:\n|$)/)
+
+  if (!headingMatch) {
+    return normalizedBody
+  }
+
+  const comparableHeading = normalizeHeadingComparableText(headingMatch[2])
+
+  if (comparableHeading !== comparableTitle) {
+    return normalizedBody
+  }
+
+  return normalizedBody
+    .slice(headingMatch[0].length)
+    .replace(/^\s*\n/, '')
+}
+
+function normalizeAuthor(value) {
+  if (!value) {
+    return null
+  }
+
+  if (typeof value === 'string') {
+    const name = normalizeTextValue(value)
+    return name ? { name } : null
+  }
+
+  if (typeof value !== 'object') {
+    return null
+  }
+
+  const name = normalizeTextValue(value.name || value.label || value.title)
+  return name ? { name } : null
+}
+
+function normalizeSafeUrl(value) {
+  const normalizedValue = normalizeTextValue(value)
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(normalizedValue)) {
+    return normalizedValue
+  }
+
+  if (normalizedValue.startsWith('/')) {
+    return normalizedValue
+  }
+
+  return ''
+}
+
+function normalizeLicense(value, fallbackUrl = '') {
+  if (!value && !fallbackUrl) {
+    return null
+  }
+
+  if (typeof value === 'string') {
+    const name = normalizeTextValue(value)
+    const url = normalizeSafeUrl(fallbackUrl)
+
+    if (!name) {
+      return url
+        ? {
+          name: url,
+          url
+        }
+        : null
+    }
+
+    return {
+      name,
+      url
+    }
+  }
+
+  if (typeof value !== 'object') {
+    return null
+  }
+
+  const name = normalizeTextValue(value.name || value.label || value.title)
+  const url = normalizeSafeUrl(value.url || value.href || fallbackUrl)
+
+  if (!name && !url) {
+    return null
+  }
+
+  return {
+    name: name || url,
+    url
+  }
+}
+
+function resolveOutdatedNoticeFlag(frontmatter = {}) {
+  const explicitValue = normalizeOptionalBoolean(
+    frontmatter.show_outdated_notice
+    ?? frontmatter.outdated_notice
+    ?? frontmatter.showOutdatedNotice
+    ?? frontmatter.outdatedNotice
+  )
+  const disabledValue = normalizeOptionalBoolean(
+    frontmatter.hide_outdated_notice
+    ?? frontmatter.disable_outdated_notice
+    ?? frontmatter.hideOutdatedNotice
+    ?? frontmatter.disableOutdatedNotice
+  )
+
+  if (disabledValue === true) {
+    return false
+  }
+
+  return explicitValue
+}
+
 function estimateReadTime(text) {
   const normalized = normalizeTextValue(text)
   if (!normalized) return 1
@@ -114,9 +254,9 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false } 
   const fileName = resolveArticleFileName(sourcePath)
   const parsed = fm(rawContent || '')
   const frontmatter = parsed.attributes || {}
-  const body = parsed.body || ''
-  const html = markdown.render(body)
   const title = frontmatter.title || fileName
+  const body = stripLeadingDuplicateTitleHeading(parsed.body || '', title)
+  const html = markdown.render(body)
   const slug = normalizeArticleLookupId(frontmatter.slug || fileName) || fileName
   const plainText = normalizeTextValue(stripHtmlTags(html))
   const description = normalizeTextValue(frontmatter.description)
@@ -132,13 +272,27 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false } 
     ? frontmatter.tags.map(tag => ({ id: toSlugId(String(tag)), name: String(tag) }))
     : []
 
-  const author = frontmatter.author ? { name: String(frontmatter.author) } : null
+  const author = normalizeAuthor(frontmatter.author)
+  const updatedAt = normalizeDateValue(
+    frontmatter.updated
+    || frontmatter.updated_at
+    || frontmatter.lastmod
+    || frontmatter.last_modified
+  )
+  const license = normalizeLicense(frontmatter.license, frontmatter.license_url)
+  const outdatedThresholdDays = normalizePositiveInteger(
+    frontmatter.outdated_threshold
+    ?? frontmatter.outdated_threshold_days
+    ?? frontmatter.outdatedThreshold
+    ?? frontmatter.outdatedThresholdDays
+  )
+  const showOutdatedNotice = resolveOutdatedNoticeFlag(frontmatter)
 
   const article = {
     id: fileName,
     slug,
     title,
-    date: frontmatter.date || null,
+    date: normalizeDateValue(frontmatter.date),
     author,
     category,
     tags,
@@ -148,7 +302,11 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false } 
     excerpt,
     plainText,
     readTime: estimateReadTime(plainText),
-    createdAt: frontmatter.date || null,
+    createdAt: normalizeDateValue(frontmatter.date),
+    updatedAt,
+    license,
+    outdatedThresholdDays,
+    showOutdatedNotice,
     sourcePath
   }
 

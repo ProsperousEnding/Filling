@@ -21,7 +21,7 @@
         </div>
 
         <div class="article-card-body p-5 flex flex-col flex-grow">
-          <div class="article-card-meta flex justify-between items-center mb-3 gap-3">
+          <div class="menu-page-grid-meta-row article-card-meta mb-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span
               v-if="getPrimaryBadge(item)"
               class="article-card-category inline-block px-3 py-1 text-xs font-medium rounded-full transition-colors duration-200"
@@ -35,13 +35,13 @@
           </div>
 
           <div class="article-card-copy">
-            <h2 class="article-card-title text-base md:text-lg leading-[1.35] font-medium mb-3 transition-colors duration-200">
+            <h2 class="menu-page-grid-article-title article-card-title text-base md:text-lg leading-[1.35] font-medium mb-3 transition-colors duration-200">
               <span class="article-card-title-link block">{{ item.title }}</span>
             </h2>
 
             <p
               v-if="item.description"
-              class="article-card-excerpt text-sm mb-4 flex-grow leading-relaxed line-clamp-3"
+              class="menu-page-grid-article-description article-card-excerpt text-sm mb-4 flex-grow leading-relaxed line-clamp-3"
             >
               {{ item.description }}
             </p>
@@ -68,12 +68,12 @@
               </li>
             </ul>
 
-            <div class="flex items-center justify-between gap-3">
+            <div class="menu-page-grid-action-row flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span class="theme-muted-note text-xs">
                 {{ item.footer || item.meta }}
               </span>
 
-              <span class="article-card-read-link inline-flex items-center text-sm font-medium transition-colors duration-200 rounded-lg px-3 py-1">
+              <span class="article-card-read-link inline-flex items-center self-start text-sm font-medium transition-colors duration-200 rounded-lg px-3 py-1">
                 {{ getActionLabel(item) }}
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -86,7 +86,7 @@
 
       <template v-else>
         <div class="menu-page-grid-entry p-5 flex h-full flex-col">
-          <div class="flex items-start justify-between gap-4">
+          <div class="menu-page-grid-entry-head flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <span class="theme-icon-badge w-11 h-11 flex items-center justify-center rounded-full shrink-0">
               <svg v-if="getItemIconKind(item) === 'tag'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -111,11 +111,11 @@
           </div>
 
           <div class="mt-5 min-w-0">
-            <h2 class="theme-section-title text-lg font-bold leading-snug">
+            <h2 class="menu-page-grid-entry-title theme-section-title text-lg font-bold leading-snug">
               {{ item.title }}
             </h2>
 
-            <p v-if="item.description" class="theme-page-description mt-2 text-sm leading-6">
+            <p v-if="item.description" class="menu-page-grid-entry-description theme-page-description mt-2 text-sm leading-6">
               {{ item.description }}
             </p>
           </div>
@@ -131,7 +131,7 @@
           </ul>
 
           <div class="menu-page-grid-action-row mt-auto pt-5 flex items-center justify-between gap-3">
-            <span v-if="item.footer" class="theme-muted-note text-sm">
+            <span v-if="item.footer" class="menu-page-grid-footer-note theme-muted-note text-sm">
               {{ item.footer }}
             </span>
             <span v-else></span>
@@ -226,3 +226,31 @@ function getGridItemClass(item) {
   ]
 }
 </script>
+
+<style scoped>
+.menu-page-grid-meta-row,
+.menu-page-grid-action-row,
+.menu-page-grid-entry-head {
+  min-width: 0;
+}
+
+.menu-page-grid-article-title,
+.menu-page-grid-article-description,
+.menu-page-grid-entry-title,
+.menu-page-grid-entry-description,
+.menu-page-grid-footer-note,
+.menu-page-grid-meta-chip {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .menu-page-grid-entry-title {
+    font-size: 1.02rem;
+    line-height: 1.42;
+  }
+
+  .menu-page-grid-footer-note {
+    font-size: 0.82rem;
+  }
+}
+</style>

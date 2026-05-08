@@ -19,120 +19,136 @@
         </div>
       </div>
 
-      <section
-        v-if="config.showProfileInSidebar && hasProfileContent"
-        class="sidebar-profile-panel"
-      >
-        <div class="sidebar-profile-card">
-          <div class="sidebar-profile-stack">
-            <div class="sidebar-profile-avatar-frame">
-              <div class="sidebar-profile-avatar-shell">
-                <div class="sidebar-profile-avatar">
-                  <img
-                    v-if="config.userProfile?.avatarUrl && !avatarLoadFailed"
-                    :src="config.userProfile.avatarUrl"
-                    :alt="displayName || 'Profile avatar'"
-                    class="sidebar-profile-avatar-image"
-                    loading="lazy"
-                    @error="handleAvatarError"
-                  />
-                  <span v-else class="sidebar-profile-avatar-fallback">{{ avatarInitial }}</span>
+      <template v-for="sectionKey in activeSidebarSections" :key="sectionKey">
+        <section
+          v-if="sectionKey === 'profile' && config.showProfileInSidebar && hasProfileContent"
+          class="sidebar-profile-panel"
+        >
+          <div class="sidebar-profile-card">
+            <div class="sidebar-profile-stack">
+              <div class="sidebar-profile-avatar-frame">
+                <div class="sidebar-profile-avatar-shell">
+                  <div class="sidebar-profile-avatar">
+                    <img
+                      v-if="config.userProfile?.avatarUrl && !avatarLoadFailed"
+                      :src="config.userProfile.avatarUrl"
+                      :alt="displayName || 'Profile avatar'"
+                      class="sidebar-profile-avatar-image"
+                      loading="lazy"
+                      @error="handleAvatarError"
+                    />
+                    <span v-else class="sidebar-profile-avatar-fallback">{{ avatarInitial }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="sidebar-profile-copy">
-              <h3 v-if="displayName" class="sidebar-profile-name">{{ displayName }}</h3>
-              <p v-if="displayUsername" class="sidebar-profile-handle">{{ displayUsername }}</p>
-              <p v-if="displayTagline" class="sidebar-profile-tagline">{{ displayTagline }}</p>
-            </div>
+              <div class="sidebar-profile-copy">
+                <h3 v-if="displayName" class="sidebar-profile-name">{{ displayName }}</h3>
+                <p v-if="displayUsername" class="sidebar-profile-handle">{{ displayUsername }}</p>
+                <p v-if="displayTagline" class="sidebar-profile-tagline">{{ displayTagline }}</p>
+              </div>
 
-            <p v-if="displayBio" class="sidebar-profile-bio">{{ displayBio }}</p>
+              <p v-if="displayBio" class="sidebar-profile-bio">{{ displayBio }}</p>
 
-            <div v-if="profileMeta.length > 0" class="sidebar-profile-meta">
-              <component
-                :is="meta.href ? 'a' : 'span'"
-                v-for="meta in profileMeta"
-                :key="meta.key"
-                :href="meta.href || undefined"
-                class="sidebar-profile-meta-item"
-                :target="meta.href ? '_blank' : undefined"
-                :rel="meta.href ? 'noreferrer' : undefined"
-              >
-                {{ meta.label }}
-              </component>
+              <div v-if="profileMeta.length > 0" class="sidebar-profile-meta">
+                <component
+                  :is="meta.href ? 'a' : 'span'"
+                  v-for="meta in profileMeta"
+                  :key="meta.key"
+                  :href="meta.href || undefined"
+                  class="sidebar-profile-meta-item"
+                  :target="meta.href ? '_blank' : undefined"
+                  :rel="meta.href ? 'noreferrer' : undefined"
+                >
+                  {{ meta.label }}
+                </component>
+              </div>
+
+              <div v-if="profileSocialLinks.length > 0" class="sidebar-profile-socials">
+                <a
+                  v-for="link in profileSocialLinks"
+                  :key="link.id"
+                  :href="link.url"
+                  class="sidebar-profile-social-link"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {{ link.name }}
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="sidebar-search-panel">
-        <div class="sidebar-search" role="search">
-          <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-search-leading" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            v-model="searchKeyword"
-            type="text"
-            placeholder="搜索文章..."
-            class="sidebar-search-input font-sf-pro"
-            @keyup.enter="handleSearch"
-          />
-          <button
-            v-if="searchKeyword"
-            type="button"
-            class="sidebar-search-clear"
-            aria-label="清除搜索"
-            @click="searchKeyword = ''"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        <section v-else-if="sectionKey === 'search'" class="sidebar-search-panel">
+          <div class="sidebar-search" role="search">
+            <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-search-leading" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-          </button>
-          <button
-            type="button"
-            class="sidebar-search-submit"
-            :disabled="!trimmedSearchKeyword"
-            title="搜索"
-            aria-label="搜索"
-            @click="handleSearch"
+            <input
+              v-model="searchKeyword"
+              type="text"
+              placeholder="搜索文章..."
+              class="sidebar-search-input font-sf-pro"
+              @keyup.enter="handleSearch"
+            />
+            <button
+              v-if="searchKeyword"
+              type="button"
+              class="sidebar-search-clear"
+              aria-label="清除搜索"
+              @click="searchKeyword = ''"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="sidebar-search-submit"
+              :disabled="!trimmedSearchKeyword"
+              title="搜索"
+              aria-label="搜索"
+              @click="handleSearch"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <template v-else-if="sectionKey === 'menu'">
+          <div
+            v-if="!isLoading && !hasSidebarMenuSections"
+            class="sidebar-empty-state"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-3 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
-          </button>
-        </div>
-      </section>
+            <p class="sidebar-empty-title">暂无侧边栏内容</p>
+            <p class="sidebar-empty-copy">添加分类、标签或文章后会显示在这里。</p>
+          </div>
 
-      <div
-        v-if="!isLoading && !hasSidebarMenuSections"
-        class="sidebar-empty-state"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-3 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <p class="sidebar-empty-title">暂无侧边栏内容</p>
-        <p class="sidebar-empty-copy">添加分类、标签或文章后会显示在这里。</p>
-      </div>
+          <div v-else-if="isLoading" class="sidebar-loading-state">
+            <div class="loading-spinner"></div>
+          </div>
 
-      <div v-else-if="isLoading" class="sidebar-loading-state">
-        <div class="loading-spinner"></div>
-      </div>
-
-      <template v-else>
-        <SidebarSection
-          v-for="section in sidebarMenuSections"
-          :key="section.key"
-          :title="section.title"
-          :items="section.items"
-          show-item-count
-        >
-          <MenuRenderer
-            :renderer="section.renderer"
-            :renderer-props="section.rendererProps"
-          />
-        </SidebarSection>
-
+          <template v-else>
+            <SidebarSection
+              v-for="section in sidebarMenuSections"
+              :key="section.key"
+              :title="section.title"
+              :items="section.items"
+              show-item-count
+            >
+              <MenuRenderer
+                :renderer="section.renderer"
+                :renderer-props="section.rendererProps"
+              />
+            </SidebarSection>
+          </template>
+        </template>
       </template>
     </div>
   </aside>
@@ -140,13 +156,15 @@
 
 <script setup>
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
 import { useConfigStore } from '../../stores/config'
 import { useCategoryStore } from '../../stores/category'
 import { useTagStore } from '../../stores/tag'
 import { useArticleStore } from '../../stores/article'
 import { getSearchRoute } from '../../utils/routeLinks'
 import { getMaxMenuSourceLimit, menuUsesSource, resolveSidebarMenuSections } from '../../utils/menuConfig'
+import { resolveSidebarSections } from '../../utils/sidebarLayout'
 import MenuRenderer from '../menu/MenuRenderer.vue'
 
 const props = defineProps({
@@ -158,6 +176,7 @@ const props = defineProps({
 
 const SidebarSection = defineAsyncComponent(() => import('./SidebarSection.vue'))
 
+const route = useRoute()
 const router = useRouter()
 const configStore = useConfigStore()
 const categoryStore = useCategoryStore()
@@ -188,6 +207,26 @@ const displayTagline = computed(() => (
   toTrimmedString(config.userProfile?.tagline) || toTrimmedString(config.blogDescription)
 ))
 const displayBio = computed(() => toTrimmedString(config.userProfile?.bio))
+const profileSocialLinks = computed(() => (
+  Array.isArray(config.userProfile?.socialLinks)
+    ? config.userProfile.socialLinks
+      .map((link, index) => {
+        const name = toTrimmedString(link?.name)
+        const url = normalizeExternalUrl(toTrimmedString(link?.url))
+
+        if (!name || !url) {
+          return null
+        }
+
+        return {
+          id: link?.id || `profile-social-${index}-${name.toLowerCase().replace(/\s+/g, '-')}`,
+          name,
+          url
+        }
+      })
+      .filter(Boolean)
+    : []
+))
 const profileMeta = computed(() => {
   const meta = []
   const location = toTrimmedString(config.userProfile?.location)
@@ -215,13 +254,19 @@ const hasProfileContent = computed(() => Boolean(
   displayName.value ||
   displayTagline.value ||
   displayBio.value ||
-  profileMeta.value.length
+  profileMeta.value.length ||
+  profileSocialLinks.value.length
 ))
 const avatarInitial = computed(() => (displayName.value || '?').charAt(0).toUpperCase())
 const needsCategories = computed(() => menuUsesSource(config.menus, 'categories'))
 const needsTags = computed(() => menuUsesSource(config.menus, 'tags'))
 const latestArticlesLimit = computed(() => getMaxMenuSourceLimit(config.menus, 'latest-articles', ['sidebar'], 0))
 const needsLatestArticles = computed(() => latestArticlesLimit.value > 0 && menuUsesSource(config.menus, 'latest-articles'))
+const isArticleDetailPage = computed(() => route.name === BLOG_ROUTE_NAMES.articleDetail)
+const activeSidebarSections = computed(() => resolveSidebarSections(config.sidebarLayout, {
+  mobile: props.mobile,
+  article: isArticleDetailPage.value
+}))
 const sidebarMenuSections = computed(() => resolveSidebarMenuSections(config.menus, {
   routePatterns: config.routePatterns,
   categories: categories.value,
@@ -250,7 +295,15 @@ function toTrimmedString(value) {
 
 function normalizeExternalUrl(value) {
   if (!value) return ''
-  return /^https?:\/\//i.test(value) ? value : `https://${value}`
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(value)) {
+    return value
+  }
+
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value)) {
+    return ''
+  }
+
+  return `https://${value}`
 }
 
 function getWebsiteLabel(value) {
@@ -498,6 +551,14 @@ watch(() => config.userProfile?.avatarUrl, () => {
   gap: 0.42rem;
 }
 
+.sidebar-profile-socials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.46rem;
+  max-width: 15.5rem;
+}
+
 .sidebar-profile-meta-item {
   display: inline-flex;
   align-items: center;
@@ -519,6 +580,28 @@ watch(() => config.userProfile?.avatarUrl, () => {
 a.sidebar-profile-meta-item:hover {
   border-color: rgba(var(--color-primary), 0.2);
   color: rgb(var(--color-primary));
+}
+
+.sidebar-profile-social-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.22rem 0.72rem;
+  border-radius: 9999px;
+  background: rgba(219, 234, 254, 0.5);
+  border: 1px solid rgba(191, 219, 254, 0.92);
+  color: rgb(37 99 235);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.sidebar-profile-social-link:hover {
+  background: rgba(191, 219, 254, 0.72);
+  border-color: rgba(147, 197, 253, 0.96);
+  color: rgb(29 78 216);
 }
 
 .sidebar-search {

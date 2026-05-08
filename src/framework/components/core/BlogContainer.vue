@@ -31,7 +31,8 @@
     <div class="theme-app flex flex-col h-full">
       <!-- 澶撮儴 -->
       <Header />
-      
+      <AnnouncementBar />
+
       <!-- 涓讳綋閮ㄥ垎 -->
       <div class="theme-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col">
         <main class="blog-container theme-main-container py-4">
@@ -63,6 +64,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Header from '../layout/Header.vue'
+import AnnouncementBar from '../layout/AnnouncementBar.vue'
 import Footer from '../layout/Footer.vue'
 import Sidebar from '../layout/Sidebar.vue'
 import { useConfigStore } from '../../stores/config'
