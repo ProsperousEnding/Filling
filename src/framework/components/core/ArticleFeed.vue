@@ -37,6 +37,7 @@
           <pagination 
             :current-page="currentPage" 
             :total-pages="totalPages"
+            :total-items="total"
             @page-change="handlePageChange"
           />
         </div>
@@ -79,7 +80,7 @@ const emit = defineEmits(['page-change'])
 
 // 计算总页数
 const totalPages = computed(() => {
-  return Math.ceil(props.total / props.pageSize)
+  return Math.max(1, Math.ceil(props.total / props.pageSize))
 })
 
 // 处理分页变化

@@ -2,6 +2,22 @@
 # 只有在 site.toml 中启用了 source = "friend-links" 的菜单模块时才会展示
 # 也可以通过 [[menus.pages]] + component = "friends" 生成独立友链页
 
+[page]
+# 独立友链页列数
+columns = 2
+
+# 宽屏下的列数
+wide_columns = 3
+
+# 页面底部自定义内容，留空则不显示
+# footer_title = "交换友链说明"
+# footer_content = """
+# 如果你希望交换友链，可以通过侧边栏的联系方式提交站点信息。
+# """
+
+# 可信 HTML 片段，按原样渲染，谨慎使用
+# footer_html = ""
+
 [[friend_links]]
 # 友链名称
 name = "Vue.js"

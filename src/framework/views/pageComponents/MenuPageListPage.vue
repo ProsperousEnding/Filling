@@ -7,21 +7,24 @@
       :to="item.to || undefined"
       :href="item.href || undefined"
       :class="getListItemClass(item)"
+      :style="getListItemStyle(item)"
       :target="item.external ? '_blank' : undefined"
       :rel="item.external ? 'noreferrer' : undefined"
     >
       <template v-if="usesHeroSurface(item)">
         <img
-          v-if="hasItemCover(item)"
+          v-if="showItemCover(item)"
           :src="getItemCover(item)"
           :alt="item.title"
-          class="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
+          class="absolute inset-0 h-full w-full"
+          :loading="coverListConfig.loading"
+          :style="coverImageStyle"
         />
 
         <div
-          v-else
+          v-else-if="showCoverPlaceholder"
           class="article-feed-card-fallback absolute inset-0 flex items-center justify-center"
+          :data-placeholder="coverListConfig.placeholder"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 md:h-16 md:w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -30,8 +33,8 @@
 
         <div class="article-feed-card-overlay absolute inset-0"></div>
 
-        <div class="absolute inset-0 z-10 flex flex-col justify-between p-4 sm:p-5 md:p-6">
-          <div class="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
+        <div class="absolute inset-0 z-10 flex flex-col p-4 sm:p-5 md:p-6">
+          <div class="flex flex-col items-start gap-2.5 sm:flex-row sm:justify-between">
             <span
               v-if="getPrimaryBadge(item)"
               class="article-feed-category inline-block px-2 py-0.5 md:px-3 md:py-1 text-xs font-medium rounded-full transition-colors duration-200"
@@ -56,36 +59,38 @@
             </div>
           </div>
 
-          <div class="mt-4 md:mt-6 mb-auto max-w-3xl">
-            <h2 class="article-feed-title text-base sm:text-lg md:text-xl leading-[1.32] font-semibold transition-colors duration-200">
-              <span class="article-feed-title-link block">{{ item.title }}</span>
-            </h2>
+          <div class="article-feed-content-stack mt-5 md:mt-6 flex flex-1 flex-col gap-4 md:gap-5">
+            <div class="article-feed-copy max-w-3xl">
+              <h2 class="article-feed-title text-base sm:text-lg md:text-[1.45rem] leading-[1.28] font-semibold transition-colors duration-200">
+                <span class="article-feed-title-link block">{{ item.title }}</span>
+              </h2>
 
-            <p
-              v-if="item.description"
-              class="article-feed-excerpt text-xs sm:text-sm leading-relaxed mt-1.5 md:mt-2 mb-2 md:mb-3 max-w-3xl"
-              :class="isSmallScreen ? 'line-clamp-1' : 'line-clamp-2'"
-            >
-              {{ item.description }}
-            </p>
-          </div>
-
-          <div class="article-feed-footer flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div class="flex flex-col">
-              <div v-if="item.meta" class="article-feed-date-row flex items-center text-xs">
-                {{ item.meta }}
-              </div>
-              <div v-else-if="item.footer" class="article-feed-date-row flex items-center text-xs">
-                {{ item.footer }}
-              </div>
+              <p
+                v-if="item.description"
+                class="article-feed-excerpt text-xs sm:text-sm leading-relaxed mt-2 max-w-3xl"
+                :class="isSmallScreen ? 'line-clamp-1' : 'line-clamp-2'"
+              >
+                {{ item.description }}
+              </p>
             </div>
 
-            <span class="article-feed-read-link self-start px-3 py-1 md:px-4 md:py-1.5 text-xs font-medium rounded-full transition-colors duration-300 flex items-center">
-              {{ getActionLabel(item) }}
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-3.5 md:w-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </span>
+            <div class="article-feed-footer mt-auto flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div class="flex flex-col">
+                <div v-if="item.meta" class="article-feed-date-row flex items-center text-xs">
+                  {{ item.meta }}
+                </div>
+                <div v-else-if="item.footer" class="article-feed-date-row flex items-center text-xs">
+                  {{ item.footer }}
+                </div>
+              </div>
+
+              <span class="article-feed-read-link self-start px-3 py-1 md:px-4 md:py-1.5 text-xs font-medium rounded-full transition-colors duration-300 flex items-center">
+                {{ getActionLabel(item) }}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-3.5 md:w-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </div>
           </div>
         </div>
       </template>
@@ -152,6 +157,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useConfigStore } from '../../stores/config'
 import {
   getMenuItemActionLabel,
   getMenuItemCover,
@@ -172,9 +178,35 @@ defineProps({
   }
 })
 
+const configStore = useConfigStore()
 const windowWidth = ref(1024)
 const isSmallScreen = computed(() => windowWidth.value < 640)
 const heroTagLimit = computed(() => (isSmallScreen.value ? 1 : 3))
+const coverResolveOptions = computed(() => ({
+  coverConfig: configStore.coverConfig,
+  style: configStore.coverStyle
+}))
+const coverListConfig = computed(() => {
+  const list = configStore.coverConfig?.list || {}
+
+  return {
+    showCover: list.showCover !== false,
+    loading: list.loading === 'eager' ? 'eager' : 'lazy',
+    aspectRatio: String(list.aspectRatio || '').trim(),
+    objectFit: String(list.objectFit || 'cover').trim() || 'cover',
+    placeholder: ['none', 'gradient', 'icon'].includes(String(list.placeholder || '').trim())
+      ? String(list.placeholder || '').trim()
+      : 'gradient'
+  }
+})
+
+const coverImageStyle = computed(() => ({
+  objectFit: coverListConfig.value.objectFit
+}))
+
+const showCoverPlaceholder = computed(() => (
+  coverListConfig.value.showCover && coverListConfig.value.placeholder !== 'none'
+))
 
 function syncWindowWidth() {
   if (typeof window === 'undefined') {
@@ -189,15 +221,19 @@ function resolveItemTag(item) {
 }
 
 function hasItemCover(item) {
-  return hasMenuItemCover(item)
+  return hasMenuItemCover(item, coverResolveOptions.value)
+}
+
+function showItemCover(item) {
+  return coverListConfig.value.showCover && hasItemCover(item)
 }
 
 function getItemCover(item) {
-  return getMenuItemCover(item)
+  return getMenuItemCover(item, coverResolveOptions.value)
 }
 
 function usesHeroSurface(item) {
-  return isArticleLikeMenuItem(item)
+  return isArticleLikeMenuItem(item, coverResolveOptions.value)
 }
 
 function getPrimaryBadge(item) {
@@ -238,7 +274,7 @@ function getListItemClass(item) {
       'overflow-hidden',
       'transition-all',
       'duration-300',
-      !hasItemCover(item) ? 'article-feed-card-without-cover' : ''
+      !showItemCover(item) ? 'article-feed-card-without-cover' : ''
     ]
   }
 
@@ -250,6 +286,17 @@ function getListItemClass(item) {
     'p-5',
     'transition-shadow'
   ]
+}
+
+function getListItemStyle(item) {
+  if (!usesHeroSurface(item) || !coverListConfig.value.aspectRatio) {
+    return undefined
+  }
+
+  return {
+    aspectRatio: coverListConfig.value.aspectRatio,
+    height: 'auto'
+  }
 }
 
 onMounted(() => {
@@ -273,9 +320,29 @@ onUnmounted(() => {
   overflow-wrap: anywhere;
 }
 
+.article-feed-content-stack {
+  min-height: 0;
+}
+
+.article-feed-copy {
+  max-width: min(40rem, 100%);
+}
+
+.article-feed-title {
+  text-wrap: balance;
+}
+
 @media (max-width: 640px) {
   .menu-page-list-meta-row {
     align-items: flex-start;
+  }
+
+  .article-feed-content-stack {
+    gap: 0.8rem;
+  }
+
+  .article-feed-copy {
+    max-width: 100%;
   }
 
   .menu-page-list-item-title {

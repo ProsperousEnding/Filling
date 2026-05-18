@@ -1,5 +1,15 @@
 <template>
-  <div class="article-detail-view">
+  <div
+    class="article-detail-view"
+    :class="articleViewClass"
+  >
+    <div
+      v-if="isArticleCoverPageBackground"
+      class="article-detail-page-background"
+      :style="articlePageBackgroundStyle"
+      aria-hidden="true"
+    ></div>
+
     <!-- 加载中 -->
     <div v-if="loading" class="py-12 flex justify-center">
       <div class="theme-loading-inline inline-flex items-center">
@@ -24,12 +34,22 @@
     <!-- 文章内容 -->
     <article v-else class="article-detail-shell">
       <!-- 文章头部 -->
-      <header class="article-detail-header mb-8">
+      <header
+        class="article-detail-header mb-8"
+        :class="articleHeaderClass"
+        :style="articleHeaderStyle"
+      >
+        <div v-if="isArticleCoverHeaderBackground" class="article-detail-header-background-overlay"></div>
+        <div :class="isArticleCoverHeaderBackground ? 'article-detail-header-content' : ''">
         <!-- 分类 -->
         <div class="mb-4" v-if="article.category">
-          <router-link :to="getCategoryRoute(article.category)" class="article-detail-category">
+          <component
+            :is="categoryPageEnabled ? 'router-link' : 'span'"
+            :to="categoryPageEnabled ? getCategoryRoute(article.category) : undefined"
+            class="article-detail-category"
+          >
             {{ typeof article.category === 'string' ? article.category : article.category.name }}
-          </router-link>
+          </component>
         </div>
 
         <!-- 标题 -->
@@ -58,15 +78,42 @@
             <span>约 {{ article.readTime }} 分钟阅读</span>
           </div>
         </div>
+        </div>
       </header>
 
       <!-- 封面图 -->
-      <div v-if="article.cover" class="article-detail-cover mb-8">
+      <div
+        v-if="showArticleCoverImage"
+        class="article-detail-cover relative mb-8"
+        :class="articleCoverAspectRatio ? 'overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800/70' : ''"
+        :style="articleCoverShellStyle"
+      >
         <img
-          :src="article.cover"
+          :src="articleCover"
           :alt="article.title"
-          class="w-full h-auto rounded-lg"
+          :loading="articleCoverLoading"
+          class="article-detail-cover-image w-full rounded-lg"
+          :class="articleCoverAspectRatio ? 'h-full rounded-none' : 'h-auto'"
+          :style="articleCoverImageStyle"
         />
+        <span
+          v-if="coverWatermarkText"
+          class="article-detail-cover-watermark"
+          :class="coverWatermarkClass"
+          :style="coverWatermarkStyle"
+        >
+          {{ coverWatermarkText }}
+        </span>
+      </div>
+      <div
+        v-else-if="showArticleCoverPlaceholder"
+        class="article-detail-cover-placeholder mb-8"
+        :data-placeholder="coverDetailConfig.placeholder"
+        :style="articleCoverShellStyle"
+      >
+        <svg v-if="coverDetailConfig.placeholder === 'icon'" xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
       </div>
 
       <section
@@ -87,14 +134,15 @@
       <!-- 文章标签 -->
       <div class="article-detail-tags-wrap mb-8" v-if="article.tags && article.tags.length > 0">
         <div class="article-detail-tags flex flex-wrap">
-          <router-link
+          <component
             v-for="tag in article.tags"
             :key="typeof tag === 'string' ? tag : tag.id"
-            :to="getTagRoute(tag)"
+            :is="tagPageEnabled ? 'router-link' : 'span'"
+            :to="tagPageEnabled ? getTagRoute(tag) : undefined"
             class="tag"
           >
             {{ typeof tag === 'string' ? tag : tag.name }}
-          </router-link>
+          </component>
         </div>
       </div>
 
@@ -128,10 +176,12 @@
           >
             <router-link :to="articleRoute(related)">
               <img
-                v-if="related.cover"
-                :src="related.cover"
+                v-if="showRelatedCover && getRelatedArticleCover(related)"
+                :src="getRelatedArticleCover(related)"
                 :alt="related.title"
+                :loading="relatedCoverLoading"
                 class="article-detail-related-image w-full h-40 object-cover"
+                :style="relatedCoverImageStyle"
               />
               <div class="article-detail-related-body p-4">
                 <h4 class="article-detail-related-title text-lg font-medium mb-2 line-clamp-2">
@@ -157,6 +207,7 @@ import SponsorSection from '../components/core/SponsorSection.vue'
 import { useArticleStore } from '../stores/article'
 import { useConfigStore } from '../stores/config'
 import { resolveOutdatedNotice, shouldShowUpdatedAt } from '../utils/articleMeta'
+import { resolveDisplayArticleCover } from '../utils/articleCover'
 import { getArticleRoute, getCategoryRoute, getHomeRoute, getTagRoute } from '../utils/routeLinks'
 import { usePageMetadata } from '../composables/usePageMetadata'
 
@@ -170,6 +221,8 @@ const articleStore = useArticleStore()
 const configStore = useConfigStore()
 const config = configStore
 const articleRoute = (target) => getArticleRoute(target)
+const categoryPageEnabled = computed(() => Boolean(config.pageRegistry?.categories))
+const tagPageEnabled = computed(() => Boolean(config.pageRegistry?.tags))
 
 // 状态
 const article = ref(null)
@@ -196,8 +249,132 @@ const outdatedNotice = computed(() => (
     outdatedThresholdDays: config.outdatedThresholdDays
   })
 ))
+const coverDetailConfig = computed(() => {
+  const detail = configStore.coverConfig?.detail
+
+  if (!detail || typeof detail !== 'object') {
+    return {
+      showCover: true,
+      showRelatedCover: true,
+      displayMode: 'image',
+      loading: 'eager',
+      aspectRatio: '',
+      objectFit: 'cover',
+      placeholder: 'gradient',
+      watermark: {
+        enabled: false,
+        text: '',
+        position: 'bottom-right',
+        opacity: 0.72
+      }
+    }
+  }
+
+  return {
+    showCover: detail.showCover !== false,
+    showRelatedCover: detail.showRelatedCover !== false,
+    displayMode: ['image', 'header-background', 'page-background'].includes(String(detail.displayMode || '').trim())
+      ? String(detail.displayMode || '').trim()
+      : 'image',
+    loading: detail.loading === 'lazy' ? 'lazy' : 'eager',
+    aspectRatio: String(detail.aspectRatio || '').trim(),
+    objectFit: String(detail.objectFit || 'cover').trim() || 'cover',
+    placeholder: ['none', 'gradient', 'icon'].includes(String(detail.placeholder || '').trim())
+      ? String(detail.placeholder || '').trim()
+      : 'gradient',
+    watermark: normalizeCoverWatermark(detail.watermark)
+  }
+})
+const articleCoverAspectRatio = computed(() => coverDetailConfig.value.aspectRatio)
+const articleCover = computed(() => resolveDisplayArticleCover(article.value, {
+  coverConfig: configStore.coverConfig,
+  style: configStore.coverStyle
+}))
+const showArticleCover = computed(() => (
+  Boolean(articleCover.value)
+  && coverDetailConfig.value.showCover
+))
+const articleCoverDisplayMode = computed(() => {
+  const articleMode = String(article.value?.coverDisplayMode || '').trim()
+
+  return ['image', 'header-background', 'page-background'].includes(articleMode)
+    ? articleMode
+    : coverDetailConfig.value.displayMode
+})
+const isArticleCoverHeaderBackground = computed(() => (
+  showArticleCover.value && articleCoverDisplayMode.value === 'header-background'
+))
+const isArticleCoverPageBackground = computed(() => (
+  showArticleCover.value && articleCoverDisplayMode.value === 'page-background'
+))
+const showArticleCoverImage = computed(() => (
+  showArticleCover.value
+  && !isArticleCoverHeaderBackground.value
+  && !isArticleCoverPageBackground.value
+))
+const showArticleCoverPlaceholder = computed(() => (
+  coverDetailConfig.value.showCover
+  && !articleCover.value
+  && coverDetailConfig.value.placeholder !== 'none'
+))
+const showRelatedCover = computed(() => coverDetailConfig.value.showRelatedCover)
+const articleCoverLoading = computed(() => coverDetailConfig.value.loading)
+const relatedCoverLoading = computed(() => (
+  coverDetailConfig.value.loading === 'eager'
+    ? 'lazy'
+    : coverDetailConfig.value.loading
+))
+const articleCoverShellStyle = computed(() => (
+  articleCoverAspectRatio.value
+    ? { aspectRatio: articleCoverAspectRatio.value }
+    : {}
+))
+const articleCoverImageStyle = computed(() => ({
+  objectFit: coverDetailConfig.value.objectFit
+}))
+const articleHeaderClass = computed(() => ({
+  'article-detail-header-with-background': isArticleCoverHeaderBackground.value
+}))
+const articleHeaderStyle = computed(() => (
+  isArticleCoverHeaderBackground.value
+    ? {
+      backgroundImage: `url("${String(articleCover.value).replace(/"/g, '\\"')}")`
+    }
+    : {}
+))
+const articleViewClass = computed(() => ({
+  'article-detail-view-with-page-background': isArticleCoverPageBackground.value
+}))
+const articlePageBackgroundStyle = computed(() => (
+  isArticleCoverPageBackground.value
+    ? {
+      backgroundImage: `url("${String(articleCover.value).replace(/"/g, '\\"')}")`
+    }
+    : {}
+))
+const relatedCoverImageStyle = computed(() => ({
+  objectFit: coverDetailConfig.value.objectFit
+}))
+const getRelatedArticleCover = (target) => resolveDisplayArticleCover(target, {
+  coverConfig: configStore.coverConfig,
+  style: configStore.coverStyle
+})
+const coverWatermarkText = computed(() => {
+  const watermark = coverDetailConfig.value.watermark || {}
+  const text = String(watermark.text || '').trim()
+
+  return watermark.enabled && text ? text : ''
+})
+const coverWatermarkClass = computed(() => (
+  `article-detail-cover-watermark-${coverDetailConfig.value.watermark?.position || 'bottom-right'}`
+))
+const coverWatermarkStyle = computed(() => ({
+  opacity: coverDetailConfig.value.watermark?.opacity ?? 0.72
+}))
 const articleLicense = computed(() => {
-  const license = article.value?.license
+  const license = article.value?.licenseDisabled
+    ? null
+    : article.value?.license || configStore.defaultLicense
 
   if (!license || typeof license !== 'object') {
     return null
@@ -223,6 +400,12 @@ usePageMetadata({
     if (hasResolved.value && !article.value) return '文章未找到'
     return '文章详情'
   },
+  type: 'article',
+  image: () => articleCover.value || '',
+  keywords: () => [
+    article.value?.category?.name || '',
+    ...((Array.isArray(article.value?.tags) ? article.value.tags : []).map(tag => tag?.name || ''))
+  ],
   description: () => (
     article.value?.description
     || article.value?.summary
@@ -296,4 +479,331 @@ const formatDate = (dateString) => {
     day: 'numeric'
   })
 }
+
+function normalizeCoverWatermark(watermark = {}) {
+  if (!watermark || typeof watermark !== 'object') {
+    return {
+      enabled: false,
+      text: '',
+      position: 'bottom-right',
+      opacity: 0.72
+    }
+  }
+
+  const position = ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(watermark.position)
+    ? watermark.position
+    : 'bottom-right'
+  const opacity = Number.parseFloat(watermark.opacity)
+
+  return {
+    enabled: watermark.enabled === true,
+    text: String(watermark.text || '').trim(),
+    position,
+    opacity: Number.isFinite(opacity) ? Math.min(Math.max(opacity, 0), 1) : 0.72
+  }
+}
 </script>
+
+<style scoped>
+.article-detail-view-with-page-background {
+  position: relative;
+  isolation: isolate;
+  margin: -1rem;
+  padding: clamp(1rem, 2.4vw, 2rem);
+  border-radius: 1.5rem;
+  overflow: visible;
+  --article-page-background-heading-color: #fff;
+  --article-page-background-body-color: rgba(255, 255, 255, 0.92);
+  --article-page-background-link-color: rgba(191, 219, 254, 0.98);
+  --article-page-background-link-hover-color: #fff;
+  --article-page-background-code-color: rgba(219, 234, 254, 0.98);
+  --article-page-background-quote-color: rgba(219, 234, 254, 0.86);
+  --article-page-background-quote-bg: rgba(15, 23, 42, 0.18);
+  --article-page-background-quote-border: rgba(255, 255, 255, 0.38);
+  --article-page-background-text-blend-mode: difference;
+  --article-page-background-text-shadow: none;
+  --article-page-background-heading-shadow: none;
+}
+
+.article-detail-page-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.article-detail-page-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.46) 0%, rgba(15, 23, 42, 0.28) 18rem, rgba(248, 250, 252, 0.04) 34rem, rgba(248, 250, 252, 0.06) 100%),
+    radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.08), transparent 30%);
+}
+
+.article-detail-view-with-page-background .article-detail-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.article-detail-view-with-page-background .article-detail-header {
+  padding-top: clamp(2rem, 8vw, 6rem);
+}
+
+.article-detail-view-with-page-background :deep(.article-detail-category) {
+  border-color: rgba(255, 255, 255, 0.44);
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff !important;
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+}
+
+.article-detail-view-with-page-background .article-detail-title {
+  color: #fff !important;
+  text-shadow: 0 3px 24px rgba(0, 0, 0, 0.5);
+}
+
+.article-detail-view-with-page-background .article-detail-meta,
+.article-detail-view-with-page-background .article-detail-meta-item {
+  color: rgba(255, 255, 255, 0.92) !important;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.42);
+}
+
+.article-detail-view-with-page-background .article-detail-meta-item svg,
+.article-detail-view-with-page-background .article-detail-meta-item span {
+  color: inherit !important;
+}
+
+.article-detail-view-with-page-background .article-detail-content {
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.015);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 24px 90px rgba(15, 23, 42, 0.1);
+  color: var(--article-page-background-body-color, rgba(255, 255, 255, 0.92)) !important;
+  text-shadow: var(--article-page-background-text-shadow, 0 2px 18px rgba(0, 0, 0, 0.34));
+  backdrop-filter: blur(8px) saturate(1.18);
+  -webkit-backdrop-filter: blur(8px) saturate(1.18);
+}
+
+.article-detail-view-with-page-background .article-detail-content :deep(h1),
+.article-detail-view-with-page-background .article-detail-content :deep(h2),
+.article-detail-view-with-page-background .article-detail-content :deep(h3),
+.article-detail-view-with-page-background .article-detail-content :deep(h4),
+.article-detail-view-with-page-background .article-detail-content :deep(h5),
+.article-detail-view-with-page-background .article-detail-content :deep(h6),
+.article-detail-view-with-page-background .article-detail-content :deep(strong) {
+  color: var(--article-page-background-heading-color, #fff) !important;
+  mix-blend-mode: var(--article-page-background-text-blend-mode, normal);
+  text-shadow: var(--article-page-background-heading-shadow, 0 2px 18px rgba(0, 0, 0, 0.42));
+}
+
+.article-detail-view-with-page-background .article-detail-content :deep(p),
+.article-detail-view-with-page-background .article-detail-content :deep(li),
+.article-detail-view-with-page-background .article-detail-content :deep(td),
+.article-detail-view-with-page-background .article-detail-content :deep(th) {
+  color: var(--article-page-background-body-color, rgba(255, 255, 255, 0.9)) !important;
+  mix-blend-mode: var(--article-page-background-text-blend-mode, normal);
+}
+
+.article-detail-view-with-page-background .article-detail-content :deep(a) {
+  color: var(--article-page-background-link-color, rgba(191, 219, 254, 0.98)) !important;
+  text-decoration-color: color-mix(in srgb, var(--article-page-background-link-color, rgba(191, 219, 254, 0.98)) 48%, transparent);
+}
+
+.article-detail-view-with-page-background .article-detail-content :deep(a:hover) {
+  color: var(--article-page-background-link-hover-color, #fff) !important;
+}
+
+.article-detail-view-with-page-background .article-detail-content :deep(blockquote) {
+  color: var(--article-page-background-quote-color, rgba(255, 255, 255, 0.82)) !important;
+  background: var(--article-page-background-quote-bg, rgba(15, 23, 42, 0.18)) !important;
+  border-left-color: var(--article-page-background-quote-border, rgba(255, 255, 255, 0.38)) !important;
+}
+
+.article-detail-view-with-page-background .article-detail-content :deep(code:not(pre code)) {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--article-page-background-code-color, rgba(219, 234, 254, 0.98)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 22px rgba(37, 99, 235, 0.08);
+  backdrop-filter: blur(6px) saturate(1.12);
+  -webkit-backdrop-filter: blur(6px) saturate(1.12);
+}
+
+:global(.dark) .article-detail-page-background::after {
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.48) 0%, rgba(2, 6, 23, 0.3) 18rem, rgba(2, 6, 23, 0.22) 34rem, rgba(2, 6, 23, 0.3) 100%),
+    radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.06), transparent 30%);
+}
+
+:global(.dark) .article-detail-view-with-page-background .article-detail-content {
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.16), rgba(15, 23, 42, 0.04)),
+    rgba(15, 23, 42, 0.02);
+  border-color: rgba(226, 232, 240, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 90px rgba(0, 0, 0, 0.22);
+}
+
+:global(.dark) .article-detail-view-with-page-background .article-detail-content :deep(code:not(pre code)) {
+  border-color: rgba(147, 197, 253, 0.16);
+  background: rgba(15, 23, 42, 0.1) !important;
+}
+
+.article-detail-header-with-background {
+  position: relative;
+  min-height: clamp(18rem, 42vw, 30rem);
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: flex-end;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  color: #fff;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+}
+
+.article-detail-header-background-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.24) 0%, rgba(15, 23, 42, 0.58) 46%, rgba(15, 23, 42, 0.9) 100%),
+    radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.16), transparent 34%);
+  pointer-events: none;
+}
+
+.article-detail-header-content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 48rem);
+}
+
+.article-detail-header-with-background :deep(.article-detail-category) {
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff !important;
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+}
+
+.article-detail-header-with-background .article-detail-title {
+  color: #fff !important;
+  text-shadow: 0 3px 22px rgba(0, 0, 0, 0.46);
+}
+
+.article-detail-header-with-background .article-detail-meta {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.article-detail-header-with-background .article-detail-meta-item {
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.36);
+}
+
+.article-detail-header-with-background .article-detail-meta-item svg,
+.article-detail-header-with-background .article-detail-meta-item span {
+  color: inherit !important;
+}
+
+@media (max-width: 640px) {
+  .article-detail-view-with-page-background {
+    margin: -0.75rem;
+    padding: 0.75rem;
+    border-radius: 1.25rem;
+  }
+
+  .article-detail-view-with-page-background .article-detail-header {
+    padding-top: 4rem;
+  }
+
+  .article-detail-view-with-page-background .article-detail-content {
+    padding: 1rem;
+    border-radius: 1rem;
+  }
+
+  .article-detail-header-with-background {
+    min-height: 16rem;
+    border-radius: 1rem;
+    padding: 1.25rem;
+  }
+}
+
+.article-detail-cover-placeholder {
+  display: flex;
+  min-height: 16rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  color: rgb(37 99 235);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(191, 219, 254, 0.82), transparent 34%),
+    linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(248, 250, 252, 0.96));
+}
+
+.article-detail-cover-placeholder[data-placeholder='icon'] {
+  color: rgb(148 163 184);
+  background: rgba(248, 250, 252, 0.96);
+}
+
+:global(.dark) .article-detail-cover-placeholder {
+  color: rgb(147 197 253);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(30, 64, 175, 0.42), transparent 34%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.86));
+}
+
+:global(.dark) .article-detail-cover-placeholder[data-placeholder='icon'] {
+  color: rgb(100 116 139);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.article-detail-cover-watermark {
+  position: absolute;
+  z-index: 2;
+  max-width: min(75%, 24rem);
+  padding: 0.42rem 0.72rem;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.58);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.article-detail-cover-watermark-top-left {
+  top: 1rem;
+  left: 1rem;
+}
+
+.article-detail-cover-watermark-top-right {
+  top: 1rem;
+  right: 1rem;
+}
+
+.article-detail-cover-watermark-bottom-left {
+  bottom: 1rem;
+  left: 1rem;
+}
+
+.article-detail-cover-watermark-bottom-right {
+  right: 1rem;
+  bottom: 1rem;
+}
+</style>

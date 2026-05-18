@@ -5,7 +5,7 @@ import {
   normalizeBlogRoutePatterns
 } from './routeManifest.js'
 import { resolveMenuPageComponentKey } from '../utils/pageComponentConfig.js'
-import { getCustomMenuPages } from '../utils/menuConfig.js'
+import { getCustomMenuPages, resolveMenuPageRegistry } from '../utils/menuConfig.js'
 
 const Home = () => import('../views/Home.vue')
 const ArticlesView = () => import('../views/ArticlesView.vue')
@@ -20,107 +20,140 @@ const MenuPageView = () => import('../views/MenuPageView.vue')
 const MenuPageItemView = () => import('../views/MenuPageItemView.vue')
 
 export function createBlogRoutes(routePatterns = getBlogPathPatterns(), menuConfig = {}) {
+  const pageRegistry = resolveMenuPageRegistry(menuConfig, routePatterns)
   const customMenuPages = getCustomMenuPages(menuConfig, routePatterns)
+  const homePage = pageRegistry.home
+  const articlesPage = pageRegistry.articles
+  const categoriesPage = pageRegistry.categories
+  const tagsPage = pageRegistry.tags
+  const archivePage = pageRegistry.archive
+  const searchPage = pageRegistry.search
+  const routes = []
 
-  return [
-    {
+  if (homePage) {
+    routes.push({
       path: routePatterns.home,
       name: BLOG_ROUTE_NAMES.home,
       component: Home,
       meta: {
-        title: '首页'
+        title: homePage.title || '首页'
       }
-    },
-    {
+    })
+  }
+
+  if (articlesPage) {
+    routes.push({
       path: routePatterns.articles,
       name: BLOG_ROUTE_NAMES.articles,
       component: ArticlesView,
       meta: {
-        title: '文章列表'
+        title: articlesPage.title || '文章列表'
       }
-    },
-    {
+    })
+    routes.push({
       path: routePatterns.articlesPage,
       name: BLOG_ROUTE_NAMES.articlesPage,
       component: ArticlesView,
       meta: {
-        title: '文章列表'
+        title: articlesPage.title || '文章列表'
       }
-    },
-    {
+    })
+  }
+
+  routes.push({
       path: routePatterns.articleDetail,
       name: BLOG_ROUTE_NAMES.articleDetail,
       component: ArticleDetail,
       meta: {
         title: '文章详情'
       }
-    },
-    {
+    })
+
+  if (categoriesPage) {
+    routes.push({
       path: routePatterns.categories,
       name: BLOG_ROUTE_NAMES.categories,
-      component: CategoriesView
-    },
-    {
+      component: CategoriesView,
+      meta: {
+        title: categoriesPage.title || '分类'
+      }
+    })
+    routes.push({
       path: routePatterns.categoryPage,
       name: BLOG_ROUTE_NAMES.categoryPage,
       component: CategoryView,
       meta: {
-        title: '分类'
+        title: categoriesPage.title || '分类'
       }
-    },
-    {
+    })
+    routes.push({
       path: routePatterns.categoryDetail,
       name: BLOG_ROUTE_NAMES.categoryDetail,
       component: CategoryView,
       meta: {
-        title: '分类'
+        title: categoriesPage.title || '分类'
       }
-    },
-    {
+    })
+  }
+
+  if (tagsPage) {
+    routes.push({
       path: routePatterns.tags,
       name: BLOG_ROUTE_NAMES.tags,
-      component: TagsView
-    },
-    {
+      component: TagsView,
+      meta: {
+        title: tagsPage.title || '标签'
+      }
+    })
+    routes.push({
       path: routePatterns.tagPage,
       name: BLOG_ROUTE_NAMES.tagPage,
       component: TagView,
       meta: {
-        title: '标签'
+        title: tagsPage.title || '标签'
       }
-    },
-    {
+    })
+    routes.push({
       path: routePatterns.tagDetail,
       name: BLOG_ROUTE_NAMES.tagDetail,
       component: TagView,
       meta: {
-        title: '标签'
+        title: tagsPage.title || '标签'
       }
-    },
-    {
+    })
+  }
+
+  if (archivePage) {
+    routes.push({
       path: routePatterns.archive,
       name: BLOG_ROUTE_NAMES.archive,
       component: ArchiveView,
       meta: {
-        title: '归档'
+        title: archivePage.title || '归档'
       }
-    },
-    {
+    })
+    routes.push({
       path: routePatterns.archiveYear,
       name: BLOG_ROUTE_NAMES.archiveYear,
       component: ArchiveView,
       meta: {
-        title: '归档'
+        title: archivePage.title || '归档'
       }
-    },
-    {
+    })
+  }
+
+  if (searchPage) {
+    routes.push({
       path: routePatterns.search,
       name: BLOG_ROUTE_NAMES.search,
       component: SearchView,
       meta: {
-        title: '搜索'
+        title: searchPage.title || '搜索'
       }
-    },
+    })
+  }
+
+  routes.push(
     ...customMenuPages.map(page => ({
       path: page.path,
       name: `MenuPage:${page.key}`,
@@ -138,6 +171,8 @@ export function createBlogRoutes(routePatterns = getBlogPathPatterns(), menuConf
           !page.builtIn
           && componentKey !== 'context'
           && componentKey !== 'friends'
+          && componentKey !== 'guestbook'
+          && componentKey !== 'sponsor'
           && String(page.folder || '').trim()
         )
       })
@@ -150,7 +185,9 @@ export function createBlogRoutes(routePatterns = getBlogPathPatterns(), menuConf
           menuPageKey: page.key
         }
     }))
-  ]
+  )
+
+  return routes
 }
 
 export const blogRoutes = createBlogRoutes()

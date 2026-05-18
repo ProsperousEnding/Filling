@@ -103,7 +103,8 @@ watch([page, itemId], async ([nextPage, nextItemId], [previousPage, previousItem
 
 usePageMetadata({
   title: () => item.value?.title || page.value?.title || '页面',
-  description: () => item.value?.detailDescription || item.value?.description || page.value?.description || ''
+  description: () => item.value?.detailDescription || item.value?.description || page.value?.description || '',
+  image: () => item.value?.cover || item.value?.image || ''
 })
 </script>
 

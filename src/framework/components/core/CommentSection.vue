@@ -35,6 +35,10 @@ const props = defineProps({
   article: {
     type: Object,
     default: () => null
+  },
+  options: {
+    type: Object,
+    default: () => ({})
   }
 })
 
@@ -42,7 +46,132 @@ const route = useRoute()
 const configStore = useConfigStore()
 const containerRef = ref(null)
 
-const commentConfig = computed(() => (
+function isPlainObject(value) {
+  return Object.prototype.toString.call(value) === '[object Object]'
+}
+
+function transformKeysDeep(value, transformKey) {
+  if (Array.isArray(value)) {
+    return value.map(item => transformKeysDeep(item, transformKey))
+  }
+
+  if (!isPlainObject(value)) {
+    return value
+  }
+
+  return Object.entries(value).reduce((result, [key, nestedValue]) => {
+    result[transformKey(key)] = transformKeysDeep(nestedValue, transformKey)
+    return result
+  }, {})
+}
+
+function toCamelKey(key) {
+  return String(key || '').replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+}
+
+function toCamelCase(value) {
+  return transformKeysDeep(value, toCamelKey)
+}
+
+function normalizeString(value, fallback = '') {
+  const normalized = String(value || '').trim()
+  return normalized || fallback
+}
+
+function normalizeBoolean(value, fallback = false) {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+function normalizeProvider(value, fallback = 'giscus') {
+  const normalized = normalizeString(value, fallback).toLowerCase()
+  return normalized === 'utterances' || normalized === 'giscus'
+    ? normalized
+    : fallback
+}
+
+function normalizeGiscusRuntimeConfig(baseConfig = {}, overrideConfig = {}) {
+  const overrides = isPlainObject(overrideConfig) ? toCamelCase(overrideConfig) : {}
+  const merged = {
+    ...baseConfig,
+    ...overrides
+  }
+
+  return {
+    ...merged,
+    repo: normalizeString(merged.repo),
+    repoId: normalizeString(merged.repoId),
+    category: normalizeString(merged.category),
+    categoryId: normalizeString(merged.categoryId),
+    mapping: normalizeString(merged.mapping, 'pathname'),
+    term: normalizeString(merged.term),
+    strict: normalizeBoolean(merged.strict, false),
+    reactionsEnabled: normalizeBoolean(merged.reactionsEnabled, true),
+    emitMetadata: normalizeBoolean(merged.emitMetadata, false),
+    inputPosition: normalizeString(merged.inputPosition, 'top'),
+    lang: normalizeString(merged.lang, 'zh-CN'),
+    loading: normalizeString(merged.loading, 'lazy'),
+    theme: normalizeString(merged.theme, 'light'),
+    darkTheme: normalizeString(merged.darkTheme, 'dark_dimmed')
+  }
+}
+
+function normalizeUtterancesRuntimeConfig(baseConfig = {}, overrideConfig = {}) {
+  const overrides = isPlainObject(overrideConfig) ? toCamelCase(overrideConfig) : {}
+  const merged = {
+    ...baseConfig,
+    ...overrides
+  }
+
+  return {
+    ...merged,
+    repo: normalizeString(merged.repo),
+    issueTerm: normalizeString(merged.issueTerm, 'pathname'),
+    issueNumber: normalizeString(merged.issueNumber),
+    label: normalizeString(merged.label),
+    theme: normalizeString(merged.theme, 'github-light'),
+    darkTheme: normalizeString(merged.darkTheme, 'github-dark'),
+    crossorigin: normalizeString(merged.crossorigin, 'anonymous')
+  }
+}
+
+function isCommentProviderReady(provider, giscus, utterances) {
+  if (provider === 'utterances') {
+    return Boolean(utterances.repo && (utterances.issueNumber || utterances.issueTerm))
+  }
+
+  return Boolean(
+    giscus.repo
+    && giscus.repoId
+    && giscus.category
+    && giscus.categoryId
+    && (giscus.mapping !== 'specific' || giscus.term)
+  )
+}
+
+function resolveCommentConfig(baseConfig = {}, rawOptions = {}) {
+  const options = isPlainObject(rawOptions) ? toCamelCase(rawOptions) : {}
+  const provider = normalizeProvider(options.provider, baseConfig.provider || 'giscus')
+  const giscus = normalizeGiscusRuntimeConfig(baseConfig.giscus, options.giscus)
+  const utterances = normalizeUtterancesRuntimeConfig(baseConfig.utterances, options.utterances)
+  const enabled = typeof options.enabled === 'boolean'
+    ? options.enabled
+    : baseConfig.enabled === true
+  const ready = enabled && isCommentProviderReady(provider, giscus, utterances)
+
+  return {
+    ...baseConfig,
+    enabled,
+    provider,
+    title: normalizeString(options.title, baseConfig.title || '评论'),
+    description: normalizeString(options.description, baseConfig.description || ''),
+    notReadyText: normalizeString(options.notReadyText, baseConfig.notReadyText || '评论系统尚未完成配置。'),
+    ready,
+    giscus,
+    utterances
+  }
+}
+
+const baseCommentConfig = computed(() => (
   configStore.commentConfig || {
     enabled: false,
     ready: false,
@@ -53,6 +182,13 @@ const commentConfig = computed(() => (
     utterances: {}
   }
 ))
+const commentConfig = computed(() => {
+  const overrides = props.options && isPlainObject(props.options)
+    ? props.options
+    : {}
+
+  return resolveCommentConfig(baseCommentConfig.value, overrides)
+})
 
 const giscusConfig = computed(() => (
   commentConfig.value?.giscus || {}

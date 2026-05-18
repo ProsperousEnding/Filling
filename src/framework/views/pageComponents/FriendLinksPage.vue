@@ -14,7 +14,11 @@
       <p class="theme-empty-text">{{ page.emptyText || '还没有配置友情链接。' }}</p>
     </div>
 
-    <div v-else class="friend-links-grid">
+    <div
+      v-else
+      class="friend-links-grid"
+      :style="friendLinksGridStyle"
+    >
       <a
         v-for="link in friendLinks"
         :key="link.id"
@@ -148,6 +152,29 @@
         </p>
       </div>
     </section>
+
+    <section
+      v-if="hasFooterContent"
+      class="friend-links-footer theme-list-card rounded-2xl p-5 sm:p-6"
+    >
+      <h2 v-if="pageConfig.footerTitle" class="friend-links-footer-title">
+        {{ pageConfig.footerTitle }}
+      </h2>
+      <div v-if="footerContentBlocks.length > 0" class="friend-links-footer-copy">
+        <p
+          v-for="block in footerContentBlocks"
+          :key="block"
+          class="friend-links-footer-paragraph"
+        >
+          {{ block }}
+        </p>
+      </div>
+      <div
+        v-if="pageConfig.footerHtml"
+        class="friend-links-footer-html"
+        v-html="pageConfig.footerHtml"
+      />
+    </section>
   </div>
 </template>
 
@@ -167,6 +194,32 @@ const props = defineProps({
 })
 
 const configStore = useConfigStore()
+
+const pageConfig = computed(() => ({
+  columns: normalizeColumnCount(configStore.friendLinksPageConfig?.columns, 2, 1, 4),
+  wideColumns: normalizeColumnCount(configStore.friendLinksPageConfig?.wideColumns, 3, 1, 5),
+  footerTitle: String(configStore.friendLinksPageConfig?.footerTitle || '').trim(),
+  footerContent: String(configStore.friendLinksPageConfig?.footerContent || '').trim(),
+  footerHtml: String(configStore.friendLinksPageConfig?.footerHtml || '').trim()
+}))
+
+const friendLinksGridStyle = computed(() => ({
+  '--friend-links-columns': String(pageConfig.value.columns),
+  '--friend-links-wide-columns': String(pageConfig.value.wideColumns)
+}))
+
+const footerContentBlocks = computed(() => (
+  pageConfig.value.footerContent
+    .split(/\n{2,}/)
+    .map(block => block.trim())
+    .filter(Boolean)
+))
+
+const hasFooterContent = computed(() => Boolean(
+  pageConfig.value.footerTitle
+  || footerContentBlocks.value.length > 0
+  || pageConfig.value.footerHtml
+))
 
 const application = computed(() => {
   const normalizedApplication = props.page?.application || {}
@@ -250,6 +303,16 @@ function getAvatarFallback(name) {
 function isExternalHref(value) {
   return /^(https?:)?\/\//i.test(String(value || '').trim())
 }
+
+function normalizeColumnCount(value, fallback, min, max) {
+  const parsed = Number.parseInt(value, 10)
+
+  if (!Number.isFinite(parsed)) {
+    return fallback
+  }
+
+  return Math.min(Math.max(parsed, min), max)
+}
 </script>
 
 <style scoped>
@@ -272,6 +335,8 @@ function isExternalHref(value) {
 }
 
 .friend-links-grid {
+  --friend-links-columns: 2;
+  --friend-links-wide-columns: 3;
   display: grid;
   gap: 1.2rem;
   grid-template-columns: 1fr;
@@ -513,13 +578,55 @@ function isExternalHref(value) {
   line-height: 1.75;
 }
 
+.friend-links-footer {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.friend-links-footer-title {
+  margin: 0;
+  color: rgb(15 23 42);
+  font-size: 1.15rem;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+.friend-links-footer-copy {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.friend-links-footer-paragraph,
+.friend-links-footer-html {
+  margin: 0;
+  color: rgb(71 85 105);
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+
+.friend-links-footer-html :deep(a) {
+  color: rgb(37 99 235);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.friend-links-footer-html :deep(a:hover) {
+  text-decoration: underline;
+}
+
 @media (min-width: 640px) {
   .friend-links-grid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(var(--friend-links-columns), minmax(0, 1fr));
   }
 
   .friend-links-application-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .friend-links-grid {
+    grid-template-columns: repeat(var(--friend-links-wide-columns), minmax(0, 1fr));
   }
 }
 

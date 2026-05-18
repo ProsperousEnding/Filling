@@ -1,0 +1,50 @@
+# 留言板配置
+
+# 是否启用留言板页面附加说明区
+enabled = true
+
+# 区块标题
+kicker = "留言板"
+title = "欢迎留下你的来访足迹"
+description = "如果你路过这里，可以简单介绍自己，或者留下一句想说的话。"
+
+# 可选留言说明
+guidelines = [
+  "欢迎简单介绍自己，或者告诉我你从哪里来到这里。",
+  "如果你有站点或社交主页，也可以顺手留下链接。",
+  "尽量保持内容友好、简洁，不要发布广告或无关外链。"
+]
+
+# 可选留言模板
+template = """
+昵称：
+站点 / 社交主页：
+想说的话：
+"""
+
+# 可选联系入口
+contact_label = "通过 GitHub 联系我"
+contact_url = "https://github.com/ProsperousEnding/Filling"
+
+# 留言区标题与说明，默认复用全站评论系统
+# comment_title = "开始留言"
+# comment_description = "评论区会按当前页面路径独立保存留言内容。"
+# comment_not_ready_text = "请先完成评论系统配置，再启用留言板。"
+
+# 留言板独立评论配置；不填时继承 comment.toml
+# [comment]
+# enabled = true
+# title = "开始留言"
+# description = "这里的评论会单独归到留言板。"
+# not_ready_text = "请先完成留言板评论配置。"
+# provider = "giscus"
+#
+# [comment.giscus]
+# mapping = "specific"
+# term = "guestbook"
+# category = "Announcements"
+# category_id = "DIC_xxx"
+#
+# [comment.utterances]
+# issue_term = "pathname"
+# label = "guestbook"

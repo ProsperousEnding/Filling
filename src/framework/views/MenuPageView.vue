@@ -66,6 +66,7 @@ const sourceLoading = ref(false)
 const loadedPageSource = ref({
   title: '',
   description: '',
+  cover: '',
   content: '',
   contentHtml: '',
   items: []
@@ -81,6 +82,7 @@ watch([page, resolvedComponentKey], async ([nextPage, nextComponentKey]) => {
   loadedPageSource.value = {
     title: '',
     description: '',
+    cover: '',
     content: '',
     contentHtml: '',
     items: []
@@ -102,6 +104,7 @@ watch([page, resolvedComponentKey], async ([nextPage, nextComponentKey]) => {
     loadedPageSource.value = {
       title: resolvedSource?.title || '',
       description: resolvedSource?.description || '',
+      cover: resolvedSource?.cover || '',
       content: resolvedSource?.content || '',
       contentHtml: resolvedSource?.contentHtml || '',
       items: Array.isArray(resolvedSource?.items) ? resolvedSource.items : []
@@ -127,6 +130,7 @@ const resolvedPage = computed(() => {
   if (menuPageUsesFileSource(page.value, resolvedComponentKey.value)) {
     nextPage.content = loadedPageSource.value.content
     nextPage.contentHtml = loadedPageSource.value.contentHtml
+    nextPage.cover = nextPage.cover || loadedPageSource.value.cover
     nextPage.description = nextPage.description || loadedPageSource.value.description
   }
 
@@ -147,6 +151,7 @@ const contentBlocks = computed(() => (
 
 usePageMetadata({
   title: () => resolvedPage.value?.title || '页面',
-  description: () => resolvedPage.value?.description || contentBlocks.value[0] || ''
+  description: () => resolvedPage.value?.description || contentBlocks.value[0] || '',
+  image: () => resolvedPage.value?.cover || resolvedPage.value?.image || ''
 })
 </script>

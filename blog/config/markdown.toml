@@ -1,0 +1,92 @@
+# Markdown 增强配置
+
+# 是否启用 Markdown 增强能力
+enabled = true
+
+[callouts]
+# 是否启用提示块
+enabled = true
+
+# 当前支持 GitHub 风格：
+# > [!NOTE]
+# > 提示内容
+syntax = "github"
+
+# 未识别类型时使用的默认类型
+default_type = "note"
+
+# 是否显示类型标记
+show_icon = true
+
+[callouts.labels]
+note = "注意"
+tip = "提示"
+important = "重要"
+warning = "警告"
+caution = "危险"
+info = "信息"
+success = "成功"
+danger = "错误"
+
+[callouts.icons]
+note = "i"
+tip = ">"
+important = "!"
+warning = "!"
+caution = "x"
+info = "i"
+success = "+"
+danger = "x"
+
+[callouts.aliases]
+warn = "warning"
+error = "danger"
+failure = "danger"
+question = "info"
+check = "success"
+
+[mermaid]
+# 是否启用 Mermaid 图表
+enabled = false
+
+# 是否在浏览器端渲染为 SVG；关闭后只显示源码
+render = true
+
+# Mermaid 浏览器脚本地址，也可以换成本地 public/ 下的脚本路径
+script_url = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
+
+# 亮色主题
+theme = "default"
+
+# 暗色主题
+dark_theme = "dark"
+
+# Mermaid 安全级别
+security_level = "strict"
+
+[math]
+# 是否启用公式语法
+enabled = false
+
+# 是否在浏览器端用 KaTeX 渲染公式；关闭后只显示 TeX 源码
+render = true
+
+# 当前支持 katex
+engine = "katex"
+
+# KaTeX 浏览器脚本与样式地址，也可以换成本地 public/ 下的文件路径
+script_url = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+css_url = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+
+# 行内公式语法：$x$ 和 \(x\)
+inline_dollar = true
+inline_parentheses = true
+
+# 块级公式语法：$$...$$ 和 \[...\]
+block_dollar = true
+block_brackets = true
+
+# KaTeX 错误处理
+throw_on_error = false
+error_color = "#dc2626"
+strict = "warn"

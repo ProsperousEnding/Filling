@@ -1,9 +1,11 @@
 import FriendLinksPage from './pageComponents/FriendLinksPage.vue'
+import GuestbookPage from './pageComponents/GuestbookPage.vue'
 import MenuPageCardPage from './pageComponents/MenuPageCardPage.vue'
 import MenuPageContextPage from './pageComponents/MenuPageContextPage.vue'
 import MenuPageGridPage from './pageComponents/MenuPageGridPage.vue'
 import MenuPageListPage from './pageComponents/MenuPageListPage.vue'
 import MenuPageTimelinePage from './pageComponents/MenuPageTimelinePage.vue'
+import SponsorPage from './pageComponents/SponsorPage.vue'
 import {
   resolveBuiltInPageComponentKey,
   resolveMenuPageComponentKey
@@ -17,7 +19,9 @@ const MENU_PAGE_COMPONENTS = Object.freeze({
   card: MenuPageCardPage,
   grid: MenuPageGridPage,
   timeline: MenuPageTimelinePage,
-  friends: FriendLinksPage
+  friends: FriendLinksPage,
+  guestbook: GuestbookPage,
+  sponsor: SponsorPage
 })
 
 export function resolveBuiltInPageComponent(pageKey, requestedComponent) {

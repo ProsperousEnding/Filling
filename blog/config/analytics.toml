@@ -1,0 +1,49 @@
+# 统计分析配置
+# 当前支持:
+# - Umami
+# - Plausible
+# - Google Analytics 4
+# - Microsoft Clarity
+
+# 总开关
+enabled = false
+
+# 只有 enabled = true 且 provider 必填字段完整时，下面的参数才会加载脚本。
+# 示例:
+# respect_dnt = true
+# track_localhost = false
+#
+# [umami]
+# enabled = true
+# script_url = "https://cloud.umami.is/script.js"
+# website_id = "your-website-id"
+# host_url = "https://umami.example.com"
+# domains = ["blog.example.com"]
+# auto_track = true
+# do_not_track = true
+# exclude_search = false
+# exclude_hash = false
+# performance = false
+# tag = ""
+#
+# [plausible]
+# enabled = true
+# script_url = "https://plausible.io/js/script.js"
+# domain = "blog.example.com"
+# endpoint = "https://plausible.example.com/api/event"
+# auto_capture_pageviews = true
+# capture_on_localhost = false
+# hash_based_routing = false
+# outbound_links = false
+# file_downloads = false
+# tagged_events = false
+#
+# [google_analytics]
+# enabled = true
+# measurement_id = "G-XXXXXXXXXX"
+# manual_pageviews = true
+# debug_mode = false
+#
+# [clarity]
+# enabled = true
+# project_id = "your-project-id"

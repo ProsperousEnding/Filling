@@ -1,80 +1,117 @@
-const SIDEBAR_SECTION_KEYS = ['profile', 'search', 'menu']
-const SIDEBAR_SECTION_KEY_SET = new Set(SIDEBAR_SECTION_KEYS)
+const SIDEBAR_MENU_COMPONENTS = Object.freeze([
+  'categories',
+  'tags',
+  'latest-articles',
+  'friend-links',
+  'custom'
+])
+
+const SIDEBAR_COMPONENT_KEYS = Object.freeze([
+  'profile',
+  'announcement',
+  'search',
+  ...SIDEBAR_MENU_COMPONENTS
+])
+
+const SIDEBAR_COMPONENT_KEY_SET = new Set(SIDEBAR_COMPONENT_KEYS)
 
 export const DEFAULT_SIDEBAR_LAYOUT = Object.freeze({
-  desktopSections: Object.freeze([...SIDEBAR_SECTION_KEYS]),
-  articleDesktopSections: Object.freeze([...SIDEBAR_SECTION_KEYS]),
-  mobileSections: Object.freeze([...SIDEBAR_SECTION_KEYS]),
-  articleMobileSections: Object.freeze([...SIDEBAR_SECTION_KEYS])
+  desktopComponents: Object.freeze(['profile', 'announcement', 'search', 'categories', 'tags', 'latest-articles']),
+  articleDesktopComponents: Object.freeze(['profile', 'announcement', 'search', 'categories', 'tags', 'latest-articles']),
+  mobileComponents: Object.freeze(['profile', 'search', 'categories', 'tags', 'latest-articles']),
+  articleMobileComponents: Object.freeze(['profile', 'announcement', 'search', 'categories', 'tags', 'latest-articles'])
 })
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]'
 }
 
-function normalizeSidebarSectionKey(value) {
+function pushUniqueComponent(target, componentKey) {
+  if (!componentKey || target.includes(componentKey)) {
+    return
+  }
+
+  target.push(componentKey)
+}
+
+function normalizeSidebarComponentKey(value) {
   const normalizedValue = String(value || '').trim().toLowerCase()
 
-  return SIDEBAR_SECTION_KEY_SET.has(normalizedValue)
+  if (!normalizedValue || normalizedValue.includes('_')) {
+    return ''
+  }
+
+  return SIDEBAR_COMPONENT_KEY_SET.has(normalizedValue)
     ? normalizedValue
     : ''
 }
 
-function normalizeSidebarSectionList(value, fallbackSections) {
+function normalizeSidebarComponentList(value, fallbackComponents) {
   if (!Array.isArray(value)) {
-    return [...fallbackSections]
+    return [...fallbackComponents]
   }
 
-  const normalizedSections = []
+  const normalizedComponents = []
 
-  value.forEach((section) => {
-    const normalizedSection = normalizeSidebarSectionKey(section)
-
-    if (!normalizedSection || normalizedSections.includes(normalizedSection)) {
-      return
-    }
-
-    normalizedSections.push(normalizedSection)
+  value.forEach((component) => {
+    pushUniqueComponent(normalizedComponents, normalizeSidebarComponentKey(component))
   })
 
-  return normalizedSections
+  return normalizedComponents
+}
+
+function resolveSidebarComponentList(sidebar, componentKeys, fallbackComponents) {
+  const explicitComponentValue = componentKeys
+    .map((key) => sidebar[key])
+    .find((value) => value !== undefined)
+
+  if (explicitComponentValue !== undefined) {
+    return normalizeSidebarComponentList(explicitComponentValue, fallbackComponents)
+  }
+
+  return [...fallbackComponents]
 }
 
 export function normalizeSidebarLayout(sidebar = {}) {
   const normalizedSidebar = isPlainObject(sidebar) ? sidebar : {}
-  const desktopSections = normalizeSidebarSectionList(
-    normalizedSidebar.desktop_sections ?? normalizedSidebar.desktopSections,
-    DEFAULT_SIDEBAR_LAYOUT.desktopSections
+
+  const desktopComponents = resolveSidebarComponentList(
+    normalizedSidebar,
+    ['desktop_components', 'desktopComponents'],
+    DEFAULT_SIDEBAR_LAYOUT.desktopComponents
   )
-  const mobileSections = normalizeSidebarSectionList(
-    normalizedSidebar.mobile_sections ?? normalizedSidebar.mobileSections,
-    DEFAULT_SIDEBAR_LAYOUT.mobileSections
+  const mobileComponents = resolveSidebarComponentList(
+    normalizedSidebar,
+    ['mobile_components', 'mobileComponents'],
+    DEFAULT_SIDEBAR_LAYOUT.mobileComponents
   )
 
   return {
-    desktopSections,
-    articleDesktopSections: normalizeSidebarSectionList(
-      normalizedSidebar.article_desktop_sections ?? normalizedSidebar.articleDesktopSections,
-      desktopSections
+    desktopComponents,
+    articleDesktopComponents: resolveSidebarComponentList(
+      normalizedSidebar,
+      ['article_desktop_components', 'articleDesktopComponents'],
+      desktopComponents
     ),
-    mobileSections,
-    articleMobileSections: normalizeSidebarSectionList(
-      normalizedSidebar.article_mobile_sections ?? normalizedSidebar.articleMobileSections,
-      mobileSections
+    mobileComponents,
+    articleMobileComponents: resolveSidebarComponentList(
+      normalizedSidebar,
+      ['article_mobile_components', 'articleMobileComponents'],
+      mobileComponents
     )
   }
 }
 
-export function resolveSidebarSections(sidebarLayout = {}, { mobile = false, article = false } = {}) {
+export function resolveSidebarComponents(sidebarLayout = {}, { mobile = false, article = false } = {}) {
   const normalizedLayout = normalizeSidebarLayout(sidebarLayout)
 
   if (mobile) {
     return article
-      ? [...normalizedLayout.articleMobileSections]
-      : [...normalizedLayout.mobileSections]
+      ? [...normalizedLayout.articleMobileComponents]
+      : [...normalizedLayout.mobileComponents]
   }
 
   return article
-    ? [...normalizedLayout.articleDesktopSections]
-    : [...normalizedLayout.desktopSections]
+    ? [...normalizedLayout.articleDesktopComponents]
+    : [...normalizedLayout.desktopComponents]
 }

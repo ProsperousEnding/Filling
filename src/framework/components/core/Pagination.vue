@@ -1,55 +1,91 @@
 <template>
-  <div v-if="totalPages > 1" class="pagination-wrap flex justify-center mt-10">
-    <div class="pagination-shell inline-flex items-center space-x-1 backdrop-blur-sm px-4 py-2 rounded-full">
-      <!-- 上一页 -->
-      <button 
-        @click="onPageChange(currentPage - 1)" 
-        :disabled="currentPage === 1"
-        class="pagination-button flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200"
+  <nav v-if="totalPages > 1" class="pagination-wrap mt-10" aria-label="分页导航">
+    <div class="pagination-meta">
+      <span class="pagination-summary">
+        第 {{ currentPage }} / {{ totalPages }} 页
+        <template v-if="normalizedTotalItems > 0">
+          · 共 {{ normalizedTotalItems }} 项
+        </template>
+      </span>
+    </div>
+
+    <div class="pagination-shell inline-flex items-center justify-center gap-1.5 backdrop-blur-sm px-3 py-2 rounded-[1.5rem]">
+      <button
+        type="button"
+        class="pagination-button pagination-button-edge hidden sm:inline-flex items-center justify-center rounded-full transition-all duration-200"
         :class="{ 'pagination-button-disabled': currentPage === 1 }"
+        :disabled="currentPage === 1"
+        aria-label="跳转到第一页"
+        @click="onPageChange(1)"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        首页
+      </button>
+
+      <button
+        type="button"
+        class="pagination-button pagination-button-icon inline-flex items-center justify-center rounded-full transition-all duration-200"
+        :class="{ 'pagination-button-disabled': currentPage === 1 }"
+        :disabled="currentPage === 1"
+        aria-label="上一页"
+        @click="onPageChange(currentPage - 1)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
-      
-      <!-- 页码 -->
-      <template v-for="page in displayedPages" :key="page">
-        <span 
-          v-if="page === '...'" 
-          class="pagination-ellipsis px-2"
+
+      <template v-for="(page, index) in displayedPages" :key="`pagination-${page}-${index}`">
+        <span
+          v-if="page === '...'"
+          class="pagination-ellipsis inline-flex items-center justify-center px-1.5 text-sm"
+          aria-hidden="true"
         >
           ···
         </span>
-        <button 
-          v-else 
-          @click="onPageChange(page)" 
-          class="pagination-button flex items-center justify-center h-8 w-8 rounded-full text-sm transition-all duration-200"
+
+        <button
+          v-else
+          type="button"
+          class="pagination-button pagination-button-number inline-flex items-center justify-center rounded-full text-sm transition-all duration-200"
           :class="{ 'pagination-button-active': page === currentPage }"
+          :aria-current="page === currentPage ? 'page' : undefined"
+          :aria-label="page === currentPage ? `当前第 ${page} 页` : `跳转到第 ${page} 页`"
+          @click="onPageChange(page)"
         >
           {{ page }}
         </button>
       </template>
-      
-      <!-- 下一页 -->
-      <button 
-        @click="onPageChange(currentPage + 1)" 
-        :disabled="currentPage === totalPages"
-        class="pagination-button flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200"
+
+      <button
+        type="button"
+        class="pagination-button pagination-button-icon inline-flex items-center justify-center rounded-full transition-all duration-200"
         :class="{ 'pagination-button-disabled': currentPage === totalPages }"
+        :disabled="currentPage === totalPages"
+        aria-label="下一页"
+        @click="onPageChange(currentPage + 1)"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
+
+      <button
+        type="button"
+        class="pagination-button pagination-button-edge hidden sm:inline-flex items-center justify-center rounded-full transition-all duration-200"
+        :class="{ 'pagination-button-disabled': currentPage === totalPages }"
+        :disabled="currentPage === totalPages"
+        aria-label="跳转到最后一页"
+        @click="onPageChange(totalPages)"
+      >
+        末页
+      </button>
     </div>
-  </div>
+  </nav>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-// 组件属性
 const props = defineProps({
   currentPage: {
     type: Number,
@@ -58,66 +94,94 @@ const props = defineProps({
   totalPages: {
     type: Number,
     required: true
+  },
+  totalItems: {
+    type: Number,
+    default: 0
   }
 })
 
-// 组件事件
 const emit = defineEmits(['page-change'])
 
-// 计算显示的页码
-const displayedPages = computed(() => {
-  const totalDisplayed = 5 // 最多显示5个页码
-  const pages = []
-  
-  if (props.totalPages <= totalDisplayed) {
-    // 总页数少于显示数量，全部显示
-    for (let i = 1; i <= props.totalPages; i++) {
-      pages.push(i)
-    }
-  } else {
-    // 总页数大于显示数量，需要省略部分页码
-    const leftSide = Math.floor(totalDisplayed / 2)
-    const rightSide = totalDisplayed - leftSide - 1
-    
-    if (props.currentPage > leftSide + 1) {
-      pages.push(1)
-      pages.push('...')
-    }
-    
-    // 计算开始页码和结束页码
-    let start = Math.max(1, props.currentPage - leftSide)
-    let end = Math.min(props.totalPages, props.currentPage + rightSide)
-    
-    // 确保显示的数量一致
-    if (end - start + 1 < totalDisplayed - 2) {
-      if (start === 1) {
-        end = Math.min(totalDisplayed - 1, props.totalPages)
-      } else {
-        start = Math.max(1, end - totalDisplayed + 3)
-      }
-    }
-    
-    for (let i = start; i <= end; i++) {
-      pages.push(i)
-    }
-    
-    if (end < props.totalPages - 1) {
-      pages.push('...')
-    }
-    
-    if (end < props.totalPages) {
-      pages.push(props.totalPages)
-    }
-  }
-  
-  return pages
-})
+const compactMode = ref(false)
+let compactMediaQuery = null
 
-// 处理页码变化
-const onPageChange = (page) => {
+function createDisplayedPages(currentPage, totalPages, maxVisiblePages) {
+  const safeCurrentPage = Math.max(1, currentPage)
+  const safeTotalPages = Math.max(1, totalPages)
+
+  if (safeTotalPages <= maxVisiblePages) {
+    return Array.from({ length: safeTotalPages }, (_, index) => index + 1)
+  }
+
+  const pages = [1]
+  const innerWindowSize = Math.max(1, maxVisiblePages - 2)
+  let start = Math.max(2, safeCurrentPage - Math.floor(innerWindowSize / 2))
+  let end = Math.min(safeTotalPages - 1, start + innerWindowSize - 1)
+
+  start = Math.max(2, end - innerWindowSize + 1)
+
+  if (start > 2) {
+    pages.push('...')
+  }
+
+  for (let page = start; page <= end; page += 1) {
+    pages.push(page)
+  }
+
+  if (end < safeTotalPages - 1) {
+    pages.push('...')
+  }
+
+  pages.push(safeTotalPages)
+
+  return pages
+}
+
+const normalizedTotalItems = computed(() => Math.max(0, Number(props.totalItems) || 0))
+const maxVisiblePages = computed(() => compactMode.value ? 3 : 5)
+const displayedPages = computed(() => (
+  createDisplayedPages(props.currentPage, props.totalPages, maxVisiblePages.value)
+))
+
+function syncCompactMode() {
+  compactMode.value = compactMediaQuery?.matches === true
+}
+
+function onPageChange(page) {
   if (page < 1 || page > props.totalPages || page === props.currentPage) {
     return
   }
+
   emit('page-change', page)
 }
+
+onMounted(() => {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return
+  }
+
+  compactMediaQuery = window.matchMedia('(max-width: 640px)')
+  syncCompactMode()
+
+  if (typeof compactMediaQuery.addEventListener === 'function') {
+    compactMediaQuery.addEventListener('change', syncCompactMode)
+    return
+  }
+
+  compactMediaQuery.addListener(syncCompactMode)
+})
+
+onUnmounted(() => {
+  if (!compactMediaQuery) {
+    return
+  }
+
+  if (typeof compactMediaQuery.removeEventListener === 'function') {
+    compactMediaQuery.removeEventListener('change', syncCompactMode)
+    return
+  }
+
+  compactMediaQuery.removeListener(syncCompactMode)
+})
 </script>

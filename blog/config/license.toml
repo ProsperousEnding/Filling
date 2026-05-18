@@ -1,0 +1,13 @@
+# 文章默认许可协议
+# 单篇文章可通过 frontmatter 的 license / license_url 覆盖
+# 如果某篇文章不想继承默认协议，可在 frontmatter 中写:
+# license: false
+
+# 是否启用默认许可协议
+enabled = true
+
+# 协议名称
+name = "CC BY-NC-SA 4.0"
+
+# 协议链接
+url = "https://creativecommons.org/licenses/by-nc-sa/4.0/"

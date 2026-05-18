@@ -1,3 +1,5 @@
+import { resolveDisplayArticleCover } from '../../utils/articleCover'
+
 function normalizeString(value) {
   return String(value || '').trim()
 }
@@ -30,17 +32,17 @@ export function resolveMenuItemTag(item) {
   return 'article'
 }
 
-export function getMenuItemCover(item) {
-  return normalizeString(item?.cover || item?.imageUrl || item?.image)
+export function getMenuItemCover(item, options = {}) {
+  return normalizeString(resolveDisplayArticleCover(item, options))
 }
 
-export function hasMenuItemCover(item) {
-  return Boolean(getMenuItemCover(item))
+export function hasMenuItemCover(item, options = {}) {
+  return Boolean(getMenuItemCover(item, options))
 }
 
-export function isArticleLikeMenuItem(item) {
+export function isArticleLikeMenuItem(item, options = {}) {
   const kind = normalizeString(item?.kind || item?.type).toLowerCase()
-  return kind === 'article' || kind === 'post' || kind === 'note' || hasMenuItemCover(item)
+  return kind === 'article' || kind === 'post' || kind === 'note' || hasMenuItemCover(item, options)
 }
 
 export function getMenuItemPrimaryBadge(item) {

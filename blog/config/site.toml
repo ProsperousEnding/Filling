@@ -1,14 +1,71 @@
 # 站点基础信息
 # title / description 会参与页面标题、SEO 和部分界面文案
-# title = "Filling"
-# description = "一个基于 Vue 3 的静态博客框架示例站"
+title = "Filling"
+subtitle = "内容系统与博客框架"
+description = "一个基于 Vue 3 的静态博客与内容系统。"
 
 # 生产环境请替换成你的站点根域名，不要带仓库子路径
 # 例如:
 # - 自定义域名: "https://blog.example.com"
-# - GitHub Pages 根域名: "https://your-name.github.io"
+# - GitHub Pages 根域名: "https://username.github.io"
 # GitHub Pages workflow 会在 CI 构建时自动覆盖成对应的 Pages URL
 site_url = "https://filling.initzo.com"
+
+[seo]
+# 页面语言，会同步到运行时和静态页 <html lang="">
+lang = "zh-CN"
+
+# Open Graph locale
+locale = "zh_CN"
+
+# 站点默认 robots 指令
+robots = "index,follow"
+
+# 站点主题色
+# theme_color = "#f8fafc"
+
+# 站点作者
+# author = "ProsperousEnding"
+
+# 建站日期和默认时区
+# site_start_date = "2026-01-01"
+# timezone = "Asia/Shanghai"
+
+# 默认关键词，可写字符串或数组
+# keywords = ["Vue 3", "博客", "静态站点"]
+
+# favicon、移动端图标和默认社交分享图，路径相对于 public/
+# favicon = "icons/points.png"
+# apple_touch_icon = "icons/apple-touch-icon.png"
+# mask_icon = "icons/safari-pinned-tab.svg"
+# mask_icon_color = "#2563eb"
+og_image = "icons/points.png"
+twitter_image = "icons/points.png"
+
+[seo.share_image]
+# 是否输出 og:image / twitter:image
+enabled = true
+
+# 文章封面或页面 frontmatter cover 优先作为分享图
+prefer_page_image = true
+
+# 没有页面图和默认图时的回退方式
+# 可选值: "site" | "seeded" | "none"
+fallback = "site"
+
+# 站点默认分享图，路径相对于 public/；留空时使用 og_image
+# default_image = "images/share/default-cover.png"
+
+# Twitter 专用分享图，留空时复用 default_image / og_image
+# twitter_image = "images/share/twitter-card.png"
+
+# 可选值: "summary_large_image" | "summary"
+twitter_card = "summary_large_image"
+
+# fallback = "seeded" 时的图片尺寸与格式
+seeded_width = 1200
+seeded_height = 630
+seeded_format = "webp"
 
 [header.leading_visual]
 # 是否显示左上角视觉元素
@@ -37,6 +94,42 @@ title_size = "18"
 # 当 type = "dots" 时使用的圆点颜色
 colors = ["#ff5f57", "#febc2e", "#28c840"]
 
+[header.navbar]
+# 是否吸顶
+# sticky = true
+
+# 是否启用模糊背景
+# blur = true
+
+# 是否显示品牌区
+# 关闭后会同时隐藏 leading_visual、站点标题和描述
+# show_brand = true
+
+# 是否显示站点标题
+show_title = false
+
+# 是否显示站点描述
+# 说明: 当前仅在桌面端展示
+# show_description = true
+
+# 是否显示桌面端顶部菜单
+# show_desktop_menu = true
+
+# 是否启用移动端顶部菜单面板
+# show_mobile_menu = true
+
+# 是否显示搜索按钮
+# show_search = true
+
+# 是否显示主题切换按钮
+# show_theme_toggle = true
+
+# 是否显示移动端侧边栏按钮
+# show_sidebar_toggle = true
+
+# 是否显示移动端菜单按钮
+# show_mobile_menu_toggle = true
+
 [features]
 # 侧边栏位置
 # 可选值: "left" | "right" | "hidden"
@@ -44,6 +137,9 @@ sidebar_position = "right"
 
 # 是否显示侧边栏
 # sidebar_visible = true
+
+# 是否在文章详情页显示侧边栏
+show_sidebar_on_articles = false
 
 # 分类和标签模块是否显示数量
 # show_category_count = true
@@ -62,17 +158,71 @@ sidebar_position = "right"
 show_profile_in_sidebar = true
 
 [sidebar]
-# 侧边栏模块编排
-# 可选 section:
-# - "profile" 个人资料卡片
-# - "search"  搜索框
-# - "menu"    分类/标签/最新文章等菜单模块
-desktop_sections = ["profile", "search", "menu"]
+# 侧边栏组件编排
+# 可选 component:
+# - "profile"         个人资料卡片
+# - "announcement"    公告卡片
+# - "search"          搜索框
+# - "categories"      分类模块
+# - "tags"            标签模块
+# - "latest-articles" 最新文章模块
+# - "friend-links"    友链模块
+# - "custom"          自定义 sidebar 菜单模块
+desktop_components = ["profile", "announcement", "search", "categories", "tags", "latest-articles"]
 
 # 不配置时，文章页沿用对应的 desktop/mobile 默认顺序
-# article_desktop_sections = ["profile", "menu"]
-# mobile_sections = ["profile", "search", "menu"]
-# article_mobile_sections = ["profile", "search", "menu"]
+# article_desktop_components = ["profile", "announcement", "categories", "latest-articles"]
+# mobile_components = ["profile", "search", "categories", "tags", "latest-articles"]
+# article_mobile_components = ["profile", "announcement", "search", "latest-articles"]
+
+[page_layouts]
+# 是否允许内置列表页切换布局
+# 支持页面:
+# - home
+# - articles
+# - categories
+# - tags
+# - archive
+# allow_switch = true
+
+# 是否记住用户上一次选择的布局
+# persist = true
+
+# 可切换的布局:
+# - "list"
+# - "card"
+# - "grid"
+# - "timeline"
+#
+# columns / wide_columns 仅对 card 和 grid 生效
+
+# [page_layouts.home]
+# available = ["list", "card", "grid"]
+# columns = 2
+# wide_columns = 3
+
+# [page_layouts.articles]
+# default = "card"
+# available = ["card", "list", "grid"]
+# allow_switch = true
+# columns = 2
+# wide_columns = 2
+
+# [page_layouts.categories]
+# default = "grid"
+# available = ["grid", "card", "list"]
+# columns = 2
+# wide_columns = 3
+
+# [page_layouts.tags]
+# default = "list"
+# available = ["list", "grid", "card"]
+
+# [page_layouts.archive]
+# default = "timeline"
+# available = ["timeline", "grid", "list"]
+# columns = 2
+# wide_columns = 3
 
 [routing]
 # 自定义站点路由
@@ -101,6 +251,11 @@ desktop_sections = ["profile", "search", "menu"]
 # - categories
 # - tags
 # - archive
+# - search
+#
+# 内置页面支持:
+# - enabled = false  直接关闭页面路由
+# - visible = false  保留页面路由，但从默认 blog-nav 中隐藏
 #
 # component 可选值:
 # - "context"  渲染单个 Markdown 文件，配 file
@@ -109,6 +264,8 @@ desktop_sections = ["profile", "search", "menu"]
 # - "grid"     渲染目录内容网格，配 folder
 # - "timeline" 渲染目录内容时间线，配 folder
 # - "friends"  渲染友情链接页面，读取 blog/config/links.toml
+# - "guestbook" 渲染留言板页面，读取 blog/config/guestbook.toml
+# - "sponsor" 渲染赞助页面，读取 blog/config/sponsor.toml
 #
 # file / folder 都相对于 blog/content
 
@@ -182,6 +339,18 @@ RSS 地址：
 # contact_label = "通过 GitHub 联系我"
 # contact_url = "https://github.com/ProsperousEnding"
 
+# 留言板页
+[[menus.pages]]
+key = "guestbook"
+title = "留言板"
+description = "如果你路过这里，欢迎留下几句话。"
+component = "guestbook"
+content = """
+欢迎留下你的来访足迹，也可以简单介绍你自己。
+
+如果你有个人站点、博客或社交主页，也可以一并贴上。
+"""
+
 # 自定义目录页
 # component = "list" / "card" / "grid" / "timeline" 时使用 folder
 # [[menus.pages]]
@@ -189,6 +358,19 @@ RSS 地址：
 # title = "项目"
 # component = "list"
 # folder = "projects"
+
+# 赞助页
+[[menus.pages]]
+key = "sponsor"
+title = "赞助"
+description = "支持本站持续更新。"
+component = "sponsor"
+visible = false
+content = """
+本站的内容会持续整理和更新。
+
+如果这些内容对你有帮助，可以通过赞助支持后续维护。
+"""
 
 # 顶部菜单示例
 # renderer 可选:
@@ -201,13 +383,37 @@ RSS 地址：
 # [[menus.header]]
 # renderer = "header-pill"
 # source = "blog-nav"
-# items = ["home", "articles", "categories", "tags", "archive", "about", "friends", "projects"]
+#
+# [[menus.header.items]]
+# key = "content"
+# label = "内容"
+# children = ["articles", "categories", "tags", "archive"]
+#
+# [[menus.header.items]]
+# page = "about"
+#
+# [[menus.header.items]]
+# page = "friends"
+#
+# [[menus.header.items]]
+# label = "GitHub"
+# target = "https://github.com/ProsperousEnding/Filling"
 
 # 移动端顶部菜单示例
 # [[menus.mobile_header]]
 # renderer = "header-stack"
 # source = "blog-nav"
-# items = ["home", "articles", "categories", "tags", "archive", "about", "friends", "projects"]
+#
+# [[menus.mobile_header.items]]
+# key = "content"
+# label = "内容"
+# children = ["articles", "categories", "tags", "archive"]
+#
+# [[menus.mobile_header.items]]
+# page = "about"
+#
+# [[menus.mobile_header.items]]
+# page = "friends"
 
 # 侧边栏菜单示例
 # renderer 可选:

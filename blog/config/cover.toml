@@ -1,0 +1,108 @@
+# 文章封面配置
+
+# 是否启用封面回退策略
+# 关闭后只有文章 frontmatter 明确提供的 cover / image / thumbnail 会生效
+enabled = true
+
+# 当文章未提供封面时的回退方式
+# 可选值:
+# - "none"    不生成默认封面
+# - "seeded"  使用基于文章 slug 的外部随机图
+# - "image"   使用固定默认图
+fallback = "seeded"
+
+# fallback = "image" 时使用
+# 路径相对于 public/
+# fallback_image = "covers/default-cover.webp"
+
+# fallback = "seeded" 时的默认尺寸与格式
+seeded_width = 1200
+seeded_height = 630
+seeded_format = "webp"
+
+# 自动封面默认外部图源
+# 可选值: "picsum" | "cataas" | "mwm-anime" | "mwm-scenery" | "xjh-acg" | "bing-rand"
+seeded_style = "picsum"
+
+[source_switch]
+# 是否在页头显示自动封面外部图源切换按钮
+enabled = true
+
+# 切换状态保存在浏览器 localStorage 的 key
+storage_key = "vue-blog-cover-source"
+
+# 按钮循环切换的封面外部图源
+sources = ["picsum", "cataas", "mwm-anime", "mwm-scenery", "xjh-acg", "bing-rand"]
+
+[source_switch.labels]
+picsum = "Picsum"
+cataas = "Cataas"
+mwm-anime = "MWM 二次元"
+mwm-scenery = "MWM 风景"
+xjh-acg = "XJH ACG"
+bing-rand = "Bing 随机"
+
+[list]
+# 是否在列表、卡片、网格中显示封面
+show_cover = true
+
+# 列表封面图片加载策略
+# 可选值: "eager" | "lazy"
+loading = "lazy"
+
+# 可选，自定义列表封面比例
+# aspect_ratio = "16 / 9"
+
+# 可选值:
+# - "cover"
+# - "contain"
+# - "fill"
+# - "none"
+# - "scale-down"
+object_fit = "cover"
+
+# 无封面时的占位方式
+# 可选值: "none" | "gradient" | "icon"
+placeholder = "gradient"
+
+[detail]
+# 是否在文章详情页显示主封面
+show_cover = true
+
+# 是否在文章详情页显示相关文章封面
+show_related_cover = true
+
+# 文章详情页主封面显示方式
+# 可选值:
+# - "image"       独立图片，显示在文章头部下方
+# - "header-background" 作为文章头部背景，标题和元信息覆盖在封面上
+# - "page-background"   作为整篇文章详情页固定背景，正文滚动时图片不动
+display_mode = "image"
+
+# 文章详情页封面的图片加载策略
+# 可选值: "eager" | "lazy"
+loading = "eager"
+
+# 可选，自定义详情页封面比例
+# aspect_ratio = "16 / 9"
+
+# 可选值:
+# - "cover"
+# - "contain"
+# - "fill"
+# - "none"
+# - "scale-down"
+object_fit = "cover"
+
+# 无封面时的占位方式
+# 可选值: "none" | "gradient" | "icon"
+placeholder = "gradient"
+
+[detail.watermark]
+# 是否在详情页主封面上显示水印
+enabled = false
+
+# enabled = true 时启用下面的参数
+# text = "Filling"
+# position = "bottom-right"
+# opacity = 0.72

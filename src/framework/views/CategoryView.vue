@@ -19,6 +19,12 @@
         <p class="theme-page-description" v-if="pageDescription">
           {{ pageDescription }}
         </p>
+        <div v-if="layoutSwitcherVisible" class="built-in-page-toolbar">
+          <CollectionLayoutSwitcher
+            v-model="layoutModel"
+            :options="collectionLayout.availableLayouts"
+          />
+        </div>
       </div>
 
       <component
@@ -30,6 +36,7 @@
         <Pagination
           :current-page="currentPage"
           :total-pages="totalPages"
+          :total-items="total"
           @page-change="handlePageChange"
         />
       </div>
@@ -42,7 +49,9 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCategoryStore } from '../stores/category'
 import { useConfigStore } from '../stores/config'
+import CollectionLayoutSwitcher from '../components/core/CollectionLayoutSwitcher.vue'
 import Pagination from '../components/core/Pagination.vue'
+import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { usePageMetadata } from '../composables/usePageMetadata'
 import { createCollectionPage, createContentCollectionItems } from '../utils/pageCollectionItems'
@@ -59,9 +68,13 @@ const defaultPageSize = computed(() => configStore.pageSize || 10)
 const articlesPageConfig = computed(() => (
   resolveMenuPage('articles', configStore.menus, configStore.routePatterns)
 ))
-const resolvedComponent = computed(() => (
-  resolveBuiltInPageComponent('articles', articlesPageConfig.value?.component)
-))
+const {
+  collectionLayout,
+  currentLayout,
+  modelValue: layoutModel,
+  switcherVisible: layoutSwitcherVisible
+} = useBuiltInPageLayout('articles', () => articlesPageConfig.value?.component)
+const resolvedComponent = computed(() => resolveBuiltInPageComponent('articles', currentLayout.value))
 
 const category = ref(null)
 
@@ -89,7 +102,7 @@ const {
   total,
   loading,
   currentPage,
-  pageSize,
+  totalPages,
   handlePageChange
 } = usePaginatedCollection({
   pageSize: defaultPageSize,
@@ -107,7 +120,6 @@ const {
   }
 })
 
-const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 const pageDescription = computed(() => {
   if (category.value?.description) {
     return currentPage.value > 1
@@ -129,7 +141,8 @@ const resolvedPage = computed(() => createCollectionPage({
   title: category.value?.name || '分类',
   description: pageDescription.value,
   items: createContentCollectionItems(items.value),
-  emptyText: '这个分类下还没有内容。'
+  emptyText: '这个分类下还没有内容。',
+  layout: collectionLayout.value
 }))
 
 usePageMetadata({

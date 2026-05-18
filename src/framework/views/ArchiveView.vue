@@ -3,6 +3,12 @@
     <div class="theme-page-header mb-8">
       <h1 class="theme-page-title text-3xl font-bold mb-4">{{ pageTitle }}</h1>
       <p class="theme-page-description">{{ pageDescription }}</p>
+      <div v-if="layoutSwitcherVisible" class="built-in-page-toolbar">
+        <CollectionLayoutSwitcher
+          v-model="layoutModel"
+          :options="collectionLayout.availableLayouts"
+        />
+      </div>
     </div>
 
     <div v-if="loading" class="py-12 flex justify-center">
@@ -26,6 +32,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import CollectionLayoutSwitcher from '../components/core/CollectionLayoutSwitcher.vue'
+import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { useArticleStore } from '../stores/article'
 import { useConfigStore } from '../stores/config'
 import { usePageMetadata } from '../composables/usePageMetadata'
@@ -54,7 +62,13 @@ const selectedYear = computed(() => {
 const pageConfig = computed(() => (
   resolveMenuPage('archive', configStore.menus, configStore.routePatterns)
 ))
-const resolvedComponent = computed(() => resolveBuiltInPageComponent('archive', pageConfig.value?.component))
+const {
+  collectionLayout,
+  currentLayout,
+  modelValue: layoutModel,
+  switcherVisible: layoutSwitcherVisible
+} = useBuiltInPageLayout('archive', () => pageConfig.value?.component)
+const resolvedComponent = computed(() => resolveBuiltInPageComponent('archive', currentLayout.value))
 const hasSelectedYear = computed(() => selectedYear.value !== null)
 const selectedArchiveGroup = computed(() => (
   archiveGroups.value.find(group => Number(group?.year) === selectedYear.value) || null
@@ -81,7 +95,8 @@ const resolvedPage = computed(() => createCollectionPage({
   items: hasSelectedYear.value
     ? createContentCollectionItems(selectedEntries.value)
     : createArchiveOverviewItems(archiveGroups.value),
-  emptyText: hasSelectedYear.value ? '这一年还没有内容。' : '这里还没有归档内容。'
+  emptyText: hasSelectedYear.value ? '这一年还没有内容。' : '这里还没有归档内容。',
+  layout: collectionLayout.value
 }))
 
 usePageMetadata({

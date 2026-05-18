@@ -7,6 +7,12 @@
       <p v-if="baseDescription" class="theme-page-description">
         {{ baseDescription }}
       </p>
+      <div v-if="layoutSwitcherVisible" class="built-in-page-toolbar">
+        <CollectionLayoutSwitcher
+          v-model="layoutModel"
+          :options="collectionLayout.availableLayouts"
+        />
+      </div>
     </div>
 
     <div v-if="loading" class="py-12 flex justify-center">
@@ -29,6 +35,7 @@
       v-if="!loading"
       :current-page="currentPage"
       :total-pages="totalPages"
+      :total-items="total"
       @page-change="handlePageChange"
     />
   </div>
@@ -36,9 +43,11 @@
 
 <script setup>
 import { computed } from 'vue'
+import CollectionLayoutSwitcher from '../components/core/CollectionLayoutSwitcher.vue'
 import Pagination from '../components/core/Pagination.vue'
 import { useArticleStore } from '../stores/article'
 import { useConfigStore } from '../stores/config'
+import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { usePageMetadata } from '../composables/usePageMetadata'
 import { getArticlesRoute } from '../utils/routeLinks'
@@ -60,22 +69,28 @@ const displayTitle = computed(() => (
 const baseDescription = computed(() => (
   pageConfig.value?.description || configStore.blogDescription || '浏览站点全部文章列表。'
 ))
-const resolvedComponent = computed(() => resolveBuiltInPageComponent('articles', pageConfig.value?.component))
+const {
+  collectionLayout,
+  currentLayout,
+  modelValue: layoutModel,
+  switcherVisible: layoutSwitcherVisible
+} = useBuiltInPageLayout('articles', () => pageConfig.value?.component)
+const resolvedComponent = computed(() => resolveBuiltInPageComponent('articles', currentLayout.value))
 const resolvedPage = computed(() => createCollectionPage({
   key: 'articles',
   title: displayTitle.value,
   description: baseDescription.value,
   items: createArticleCollectionItems(articles.value),
-  emptyText: '这里还没有文章。'
+  emptyText: '这里还没有文章。',
+  layout: collectionLayout.value
 }))
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 
 const {
   items: articles,
   total,
   loading,
   currentPage,
-  pageSize,
+  totalPages,
   handlePageChange
 } = usePaginatedCollection({
   pageSize: defaultPageSize,

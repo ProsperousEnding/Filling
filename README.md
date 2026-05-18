@@ -56,6 +56,10 @@ scripts/
 
 ## 配置文件
 
+完整配置说明见：
+
+- [docs/configuration.md](./docs/configuration.md)
+
 ### `blog/config/site.toml`
 
 控制站点标题、布局、路由、分页、菜单、页脚。
@@ -82,10 +86,22 @@ scripts/
 - `categories`
 - `tags`
 - `archive`
+- `search`
+
+页面开关：
+
+- `enabled = false`：关闭页面路由和静态生成
+- `visible = false`：保留页面路由，但从默认 `blog-nav` 中隐藏
 
 自定义页面示例：
 
 ```toml
+[[menus.pages]]
+key = "search"
+title = "搜索"
+enabled = true
+visible = false
+
 [[menus.pages]]
 key = "about"
 title = "关于"
@@ -155,7 +171,14 @@ folder = "projects"
 [[menus.header]]
 renderer = "header-pill"
 source = "blog-nav"
-items = ["home", "articles", "categories", "tags", "archive", "about", "projects"]
+
+[[menus.header.items]]
+key = "content"
+label = "内容"
+children = ["articles", "categories", "tags", "archive"]
+
+[[menus.header.items]]
+page = "about"
 
 [[menus.sidebar]]
 title = "友情链接"

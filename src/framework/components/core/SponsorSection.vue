@@ -1,6 +1,6 @@
 <template>
   <section
-    v-if="sponsorConfig.enabled"
+    v-if="articleSponsorEnabled"
     class="article-sponsor-section mb-12 rounded-[1.75rem] border border-slate-200/80 bg-white/95 px-6 py-5 shadow-sm"
   >
     <div class="article-sponsor-header">
@@ -75,12 +75,19 @@ const sponsorConfig = computed(() => (
     buttonUrl: '',
     buttonExternal: false,
     buttonNote: '',
+    articleEnabled: false,
     methods: []
   }
 ))
 
 const sponsorButtonText = computed(() => (
   sponsorConfig.value.buttonText || '前往支持'
+))
+
+const articleSponsorEnabled = computed(() => (
+  typeof sponsorConfig.value.articleEnabled === 'boolean'
+    ? sponsorConfig.value.articleEnabled
+    : sponsorConfig.value.enabled
 ))
 
 const showPrimaryAction = computed(() => (

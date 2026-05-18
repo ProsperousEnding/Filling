@@ -52,20 +52,25 @@
 
                 <div class="theme-inline-meta flex flex-wrap text-sm mt-1">
                   <div v-if="article.category" class="mr-4">
-                    <router-link :to="getCategoryRoute(article.category)" class="theme-inline-link">
+                    <component
+                      :is="categoryPageEnabled ? 'router-link' : 'span'"
+                      :to="categoryPageEnabled ? getCategoryRoute(article.category) : undefined"
+                      class="theme-inline-link"
+                    >
                       {{ typeof article.category === 'string' ? article.category : article.category.name }}
-                    </router-link>
+                    </component>
                   </div>
 
                   <div v-if="article.tags && article.tags.length > 0" class="flex flex-wrap gap-1">
-                    <router-link
+                    <component
                       v-for="tag in article.tags"
                       :key="typeof tag === 'string' ? tag : tag.id"
-                      :to="getTagRoute(tag)"
+                      :is="tagPageEnabled ? 'router-link' : 'span'"
+                      :to="tagPageEnabled ? getTagRoute(tag) : undefined"
                       class="theme-inline-link"
                     >
                       #{{ typeof tag === 'string' ? tag : tag.name }}
-                    </router-link>
+                    </component>
                   </div>
                 </div>
               </div>
@@ -115,7 +120,13 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useConfigStore } from '../../stores/config'
 import { getArchiveRoute, getArticleRoute, getCategoryRoute, getTagRoute } from '../../utils/routeLinks'
+
+const configStore = useConfigStore()
+const categoryPageEnabled = computed(() => Boolean(configStore.pageRegistry?.categories))
+const tagPageEnabled = computed(() => Boolean(configStore.pageRegistry?.tags))
 
 defineProps({
   title: {

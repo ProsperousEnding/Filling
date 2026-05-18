@@ -119,6 +119,25 @@ a {
   color: var(--theme-body-color);
 }
 
+:root .pagination-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+:root .pagination-meta {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+:root .pagination-summary {
+  color: var(--theme-text-soft);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 :root .theme-loading-pill,
 :root .pagination-shell {
   color: var(--theme-text-soft);
@@ -240,6 +259,12 @@ a {
   box-shadow: var(--theme-shadow-xs) !important;
 }
 
+:root .site-header.site-header-transparent {
+  background: transparent !important;
+  border-bottom-color: transparent;
+  box-shadow: none !important;
+}
+
 :root .site-brand-link {
   color: var(--theme-heading-color) !important;
   letter-spacing: -0.03em;
@@ -322,8 +347,18 @@ a {
   box-shadow: var(--theme-shadow-sm) !important;
 }
 
+:root .theme-sidebar-drawer-shell,
+:root .theme-sidebar-drawer-shell .sidebar-container-mobile {
+  border: 0 !important;
+}
+
+:root .theme-sidebar-drawer-shell .sidebar-container-mobile {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 :root .sidebar-mobile-actions {
-  background: linear-gradient(180deg, var(--theme-panel-strong), transparent) !important;
+  background: transparent !important;
 }
 
 :root .sidebar-close-button,
@@ -566,12 +601,29 @@ a {
 }
 
 :root .pagination-button {
+  min-width: 2.4rem;
+  height: 2.4rem;
+  padding-inline: 0.7rem;
   color: var(--theme-text-soft) !important;
 }
 
 :root .pagination-button:hover {
   background: var(--theme-chip-hover) !important;
   color: var(--theme-heading-color) !important;
+}
+
+:root .pagination-button-icon {
+  min-width: 2.4rem;
+  padding-inline: 0;
+}
+
+:root .pagination-button-edge {
+  min-width: 3.6rem;
+  font-size: 0.82rem;
+}
+
+:root .pagination-button-number {
+  min-width: 2.4rem;
 }
 
 :root .pagination-button-active {
@@ -592,6 +644,29 @@ a {
 
 :root .pagination-ellipsis {
   color: var(--theme-text-soft) !important;
+}
+
+@media (max-width: 640px) {
+  :root .pagination-wrap {
+    gap: 0.55rem;
+  }
+
+  :root .pagination-summary {
+    font-size: 0.8rem;
+  }
+
+  :root .pagination-shell {
+    max-width: 100%;
+    padding-inline: 0.75rem;
+  }
+
+  :root .pagination-button,
+  :root .pagination-button-number,
+  :root .pagination-button-icon {
+    min-width: 2.15rem;
+    height: 2.15rem;
+    padding-inline: 0.55rem;
+  }
 }
 
 :root .tag,

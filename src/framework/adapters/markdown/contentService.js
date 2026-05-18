@@ -1,5 +1,7 @@
 import contentIndexData from '../../generated/contentIndex.generated.js'
 import { resolveArticleCover } from '../../utils/articleCover.js'
+import { resolveSiteAssetUrl } from '../../utils/siteAsset.js'
+import { useConfigStore } from '../../stores/config'
 
 const articleFileLoaders = import.meta.glob([
   '/blog/content/articles/*.md',
@@ -49,10 +51,6 @@ function buildAllArticles() {
     : []
 
   return articles
-    .map(article => ({
-      ...article,
-      cover: resolveArticleCover(article?.cover, article?.slug || article?.id || article?.title)
-    }))
     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
 }
 
@@ -74,6 +72,61 @@ const allContentEntries = buildAllContentEntries()
 const articleIndex = new Map()
 const articleAliasIndex = new Map()
 const articleDetailCache = new Map()
+
+function serializeCodeBlockCacheKey(config = {}) {
+  return JSON.stringify(config || {})
+}
+
+function serializeMarkdownCacheKey(config = {}) {
+  return JSON.stringify(config || {})
+}
+
+function serializeCoverCacheKey(config = {}) {
+  return JSON.stringify(config || {})
+}
+
+function serializeRawContentCacheKey(rawContent = '') {
+  const value = String(rawContent || '')
+  let hash = 0
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash + value.charCodeAt(index)) | 0
+  }
+
+  return `${value.length}:${hash}`
+}
+
+function getCoverConfig() {
+  return useConfigStore().coverConfig
+}
+
+function resolveRuntimeCover(sourceValue, seedInput) {
+  const cover = resolveArticleCover(sourceValue, seedInput, {
+    coverConfig: getCoverConfig()
+  })
+
+  return resolveSiteAssetUrl(cover)
+}
+
+function hydrateArticleCover(article = {}) {
+  return {
+    ...article,
+    cover: resolveRuntimeCover(
+      article?.coverSource || article?.cover,
+      article?.slug || article?.id || article?.title
+    )
+  }
+}
+
+function hydrateEntryCover(entry = {}) {
+  return {
+    ...entry,
+    cover: resolveRuntimeCover(
+      entry?.coverSource || entry?.cover,
+      entry?.itemId || entry?.id || entry?.sourcePath || entry?.title
+    )
+  }
+}
 
 function indexArticleKey(index, key, article, override = true) {
   const normalizedKey = normalizeArticleLookupId(key)
@@ -186,11 +239,13 @@ const archiveList = Array.from(archiveIndex.entries())
   .sort((a, b) => b.year - a.year)
 
 function getScopedArticles(categoryId, tagId) {
-  return allArticles.filter((article) => {
+  return allArticles
+    .filter((article) => {
     const categoryMatched = !categoryId || article.category?.id === categoryId
     const tagMatched = !tagId || (Array.isArray(article.tags) && article.tags.some(tag => tag.id === tagId))
     return categoryMatched && tagMatched
   })
+    .map(hydrateArticleCover)
 }
 
 function aggregateCategories() {
@@ -202,11 +257,14 @@ function aggregateTags() {
 }
 
 function getArchiveGroups() {
-  return archiveList
+  return archiveList.map(group => ({
+    ...group,
+    articles: Array.isArray(group.articles) ? group.articles.map(hydrateEntryCover) : []
+  }))
 }
 
 function getArchiveArticlesByYear(year) {
-  return archiveIndex.get(year) || []
+  return (archiveIndex.get(year) || []).map(hydrateEntryCover)
 }
 
 async function loadSearchIndex() {
@@ -288,10 +346,6 @@ async function hydrateArticleDetail(article) {
     return null
   }
 
-  if (articleDetailCache.has(article.sourcePath)) {
-    return articleDetailCache.get(article.sourcePath)
-  }
-
   const sourceLoader = articleFileLoaders[article.sourcePath]
 
   if (typeof sourceLoader !== 'function') {
@@ -302,13 +356,37 @@ async function hydrateArticleDetail(article) {
     import('./articleSourceParser.js'),
     sourceLoader()
   ])
+  const configStore = useConfigStore()
+  const codeBlockConfig = configStore.codeBlockConfig
+  const markdownConfig = configStore.markdownConfig
+  const coverConfig = configStore.coverConfig
+  const cacheKey = [
+    article.sourcePath,
+    serializeRawContentCacheKey(rawContent),
+    serializeCodeBlockCacheKey(codeBlockConfig),
+    serializeMarkdownCacheKey(markdownConfig),
+    serializeCoverCacheKey(coverConfig)
+  ].join('::')
 
-  const detail = {
-    ...article,
-    ...parseArticleDetail(rawContent, article.sourcePath)
+  if (articleDetailCache.has(cacheKey)) {
+    return articleDetailCache.get(cacheKey)
   }
 
-  articleDetailCache.set(article.sourcePath, detail)
+  const parsedDetail = parseArticleDetail(rawContent, article.sourcePath, {
+    codeBlockConfig,
+    markdownConfig,
+    coverConfig
+  })
+  const detail = {
+    ...hydrateArticleCover(article),
+    ...parsedDetail,
+    cover: resolveSiteAssetUrl(parsedDetail.cover),
+    license: (!parsedDetail.license && !parsedDetail.licenseDisabled && article.license)
+      ? article.license
+      : parsedDetail.license
+  }
+
+  articleDetailCache.set(cacheKey, detail)
   return detail
 }
 
@@ -335,7 +413,7 @@ const contentService = {
   },
 
   getLatestArticles(limit = 5) {
-    return allArticles.slice(0, limit)
+    return allArticles.slice(0, limit).map(hydrateArticleCover)
   },
 
   getRelatedArticles(id, limit = 3) {
@@ -349,7 +427,7 @@ const contentService = {
       return sameCategory || sharedTag
     })
 
-    return related.slice(0, limit)
+    return related.slice(0, limit).map(hydrateArticleCover)
   },
 
   getArchiveArticles(year) {
@@ -376,7 +454,7 @@ const contentService = {
 
   getCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
     const categoryId = toSlugId(String(id))
-    const filtered = categoryEntriesIndex.get(categoryId) || []
+    const filtered = (categoryEntriesIndex.get(categoryId) || []).map(hydrateEntryCover)
     return paginate(filtered, params.page, params.pageSize)
   },
 
@@ -387,7 +465,7 @@ const contentService = {
 
   getTagArticles(id, params = { page: 1, pageSize: 10 }) {
     const tagId = toSlugId(String(id))
-    const filtered = tagEntriesIndex.get(tagId) || []
+    const filtered = (tagEntriesIndex.get(tagId) || []).map(hydrateEntryCover)
     return paginate(filtered, params.page, params.pageSize)
   },
 

@@ -2,16 +2,28 @@
 # 会显示在文章详情页底部
 
 # 是否启用赞助区
-enabled = true
+enabled = false
+
+# 是否在文章详情页底部显示赞助区
+show_on_articles = false
+
+# 是否启用独立赞助页内容
+page_enabled = false
+
 # 模块标题
 title = "支持作者"
 
 # 模块描述
 description = "如果这篇内容对你有帮助，可以通过下面的方式支持继续更新。"
 
+# 独立赞助页文案
+page_kicker = "赞助"
+page_title = "支持本站持续更新"
+page_description = "如果你觉得这些内容有价值，可以通过赞助支持站点继续维护。"
+
 # 主按钮文案与链接
 button_text = "前往支持"
-button_url = "https://buymeacoffee.com/your-name"
+button_url = ""
 
 # 按钮下方备注
 button_note = "也可以使用下方二维码方式赞助。"
@@ -35,4 +47,18 @@ button_note = "也可以使用下方二维码方式赞助。"
 # [[methods]]
 # name = "GitHub Sponsors"
 # note = "在 GitHub 上长期支持"
-# link_url = "https://github.com/sponsors/your-name"
+# link_url = "https://github.com/sponsors/username"
+
+# 赞助者列表
+supporters_title = "赞助者"
+supporters_description = "感谢这些朋友对本站的支持。"
+
+# [[supporters]]
+# name = "示例赞助者"
+# tier = "支持者"
+# amount = "¥50"
+# date = "2026-05"
+# description = "感谢支持内容更新。"
+# avatar_url = "images/sponsor/supporter.png"
+# url = "https://example.com"
+# weight = 100

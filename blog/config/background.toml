@@ -1,0 +1,31 @@
+enabled = true
+
+# 可选值:
+# - "none"      不渲染额外背景层
+# - "gradient"  使用渐变背景
+# - "image"     使用图片背景
+mode = "gradient"
+
+# 亮色 / 暗色渐变
+# mode = "gradient" 时生效
+gradient_light = "radial-gradient(72rem 42rem at 0% 0%, rgba(59, 130, 246, 0.14), transparent 56%), linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(255, 255, 255, 0.98) 38%, rgba(248, 250, 252, 0.94) 100%)"
+# gradient_dark = "radial-gradient(72rem 42rem at 0% 0%, rgba(37, 99, 235, 0.18), transparent 54%), linear-gradient(180deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.98) 42%, rgba(15, 23, 42, 0.94) 100%)"
+
+# 背景图片
+# mode = "image" 时生效
+# 路径相对于 public/
+# image = "backgrounds/site-light.webp"
+# dark_image = "backgrounds/site-dark.webp"
+
+# 可选叠加层，通常用于压住图片亮度
+# overlay_light = "linear-gradient(180deg, rgba(248, 250, 252, 0.62), rgba(255, 255, 255, 0.88))"
+# overlay_dark = "linear-gradient(180deg, rgba(2, 6, 23, 0.52), rgba(15, 23, 42, 0.84))"
+
+# 图片 / 渐变排布
+# position = "center top"
+# size = "cover"
+# repeat = "no-repeat"
+# attachment = "scroll"
+
+# 整体透明度，范围 0-1
+# opacity = 1

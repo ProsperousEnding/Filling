@@ -107,6 +107,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSearchStore } from '../stores/search'
 import { useTagStore } from '../stores/tag'
+import { useConfigStore } from '../stores/config'
 import SearchResultCard from '../components/core/SearchResultCard.vue'
 import TagCloud from '../components/core/TagCloud.vue'
 import Pagination from '../components/core/Pagination.vue'
@@ -120,6 +121,7 @@ const router = useRouter()
 // 获取store
 const searchStore = useSearchStore()
 const tagStore = useTagStore()
+const configStore = useConfigStore()
 
 // 状态
 const searchQuery = ref('')
@@ -130,7 +132,7 @@ const total = ref(0)
 const loading = ref(false)
 const searchPerformed = ref(false)
 const currentPage = ref(parseInt(route.query.page) || 1)
-const pageSize = ref(10)
+const pageSize = computed(() => configStore.pageSize || 10)
 const suggestedTags = ref([])
 const suggestedTagsLoading = ref(false)
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
@@ -141,7 +143,8 @@ usePageMetadata({
   title: () => displayQuery.value ? `搜索：${displayQuery.value}` : '搜索',
   description: () => displayQuery.value
     ? `搜索“${displayQuery.value}”的结果页，共 ${total.value} 条结果。`
-    : '搜索站点中的内容。'
+    : '搜索站点中的内容。',
+  robots: 'noindex,follow'
 })
 
 onMounted(() => {
@@ -168,6 +171,15 @@ const syncFromRoute = () => {
 }
 
 watch(() => [route.query.keyword, route.query.q, route.query.page], syncFromRoute, { immediate: true })
+
+watch(pageSize, () => {
+  if (!searchPerformed.value || !activeSearchQuery.value.trim()) {
+    return
+  }
+
+  currentPage.value = 1
+  performSearch(false, 1)
+})
 
 // 执行搜索
 async function performSearch(updateUrl = true, page = currentPage.value) {

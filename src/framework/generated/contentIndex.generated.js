@@ -3,142 +3,246 @@
 const contentIndex = {
   "articles": [
     {
-      "id": "tailwind-tricks",
-      "slug": "tailwind-tricks",
-      "title": "Tailwind 实用技巧",
-      "date": "2024-06-01T00:00:00.000Z",
-      "author": {
-        "name": "测试"
-      },
+      "id": "config-comments-and-analytics",
+      "slug": "config-comments-and-analytics",
+      "title": "评论与统计接入指南",
+      "date": "2026-05-13T00:00:00.000Z",
+      "author": null,
       "category": {
-        "id": "css",
-        "name": "CSS"
+        "id": "配置",
+        "name": "配置"
       },
       "tags": [
         {
-          "id": "tailwind",
-          "name": "Tailwind"
+          "id": "配置",
+          "name": "配置"
         },
         {
-          "id": "技巧",
-          "name": "技巧"
+          "id": "评论",
+          "name": "评论"
+        },
+        {
+          "id": "统计",
+          "name": "统计"
         }
       ],
-      "cover": "https://picsum.photos/id/10/800/450",
-      "description": "一些常用的 Tailwind CSS 技巧示例",
-      "summary": "一些常用的 Tailwind CSS 技巧示例",
-      "excerpt": "一些常用的 Tailwind CSS 技巧示例",
-      "readTime": 1,
-      "createdAt": "2024-06-01T00:00:00.000Z",
+      "cover": "https://picsum.photos/seed/config-comments-and-analytics/1200/630.webp",
+      "coverSource": "",
+      "coverDisplayMode": "page-background",
+      "description": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
+      "summary": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
+      "excerpt": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
+      "readTime": 4,
+      "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
-      "license": null,
+      "license": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "licenseDisabled": false,
       "outdatedThresholdDays": null,
       "showOutdatedNotice": null,
-      "sourcePath": "/blog/content/articles/tailwind-tricks.md"
+      "sourcePath": "/blog/content/articles/config-comments-and-analytics.md"
     },
     {
-      "id": "vue3-components",
-      "slug": "vue3-components",
-      "title": "Tailwind CSS高级技巧",
-      "date": "2024-03-15T00:00:00.000Z",
-      "author": {
-        "name": "李四"
-      },
+      "id": "config-content-and-pages",
+      "slug": "config-content-and-pages",
+      "title": "内容页面与互动配置指南",
+      "date": "2026-05-13T00:00:00.000Z",
+      "author": null,
       "category": {
-        "id": "css",
-        "name": "CSS"
+        "id": "配置",
+        "name": "配置"
       },
       "tags": [
         {
-          "id": "tailwind",
-          "name": "Tailwind"
+          "id": "配置",
+          "name": "配置"
         },
         {
-          "id": "css",
-          "name": "CSS"
+          "id": "页面",
+          "name": "页面"
         },
         {
-          "id": "前端",
-          "name": "前端"
+          "id": "内容",
+          "name": "内容"
         }
       ],
-      "cover": "https://picsum.photos/id/2/800/450",
-      "description": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
-      "summary": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
-      "excerpt": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
-      "readTime": 1,
-      "createdAt": "2024-03-15T00:00:00.000Z",
+      "cover": "https://picsum.photos/seed/config-content-and-pages/1200/630.webp",
+      "coverSource": "",
+      "coverDisplayMode": "page-background",
+      "description": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
+      "summary": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
+      "excerpt": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
+      "readTime": 7,
+      "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
-      "license": null,
+      "license": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "licenseDisabled": false,
       "outdatedThresholdDays": null,
       "showOutdatedNotice": null,
-      "sourcePath": "/blog/content/articles/vue3-components.md"
+      "sourcePath": "/blog/content/articles/config-content-and-pages.md"
+    },
+    {
+      "id": "config-site-and-theme",
+      "slug": "config-site-and-theme",
+      "title": "站点基础与外观配置指南",
+      "date": "2026-05-13T00:00:00.000Z",
+      "author": null,
+      "category": {
+        "id": "配置",
+        "name": "配置"
+      },
+      "tags": [
+        {
+          "id": "配置",
+          "name": "配置"
+        },
+        {
+          "id": "站点",
+          "name": "站点"
+        },
+        {
+          "id": "外观",
+          "name": "外观"
+        }
+      ],
+      "cover": "https://picsum.photos/seed/config-site-and-theme/1200/630.webp",
+      "coverSource": "",
+      "coverDisplayMode": "page-background",
+      "description": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
+      "summary": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
+      "excerpt": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
+      "readTime": 10,
+      "createdAt": "2026-05-13T00:00:00.000Z",
+      "updatedAt": null,
+      "license": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "licenseDisabled": false,
+      "outdatedThresholdDays": null,
+      "showOutdatedNotice": null,
+      "sourcePath": "/blog/content/articles/config-site-and-theme.md"
     }
   ],
   "entries": [
     {
-      "id": "article:tailwind-tricks",
+      "id": "article:config-content-and-pages",
       "kind": "article",
       "iconKind": "article",
-      "title": "Tailwind 实用技巧",
-      "description": "一些常用的 Tailwind CSS 技巧示例",
-      "excerpt": "一些常用的 Tailwind CSS 技巧示例",
-      "createdAt": "2024-06-01T00:00:00.000Z",
+      "title": "内容页面与互动配置指南",
+      "description": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
+      "excerpt": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
+      "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
       "category": {
-        "id": "css",
-        "name": "CSS"
+        "id": "配置",
+        "name": "配置"
       },
       "tags": [
         {
-          "id": "tailwind",
-          "name": "Tailwind"
+          "id": "配置",
+          "name": "配置"
         },
         {
-          "id": "技巧",
-          "name": "技巧"
+          "id": "页面",
+          "name": "页面"
+        },
+        {
+          "id": "内容",
+          "name": "内容"
         }
       ],
-      "license": null,
-      "cover": "https://picsum.photos/id/10/800/450",
-      "to": "/article/tailwind-tricks",
+      "license": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "cover": "https://picsum.photos/seed/config-content-and-pages/1200/630.webp",
+      "coverSource": "",
+      "to": "/article/config-content-and-pages",
       "sectionTitle": "",
       "sectionPath": "",
-      "sourcePath": "/blog/content/articles/tailwind-tricks.md"
+      "sourcePath": "/blog/content/articles/config-content-and-pages.md"
     },
     {
-      "id": "article:vue3-components",
+      "id": "article:config-comments-and-analytics",
       "kind": "article",
       "iconKind": "article",
-      "title": "Tailwind CSS高级技巧",
-      "description": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
-      "excerpt": "掌握Tailwind CSS的高级使用技巧和自定义配置方法",
-      "createdAt": "2024-03-15T00:00:00.000Z",
+      "title": "评论与统计接入指南",
+      "description": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
+      "excerpt": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
+      "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
       "category": {
-        "id": "css",
-        "name": "CSS"
+        "id": "配置",
+        "name": "配置"
       },
       "tags": [
         {
-          "id": "tailwind",
-          "name": "Tailwind"
+          "id": "配置",
+          "name": "配置"
         },
         {
-          "id": "css",
-          "name": "CSS"
+          "id": "评论",
+          "name": "评论"
         },
         {
-          "id": "前端",
-          "name": "前端"
+          "id": "统计",
+          "name": "统计"
         }
       ],
-      "license": null,
-      "cover": "https://picsum.photos/id/2/800/450",
-      "to": "/article/vue3-components",
+      "license": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "cover": "https://picsum.photos/seed/config-comments-and-analytics/1200/630.webp",
+      "coverSource": "",
+      "to": "/article/config-comments-and-analytics",
       "sectionTitle": "",
       "sectionPath": "",
-      "sourcePath": "/blog/content/articles/vue3-components.md"
+      "sourcePath": "/blog/content/articles/config-comments-and-analytics.md"
+    },
+    {
+      "id": "article:config-site-and-theme",
+      "kind": "article",
+      "iconKind": "article",
+      "title": "站点基础与外观配置指南",
+      "description": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
+      "excerpt": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
+      "createdAt": "2026-05-13T00:00:00.000Z",
+      "updatedAt": null,
+      "category": {
+        "id": "配置",
+        "name": "配置"
+      },
+      "tags": [
+        {
+          "id": "配置",
+          "name": "配置"
+        },
+        {
+          "id": "站点",
+          "name": "站点"
+        },
+        {
+          "id": "外观",
+          "name": "外观"
+        }
+      ],
+      "license": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "cover": "https://picsum.photos/seed/config-site-and-theme/1200/630.webp",
+      "coverSource": "",
+      "to": "/article/config-site-and-theme",
+      "sectionTitle": "",
+      "sectionPath": "",
+      "sourcePath": "/blog/content/articles/config-site-and-theme.md"
     },
     {
       "id": "page:about",
@@ -153,6 +257,7 @@ const contentIndex = {
       "tags": [],
       "license": null,
       "cover": "https://picsum.photos/seed/%E5%85%B3%E4%BA%8E/1200/630.webp",
+      "coverSource": "",
       "to": "/about",
       "sectionTitle": "",
       "sectionPath": "/about",

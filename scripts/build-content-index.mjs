@@ -17,6 +17,8 @@ import {
   getArticlePath,
   normalizeBlogRoutePatterns
 } from '../src/framework/router/routeManifest.js'
+import { normalizeCoverConfig } from '../src/framework/utils/coverConfig.js'
+import { normalizeMarkdownConfig } from '../src/framework/utils/markdownConfig.js'
 import { resolveMenuPages } from '../src/framework/utils/menuConfig.js'
 import { parseToml } from '../src/framework/utils/tomlParser.js'
 
@@ -24,6 +26,9 @@ const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url))
 const CONTENT_DIR = path.join(ROOT_DIR, 'blog', 'content')
 const ARTICLES_DIR = path.join(CONTENT_DIR, 'articles')
 const SITE_CONFIG_FILE = path.join(ROOT_DIR, 'blog', 'config', 'site.toml')
+const LICENSE_CONFIG_FILE = path.join(ROOT_DIR, 'blog', 'config', 'license.toml')
+const COVER_CONFIG_FILE = path.join(ROOT_DIR, 'blog', 'config', 'cover.toml')
+const MARKDOWN_CONFIG_FILE = path.join(ROOT_DIR, 'blog', 'config', 'markdown.toml')
 const CONTENT_INDEX_OUTPUT_FILE = path.join(ROOT_DIR, 'src', 'framework', 'generated', 'contentIndex.generated.js')
 const SEARCH_INDEX_OUTPUT_FILE = path.join(ROOT_DIR, 'src', 'framework', 'generated', 'searchIndex.generated.js')
 const CONTENT_ROOT_PREFIX = '/blog/content/'
@@ -143,6 +148,7 @@ function createContentIndexRecord({
   tags,
   license,
   cover,
+  coverSource,
   to,
   sectionTitle,
   sectionPath,
@@ -172,6 +178,7 @@ function createContentIndexRecord({
       }
       : null,
     cover: normalizeContentField(cover),
+    coverSource: normalizeContentField(coverSource),
     to: normalizeContentField(to),
     sectionTitle: normalizeContentField(sectionTitle),
     sectionPath: normalizeContentField(sectionPath),
@@ -225,6 +232,7 @@ function createArticleContentRecord(article, routePatterns) {
     tags: article.tags,
     license: article.license,
     cover: article.cover,
+    coverSource: article.coverSource,
     to: getArticlePath(article, routePatterns),
     sectionTitle: '',
     sectionPath: '',
@@ -274,6 +282,7 @@ function createMenuContextContentRecord(pageRecord, sourcePath, page = null) {
     category: pageRecord.category,
     tags: pageRecord.tags,
     cover: pageRecord.cover,
+    coverSource: pageRecord.coverSource,
     to: resolveSearchTarget(sourcePath, page),
     sectionTitle: page?.title && page.title !== pageRecord.title ? page.title : '',
     sectionPath: page?.path || '',
@@ -303,6 +312,7 @@ function createMenuCollectionContentRecord(itemRecord, sourcePath, page = null) 
     category,
     tags,
     cover: itemRecord.cover,
+    coverSource: itemRecord.coverSource,
     to: resolveSearchTarget(sourcePath, page, itemRecord.to),
     sectionTitle: page?.title || fallbackSectionTitle,
     sectionPath: page?.path || '',
@@ -343,6 +353,33 @@ async function loadSiteConfig() {
     return parseToml(rawConfig)
   } catch {
     return {}
+  }
+}
+
+async function loadLicenseConfig() {
+  try {
+    const rawConfig = await readFile(LICENSE_CONFIG_FILE, 'utf8')
+    return parseToml(rawConfig)
+  } catch {
+    return {}
+  }
+}
+
+async function loadCoverConfig() {
+  try {
+    const rawConfig = await readFile(COVER_CONFIG_FILE, 'utf8')
+    return normalizeCoverConfig(parseToml(rawConfig))
+  } catch {
+    return normalizeCoverConfig({})
+  }
+}
+
+async function loadMarkdownConfig() {
+  try {
+    const rawConfig = await readFile(MARKDOWN_CONFIG_FILE, 'utf8')
+    return normalizeMarkdownConfig(parseToml(rawConfig))
+  } catch {
+    return normalizeMarkdownConfig({})
   }
 }
 
@@ -420,8 +457,11 @@ async function writeGeneratedModuleIfChanged(filePath, content) {
 }
 
 export async function generateContentIndex() {
-  const [siteConfig, markdownFiles] = await Promise.all([
+  const [siteConfig, licenseConfig, coverConfig, markdownConfig, markdownFiles] = await Promise.all([
     loadSiteConfig(),
+    loadLicenseConfig(),
+    loadCoverConfig(),
+    loadMarkdownConfig(),
     collectMarkdownFiles(CONTENT_DIR)
   ])
   const searchContext = createSearchContext(siteConfig)
@@ -434,7 +474,11 @@ export async function generateContentIndex() {
     const rawContent = await readFile(absolutePath, 'utf8')
 
     if (isArticleSourcePath(sourcePath)) {
-      const article = parseArticleMetadata(rawContent, sourcePath)
+      const article = parseArticleMetadata(rawContent, sourcePath, {
+        defaultLicense: licenseConfig,
+        markdownConfig,
+        coverConfig
+      })
       const contentEntry = createArticleContentRecord(article, searchContext.routePatterns)
       articles.push(article)
       contentEntries.push(contentEntry)
@@ -446,7 +490,9 @@ export async function generateContentIndex() {
 
     if (mappedPage?.sourceType === 'page-item') {
       const item = parseMenuCollectionDetail(rawContent, sourcePath, {
-        pagePath: mappedPage.page.path
+        pagePath: mappedPage.page.path,
+        markdownConfig,
+        coverConfig
       })
       const contentEntry = createMenuCollectionContentRecord(item, sourcePath, mappedPage.page)
 
@@ -459,7 +505,7 @@ export async function generateContentIndex() {
     }
 
     if (mappedPage?.sourceType === 'page') {
-      const pageRecord = parseMenuContextSource(rawContent, sourcePath)
+      const pageRecord = parseMenuContextSource(rawContent, sourcePath, { markdownConfig, coverConfig })
       const contentEntry = createMenuContextContentRecord(pageRecord, sourcePath, mappedPage.page)
 
       if (contentEntry.to) {
@@ -474,7 +520,7 @@ export async function generateContentIndex() {
     const segments = relativePath.split('/').filter(Boolean)
 
     if (segments.length <= 1) {
-      const pageRecord = parseMenuContextSource(rawContent, sourcePath)
+      const pageRecord = parseMenuContextSource(rawContent, sourcePath, { markdownConfig, coverConfig })
       const contentEntry = createMenuContextContentRecord(pageRecord, sourcePath)
 
       if (contentEntry.to) {
@@ -485,7 +531,7 @@ export async function generateContentIndex() {
       continue
     }
 
-    const item = parseMenuCollectionDetail(rawContent, sourcePath, { pagePath: '' })
+    const item = parseMenuCollectionDetail(rawContent, sourcePath, { pagePath: '', markdownConfig, coverConfig })
     const contentEntry = createMenuCollectionContentRecord(item, sourcePath)
 
     if (contentEntry.to) {

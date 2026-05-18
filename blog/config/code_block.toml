@@ -1,0 +1,71 @@
+# 代码块配置
+
+# 是否启用增强代码块（语言标签、复制按钮、折叠）
+enabled = true
+
+# 是否显示语言标签
+show_language = true
+
+# 是否显示文件名
+show_filename = true
+
+# 是否显示复制按钮
+show_copy_button = true
+
+# 是否显示行号
+show_line_numbers = true
+
+# 行号起始值
+line_number_start = 1
+
+# 代码块配色
+# 可选值: "default" | "github" | "dracula"
+theme = "default"
+dark_theme = "default"
+
+# 复制按钮文案
+copy_label = "复制代码"
+copied_label = "已复制"
+
+# 长代码默认是否允许换行
+wrap_long_lines = false
+
+# 代码块最大高度；留空表示不限制
+# max_height = "26rem"
+
+# 是否允许按行数折叠长代码
+collapsible = true
+
+# 超过多少行后默认折叠
+collapse_threshold_lines = 18
+
+# 折叠时预览多少行；不填时使用 collapse_threshold_lines
+preview_lines = 18
+
+# 折叠按钮文案
+expand_label = "展开代码"
+collapse_label = "收起代码"
+
+# 是否根据 ```diff / ```patch 自动标记增删行
+mark_diff_lines = true
+
+# 按语言覆盖；只写需要覆盖的字段，未写字段继承上面的全局配置
+# 语言名支持常见别名，例如 js 会映射到 javascript，ts 会映射到 typescript
+
+[languages.javascript]
+# JavaScript 代码通常较长，放宽折叠阈值
+collapse_threshold_lines = 28
+preview_lines = 22
+wrap_long_lines = false
+
+[languages.bash]
+# 命令行代码通常不需要行号，长命令允许换行
+show_line_numbers = false
+wrap_long_lines = true
+collapse_threshold_lines = 36
+
+[languages.diff]
+# diff 代码突出增删行，并关闭复制按钮
+mark_diff_lines = true
+show_copy_button = false
+show_line_numbers = false

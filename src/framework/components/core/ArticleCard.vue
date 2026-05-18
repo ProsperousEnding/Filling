@@ -1,15 +1,29 @@
 <template>
   <div class="article-card article-card-shell flex flex-col backdrop-blur-sm rounded-2xl transition-all duration-300 h-full overflow-hidden">
     <!-- 文章封面 -->
-    <div v-if="article.imageUrl || article.cover" class="article-card-cover h-48 overflow-hidden">
+    <div
+      v-if="showArticleCover"
+      class="article-card-cover h-48 overflow-hidden"
+      :style="coverShellStyle"
+    >
       <router-link :to="articleRoute">
         <img 
-          :src="article.imageUrl || article.cover" 
+          :src="articleCover" 
           :alt="article.title" 
-          class="article-card-cover-image w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-          loading="lazy"
+          class="article-card-cover-image w-full h-full transition-transform duration-500 hover:scale-105"
+          :loading="coverListConfig.loading"
+          :style="coverImageStyle"
         />
       </router-link>
+    </div>
+    <div
+      v-else-if="showCoverPlaceholder"
+      class="article-card-cover-placeholder h-48"
+      :data-placeholder="coverListConfig.placeholder"
+    >
+      <svg v-if="coverListConfig.placeholder === 'icon'" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
     </div>
     
     <!-- 文章内容 -->
@@ -86,7 +100,9 @@
 import { computed } from 'vue'
 import { useElementWidth } from '../../composables/useElementWidth'
 import MeasuredText from './MeasuredText.vue'
+import { useConfigStore } from '../../stores/config'
 import { getArticleRoute } from '../../utils/articleRoute'
+import { resolveDisplayArticleCover } from '../../utils/articleCover'
 
 const props = defineProps({
   article: {
@@ -95,8 +111,41 @@ const props = defineProps({
   }
 })
 
+const configStore = useConfigStore()
 const articleRoute = computed(() => getArticleRoute(props.article))
 const { elementRef: textBlockRef, width: textBlockWidth } = useElementWidth()
+const articleCover = computed(() => resolveDisplayArticleCover(props.article, {
+  coverConfig: configStore.coverConfig,
+  style: configStore.coverStyle
+}))
+const coverListConfig = computed(() => {
+  const list = configStore.coverConfig?.list || {}
+
+  return {
+    showCover: list.showCover !== false,
+    loading: list.loading === 'eager' ? 'eager' : 'lazy',
+    aspectRatio: String(list.aspectRatio || '').trim(),
+    objectFit: String(list.objectFit || 'cover').trim() || 'cover',
+    placeholder: ['none', 'gradient', 'icon'].includes(String(list.placeholder || '').trim())
+      ? String(list.placeholder || '').trim()
+      : 'gradient'
+  }
+})
+const hasArticleCover = computed(() => Boolean(articleCover.value))
+const showArticleCover = computed(() => coverListConfig.value.showCover && hasArticleCover.value)
+const showCoverPlaceholder = computed(() => (
+  coverListConfig.value.showCover
+  && !hasArticleCover.value
+  && coverListConfig.value.placeholder !== 'none'
+))
+const coverShellStyle = computed(() => (
+  coverListConfig.value.aspectRatio
+    ? { aspectRatio: coverListConfig.value.aspectRatio, height: 'auto' }
+    : {}
+))
+const coverImageStyle = computed(() => ({
+  objectFit: coverListConfig.value.objectFit
+}))
 
 // 日期格式化
 const formatDate = (dateString) => {
@@ -106,3 +155,20 @@ const formatDate = (dateString) => {
 }
 
 </script>
+
+<style scoped>
+.article-card-cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(37 99 235);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(191, 219, 254, 0.82), transparent 34%),
+    linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(248, 250, 252, 0.96));
+}
+
+.article-card-cover-placeholder[data-placeholder='icon'] {
+  background: rgba(248, 250, 252, 0.96);
+  color: rgb(148 163 184);
+}
+</style>

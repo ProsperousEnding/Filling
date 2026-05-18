@@ -53,8 +53,8 @@
           <component
             v-for="tag in article.tags"
             :key="typeof tag === 'string' ? tag : tag.id"
-            :is="showTaxonomyLinks ? 'router-link' : 'span'"
-            :to="showTaxonomyLinks ? getTagRoute(tag) : undefined"
+            :is="showTagLinks ? 'router-link' : 'span'"
+            :to="showTagLinks ? getTagRoute(tag) : undefined"
             class="theme-inline-link"
           >
             #{{ typeof tag === 'string' ? tag : tag.name }}
@@ -68,6 +68,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useElementWidth } from '../../composables/useElementWidth'
+import { useConfigStore } from '../../stores/config'
 import { getArticleRoute, getCategoryRoute, getTagRoute } from '../../utils/routeLinks'
 import MeasuredHighlightedText from './MeasuredHighlightedText.vue'
 import MeasuredText from './MeasuredText.vue'
@@ -83,6 +84,7 @@ const props = defineProps({
   }
 })
 
+const configStore = useConfigStore()
 const { elementRef: contentRef, width: contentWidth } = useElementWidth()
 const resultRoute = computed(() => {
   if (props.article?.to) {
@@ -96,8 +98,12 @@ const resultRoute = computed(() => {
   return ''
 })
 const showTaxonomyLinks = computed(() => (
-  Boolean(props.article?.category)
-  || (Array.isArray(props.article?.tags) && props.article.tags.length > 0)
+  Boolean(props.article?.category) && Boolean(configStore.pageRegistry?.categories)
+))
+const showTagLinks = computed(() => (
+  Array.isArray(props.article?.tags)
+  && props.article.tags.length > 0
+  && Boolean(configStore.pageRegistry?.tags)
 ))
 
 const articleSnippet = computed(() => {

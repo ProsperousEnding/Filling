@@ -3,6 +3,12 @@
     <div class="theme-page-header mb-8">
       <h1 class="theme-page-title text-3xl font-bold mb-4">{{ pageTitle }}</h1>
       <p class="theme-page-description">{{ pageDescription }}</p>
+      <div v-if="layoutSwitcherVisible" class="built-in-page-toolbar">
+        <CollectionLayoutSwitcher
+          v-model="layoutModel"
+          :options="collectionLayout.availableLayouts"
+        />
+      </div>
     </div>
 
     <div v-if="loading" class="py-12 flex justify-center">
@@ -25,6 +31,8 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import CollectionLayoutSwitcher from '../components/core/CollectionLayoutSwitcher.vue'
+import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { useTagStore } from '../stores/tag'
 import { useConfigStore } from '../stores/config'
 import { usePageMetadata } from '../composables/usePageMetadata'
@@ -45,13 +53,20 @@ const pageTitle = computed(() => pageConfig.value?.title || '内容标签')
 const pageDescription = computed(() => (
   pageConfig.value?.description || '浏览所有内容标签，快速定位你感兴趣的话题'
 ))
-const resolvedComponent = computed(() => resolveBuiltInPageComponent('tags', pageConfig.value?.component))
+const {
+  collectionLayout,
+  currentLayout,
+  modelValue: layoutModel,
+  switcherVisible: layoutSwitcherVisible
+} = useBuiltInPageLayout('tags', () => pageConfig.value?.component)
+const resolvedComponent = computed(() => resolveBuiltInPageComponent('tags', currentLayout.value))
 const resolvedPage = computed(() => createCollectionPage({
   key: 'tags',
   title: pageTitle.value,
   description: pageDescription.value,
   items: createTagCollectionItems(tags.value),
-  emptyText: '目前还没有标签。'
+  emptyText: '目前还没有标签。',
+  layout: collectionLayout.value
 }))
 
 usePageMetadata({

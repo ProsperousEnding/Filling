@@ -1,12 +1,11 @@
 <template>
-  <header class="site-header backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
+  <header :class="headerClass">
     <div class="blog-container site-header-bar py-3">
       <div class="flex items-center justify-between gap-4">
-        <!-- 博客标题区域 - Mac风格 -->
-        <div class="site-brand-group flex items-center space-x-3">
+        <div v-if="showBrandGroup" class="site-brand-group flex min-w-0 items-center gap-3">
           <div
-            v-if="leadingVisual.visible"
-            class="site-header-leading flex items-center mr-2"
+            v-if="showLeadingVisual"
+            class="site-header-leading mr-2 flex items-center"
           >
             <img
               v-if="leadingVisual.type === 'image' && leadingVisualSrc"
@@ -24,49 +23,64 @@
                 aria-hidden="true"
               ></span>
             </div>
-            <span
+            <router-link
               v-if="leadingVisual.title"
-              class="site-header-leading-title"
+              :to="homePath"
+              class="site-header-leading-title inline-flex items-center no-underline transition-opacity hover:opacity-80 focus-visible:opacity-80"
               :style="leadingVisualTitleStyle"
             >
               {{ leadingVisual.title }}
-            </span>
+            </router-link>
           </div>
-          <router-link
-            v-if="config.blogTitle"
-            :to="homePath"
-            class="site-brand-link text-xl font-medium transition-colors"
-          >
-            {{ config.blogTitle }}
-          </router-link>
-          <p v-if="config.blogDescription" class="site-brand-description hidden md:block text-sm font-light">
-            {{ config.blogDescription }}
-          </p>
+
+          <div v-if="showBrandTitle || showBrandDescription" class="site-brand-copy min-w-0">
+            <router-link
+              v-if="showBrandTitle"
+              :to="homePath"
+              class="site-brand-link block truncate text-xl font-medium transition-colors"
+            >
+              {{ config.blogTitle }}
+            </router-link>
+            <p
+              v-if="showBrandDescription"
+              class="site-brand-description hidden truncate text-sm font-light md:block"
+            >
+              {{ brandDescriptionText }}
+            </p>
+          </div>
         </div>
-        
+
         <div
-          v-if="headerMenuGroups.length > 0"
-          class="site-header-menu-groups hidden md:flex items-center gap-2"
+          v-if="showDesktopMenu"
+          class="site-header-menu-groups hidden items-center gap-2 md:flex"
         >
           <MenuRenderer
-            v-for="group in headerMenuGroups"
+            v-for="group in desktopHeaderMenuGroups"
             :key="group.key"
             :renderer="group.renderer"
             :renderer-props="group.rendererProps"
           />
         </div>
-        
-        <!-- 操作区 - Mac风格图标 -->
-        <div class="site-header-actions flex items-center space-x-3">
-          <!-- 搜索按钮 -->
-          <router-link :to="searchPath" class="site-header-action p-2 rounded-full transition-all">
+
+        <div v-if="showActions" class="site-header-actions flex items-center space-x-3">
+          <router-link
+            v-if="showSearchAction"
+            :to="searchPath"
+            class="site-header-action rounded-full p-2 transition-all"
+            aria-label="搜索"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </router-link>
 
-          <!-- 主题切换按钮 -->
-          <button @click="toggleTheme" class="site-header-action p-2 rounded-full transition-all">
+          <button
+            v-if="navbar.showThemeToggle"
+            type="button"
+            class="site-header-action rounded-full p-2 transition-all"
+            aria-label="切换主题"
+            @click="toggleTheme"
+          >
             <svg v-if="config.theme === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
@@ -76,18 +90,36 @@
           </button>
 
           <button
-            v-if="config.sidebarVisible"
-            @click="toggleSidebarDrawer"
-            class="site-header-action md:hidden p-2 rounded-full transition-all"
+            v-if="showCoverStyleToggle"
+            type="button"
+            class="site-header-action site-header-cover-action rounded-full px-2.5 py-2 text-xs font-semibold transition-all"
+            :aria-label="`切换封面图源，当前为${currentCoverStyleLabel}`"
+            :title="`切换封面图源，当前为${currentCoverStyleLabel}`"
+            @click="toggleCoverStyle"
+          >
+            <span class="site-header-cover-label-full">{{ currentCoverStyleLabel }}</span>
+            <span class="site-header-cover-label-compact">{{ compactCoverStyleLabel }}</span>
+          </button>
+
+          <button
+            v-if="showSidebarToggle"
+            type="button"
+            class="site-header-action rounded-full p-2 transition-all md:hidden"
             :aria-label="config.mobileSidebarOpen ? '关闭侧边栏' : '打开侧边栏'"
+            @click="toggleSidebarDrawer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 5.25h16.5M3.75 18.75h16.5M9.75 9.75h10.5M9.75 14.25h10.5M3.75 9.75h2.25v4.5H3.75z" />
             </svg>
           </button>
-          
-          <!-- 移动端菜单按钮 -->
-          <button @click="toggleMobileMenu" class="site-header-action md:hidden p-2 rounded-full transition-all">
+
+          <button
+            v-if="showMobileMenuToggle"
+            type="button"
+            class="site-header-action rounded-full p-2 transition-all md:hidden"
+            :aria-label="mobileMenuOpen ? '关闭导航菜单' : '打开导航菜单'"
+            @click="toggleMobileMenu"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -95,9 +127,8 @@
         </div>
       </div>
     </div>
-    
-    <!-- 移动端菜单 -->
-    <div v-if="mobileMenuOpen" class="site-mobile-nav md:hidden backdrop-blur-md transition-all duration-300">
+
+    <div v-if="showMobileMenuPanel" :class="mobileNavClass">
       <div class="blog-container py-3">
         <MenuRenderer
           v-for="group in mobileHeaderMenuGroups"
@@ -112,25 +143,23 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useConfigStore } from '../../stores/config'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { getHomePath, getSearchPath } from '../../utils/routeLinks'
-import { resolveHeaderMenuGroups, resolveMobileHeaderMenuGroups } from '../../utils/menuConfig'
+import { useConfigStore } from '../../stores/config'
 import MenuRenderer from '../menu/MenuRenderer.vue'
+import {
+  getPrimaryMenuPagePath,
+  resolveHeaderMenuGroups,
+  resolveMobileHeaderMenuGroups
+} from '../../utils/menuConfig'
+import { getSearchPath } from '../../utils/routeLinks'
+import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
 
-// 获取当前路由
-const $route = useRoute()
-
-// 移动端菜单控制
+const route = useRoute()
 const mobileMenuOpen = ref(false)
-const toggleMobileMenu = () => {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
-
-// 获取配置store
 const configStore = useConfigStore()
 const config = configStore
+
 const leadingVisual = computed(() => (
   config.headerConfig?.leadingVisual || {
     visible: true,
@@ -147,26 +176,137 @@ const leadingVisual = computed(() => (
   }
 ))
 
-// 主题切换
+const navbar = computed(() => (
+  config.headerConfig?.navbar || {
+    sticky: true,
+    blur: true,
+    showBrand: true,
+    showTitle: true,
+    showDescription: true,
+    showDesktopMenu: true,
+    showMobileMenu: true,
+    showSearch: true,
+    showThemeToggle: true,
+    showSidebarToggle: true,
+    showMobileMenuToggle: true
+  }
+))
+
+const homePath = computed(() => getPrimaryMenuPagePath(config.menus, config.routePatterns))
+const searchPath = computed(() => getSearchPath(config.routePatterns))
+const headerMenuGroups = computed(() => resolveHeaderMenuGroups(config.menus, {
+  routePatterns: config.routePatterns,
+  pageRegistry: config.pageRegistry,
+  activePath: route.path
+}))
+const mobileHeaderMenuGroups = computed(() => resolveMobileHeaderMenuGroups(config.menus, {
+  routePatterns: config.routePatterns,
+  pageRegistry: config.pageRegistry,
+  activePath: route.path
+}))
+const desktopHeaderMenuGroups = computed(() => (
+  navbar.value.showDesktopMenu ? headerMenuGroups.value : []
+))
+const showDesktopMenu = computed(() => desktopHeaderMenuGroups.value.length > 0)
+const showLeadingVisual = computed(() => navbar.value.showBrand && leadingVisual.value.visible)
+const showBrandTitle = computed(() => (
+  navbar.value.showBrand && navbar.value.showTitle && Boolean(config.blogTitle)
+))
+const brandDescriptionText = computed(() => config.blogDescription || config.blogSubtitle || '')
+const showBrandDescription = computed(() => (
+  navbar.value.showBrand && navbar.value.showDescription && Boolean(brandDescriptionText.value)
+))
+const showBrandGroup = computed(() => (
+  showLeadingVisual.value || showBrandTitle.value || showBrandDescription.value
+))
+const showSidebarToggle = computed(() => (
+  navbar.value.showSidebarToggle
+  && config.sidebarVisible
+  && (route.name !== BLOG_ROUTE_NAMES.articleDetail || config.showSidebarOnArticles !== false)
+))
+const showSearchAction = computed(() => (
+  navbar.value.showSearch && Boolean(config.pageRegistry?.search)
+))
+const showMobileMenuToggle = computed(() => (
+  navbar.value.showMobileMenu
+  && navbar.value.showMobileMenuToggle
+  && mobileHeaderMenuGroups.value.length > 0
+))
+const showCoverStyleToggle = computed(() => (
+  config.coverConfig?.fallback === 'seeded'
+  && (config.coverConfig?.sourceSwitch?.enabled ?? config.coverConfig?.styleSwitch?.enabled) !== false
+  && (
+    (Array.isArray(config.coverConfig?.sourceSwitch?.sources) && config.coverConfig.sourceSwitch.sources.length > 1)
+    || (Array.isArray(config.coverConfig?.styleSwitch?.styles) && config.coverConfig.styleSwitch.styles.length > 1)
+  )
+))
+const currentCoverStyleLabel = computed(() => (
+  config.coverConfig?.sourceSwitch?.labels?.[config.coverStyle]
+  || config.coverConfig?.styleSwitch?.labels?.[config.coverStyle]
+  || config.coverStyle
+))
+const compactCoverStyleLabel = computed(() => {
+  const label = String(currentCoverStyleLabel.value || '').trim()
+
+  if (!label) {
+    return ''
+  }
+
+  const compactMap = {
+    'MWM 二次元': '二次',
+    'MWM 风景': '风景',
+    'XJH ACG': 'ACG',
+    'Bing 随机': 'Bing'
+  }
+
+  return compactMap[label] || label.replace(/\s+/g, '').slice(0, 4)
+})
+const showActions = computed(() => (
+  showSearchAction.value
+  || navbar.value.showThemeToggle
+  || showCoverStyleToggle.value
+  || showSidebarToggle.value
+  || showMobileMenuToggle.value
+))
+const showMobileMenuPanel = computed(() => (
+  mobileMenuOpen.value && navbar.value.showMobileMenu && mobileHeaderMenuGroups.value.length > 0
+))
+const headerClass = computed(() => [
+  'site-header',
+  'z-50',
+  'transition-all',
+  'duration-300',
+  navbar.value.blur ? 'site-header-has-blur backdrop-blur-md' : '',
+  navbar.value.sticky ? 'sticky top-0' : ''
+])
+const mobileNavClass = computed(() => [
+  'site-mobile-nav',
+  'md:hidden',
+  'transition-all',
+  'duration-300',
+  navbar.value.blur ? 'site-mobile-nav-has-blur backdrop-blur-md' : ''
+])
+
 const toggleTheme = () => {
   configStore.toggleTheme()
+}
+
+const toggleCoverStyle = () => {
+  configStore.toggleCoverStyle()
 }
 
 const toggleSidebarDrawer = () => {
   configStore.toggleMobileSidebar()
 }
 
-// 导航菜单项
-const homePath = computed(() => getHomePath(config.routePatterns))
-const searchPath = computed(() => getSearchPath(config.routePatterns))
-const headerMenuGroups = computed(() => resolveHeaderMenuGroups(config.menus, {
-  routePatterns: config.routePatterns,
-  activePath: $route.path
-}))
-const mobileHeaderMenuGroups = computed(() => resolveMobileHeaderMenuGroups(config.menus, {
-  routePatterns: config.routePatterns,
-  activePath: $route.path
-}))
+const toggleMobileMenu = () => {
+  if (!showMobileMenuToggle.value) {
+    mobileMenuOpen.value = false
+    return
+  }
+
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
 
 function resolveHeaderAssetUrl(value) {
   const rawValue = String(value || '').trim()
@@ -193,12 +333,25 @@ const leadingVisualImageStyle = computed(() => ({
 const leadingVisualTitleStyle = computed(() => ({
   fontSize: leadingVisual.value.titleSize || '0.98rem'
 }))
+
+watch(() => route.fullPath, () => {
+  mobileMenuOpen.value = false
+})
+
+watch(showMobileMenuToggle, (visible) => {
+  if (!visible) {
+    mobileMenuOpen.value = false
+  }
+})
 </script>
 
 <style scoped>
-/* 为Mac风格添加一些微妙阴影和过渡效果 */
 header {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.site-brand-copy {
+  min-width: 0;
 }
 
 .site-header-leading {
@@ -238,14 +391,127 @@ header {
   transform: translateY(-0.5px);
 }
 
+.site-header-cover-label-compact {
+  display: none;
+}
+
 :global(.dark) .site-header-leading-title {
   color: rgb(241 245 249 / 0.88);
 }
 
+@media (max-width: 640px) {
+  .site-header-bar {
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
+
+  .site-header-bar > div {
+    gap: 0.45rem;
+  }
+
+  .site-brand-group {
+    flex: 1 1 auto;
+    gap: 0.38rem;
+    min-width: 0;
+  }
+
+  .site-header-leading {
+    gap: 0.46rem;
+    margin-right: 0 !important;
+    min-width: 0;
+  }
+
+  .site-header-dots {
+    gap: 0.32rem;
+  }
+
+  .site-header-dot {
+    width: 0.78rem;
+    height: 0.78rem;
+  }
+
+  .site-header-leading-title {
+    max-width: 4.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.86rem !important;
+  }
+
+  .site-brand-copy {
+    display: none;
+  }
+
+  .site-header-actions {
+    flex: 0 0 auto;
+    gap: 0.35rem !important;
+    margin-left: auto;
+    padding-left: 0.25rem;
+  }
+
+  .site-header-actions :deep(.site-header-action),
+  .site-header-action {
+    width: 2.05rem;
+    height: 2.05rem;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .site-header-action svg {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .site-header-cover-action {
+    width: auto;
+    min-width: 2.35rem;
+    max-width: 3.35rem;
+    padding-inline: 0.5rem !important;
+    font-size: 0.68rem;
+    line-height: 1;
+  }
+
+  .site-header-cover-label-full {
+    display: none;
+  }
+
+  .site-header-cover-label-compact {
+    display: inline;
+  }
+}
+
+@media (max-width: 380px) {
+  .site-header-actions {
+    gap: 0.25rem !important;
+  }
+
+  .site-header-action {
+    width: 1.92rem;
+    height: 1.92rem;
+  }
+
+  .site-header-cover-action {
+    min-width: 2.15rem;
+    max-width: 2.8rem;
+    padding-inline: 0.38rem !important;
+  }
+
+  .site-header-leading-title {
+    max-width: 3.4rem;
+  }
+}
+
 @supports (backdrop-filter: blur(12px)) {
-  header {
+  .site-header-has-blur {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .site-mobile-nav-has-blur {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
 }
-</style> 
+</style>

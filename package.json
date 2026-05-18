@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@10.32.1",
   "description": "一个基于 Vue 3 的静态博客框架",
-  "author": "Your Name",
+  "author": "ProsperousEnding",
   "license": "MIT",
   "keywords": [
     "vue",

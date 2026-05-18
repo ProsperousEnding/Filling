@@ -1,19 +1,7 @@
 import fm from 'front-matter'
-import MarkdownIt from 'markdown-it'
 import { resolveArticleCover } from '../../utils/articleCover.js'
 import { normalizeOptionalBoolean, normalizePositiveInteger } from '../../utils/articleMeta.js'
-
-const markdown = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: true
-})
-
-const markdownValidateLink = markdown.validateLink.bind(markdown)
-markdown.validateLink = (url) => {
-  const normalizedUrl = String(url || '').trim()
-  return markdownValidateLink(normalizedUrl) && !/^(?:javascript|vbscript|data):/i.test(normalizedUrl)
-}
+import { renderMarkdown } from '../../utils/markdownRenderer.js'
 
 const HTML_ENTITY_MAP = {
   '&nbsp;': ' ',
@@ -199,6 +187,19 @@ function normalizeLicense(value, fallbackUrl = '') {
   }
 }
 
+function resolveLicenseDisabled(frontmatter = {}) {
+  if (frontmatter.license === false) {
+    return true
+  }
+
+  return normalizeOptionalBoolean(
+    frontmatter.hide_license
+    ?? frontmatter.disable_license
+    ?? frontmatter.hideLicense
+    ?? frontmatter.disableLicense
+  ) === true
+}
+
 function resolveOutdatedNoticeFlag(frontmatter = {}) {
   const explicitValue = normalizeOptionalBoolean(
     frontmatter.show_outdated_notice
@@ -218,6 +219,12 @@ function resolveOutdatedNoticeFlag(frontmatter = {}) {
   }
 
   return explicitValue
+}
+
+function normalizeCoverDisplayMode(value) {
+  const normalized = normalizeTextValue(value).toLowerCase()
+
+  return ['image', 'header-background', 'page-background'].includes(normalized) ? normalized : ''
 }
 
 function estimateReadTime(text) {
@@ -250,15 +257,16 @@ function resolveArticleFileName(sourcePath = '') {
     .join('-')
 }
 
-function createArticleRecord(rawContent, sourcePath, { includeContent = false } = {}) {
+function createArticleRecord(rawContent, sourcePath, { includeContent = false, defaultLicense = null, codeBlockConfig = null, markdownConfig = null, coverConfig = null } = {}) {
   const fileName = resolveArticleFileName(sourcePath)
   const parsed = fm(rawContent || '')
   const frontmatter = parsed.attributes || {}
   const title = frontmatter.title || fileName
   const body = stripLeadingDuplicateTitleHeading(parsed.body || '', title)
-  const html = markdown.render(body)
+  const html = renderMarkdown(body, { codeBlockConfig, markdownConfig })
+  const plainHtml = renderMarkdown(body, { enhanceCodeBlocks: false, markdownConfig })
   const slug = normalizeArticleLookupId(frontmatter.slug || fileName) || fileName
-  const plainText = normalizeTextValue(stripHtmlTags(html))
+  const plainText = normalizeTextValue(stripHtmlTags(plainHtml))
   const description = normalizeTextValue(frontmatter.description)
   const summary = normalizeTextValue(frontmatter.summary)
   const excerpt = summary || description || createExcerpt(plainText)
@@ -279,7 +287,10 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false } 
     || frontmatter.lastmod
     || frontmatter.last_modified
   )
-  const license = normalizeLicense(frontmatter.license, frontmatter.license_url)
+  const licenseDisabled = resolveLicenseDisabled(frontmatter)
+  const license = licenseDisabled
+    ? null
+    : normalizeLicense(frontmatter.license, frontmatter.license_url) || normalizeLicense(defaultLicense)
   const outdatedThresholdDays = normalizePositiveInteger(
     frontmatter.outdated_threshold
     ?? frontmatter.outdated_threshold_days
@@ -287,6 +298,13 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false } 
     ?? frontmatter.outdatedThresholdDays
   )
   const showOutdatedNotice = resolveOutdatedNoticeFlag(frontmatter)
+  const coverSource = normalizeTextValue(frontmatter.cover || frontmatter.image || frontmatter.thumbnail)
+  const coverDisplayMode = normalizeCoverDisplayMode(
+    frontmatter.cover_display_mode
+    ?? frontmatter.coverDisplayMode
+    ?? frontmatter.cover_mode
+    ?? frontmatter.coverMode
+  )
 
   const article = {
     id: fileName,
@@ -296,7 +314,9 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false } 
     author,
     category,
     tags,
-    cover: resolveArticleCover(frontmatter.cover, slug || fileName),
+    cover: resolveArticleCover(coverSource, slug || fileName, { coverConfig }),
+    coverSource,
+    coverDisplayMode,
     description,
     summary: summary || excerpt,
     excerpt,
@@ -305,6 +325,7 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false } 
     createdAt: normalizeDateValue(frontmatter.date),
     updatedAt,
     license,
+    licenseDisabled,
     outdatedThresholdDays,
     showOutdatedNotice,
     sourcePath
@@ -317,10 +338,13 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false } 
   return article
 }
 
-export function parseArticleMetadata(rawContent, sourcePath) {
-  return createArticleRecord(rawContent, sourcePath)
+export function parseArticleMetadata(rawContent, sourcePath, options = {}) {
+  return createArticleRecord(rawContent, sourcePath, options)
 }
 
-export function parseArticleDetail(rawContent, sourcePath) {
-  return createArticleRecord(rawContent, sourcePath, { includeContent: true })
+export function parseArticleDetail(rawContent, sourcePath, options = {}) {
+  return createArticleRecord(rawContent, sourcePath, {
+    ...options,
+    includeContent: true
+  })
 }

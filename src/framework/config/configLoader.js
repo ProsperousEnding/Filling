@@ -1,5 +1,5 @@
-﻿import { applyConfigEnvOverrides } from './configEnvOverrides'
-import { parseToml } from '../utils/tomlParser'
+﻿import { applyConfigEnvOverrides } from './configEnvOverrides.js'
+import { parseToml } from '../utils/tomlParser.js'
 
 // 动态导入所有配置文件
 const configFiles = import.meta.glob('/blog/config/*.toml', {
@@ -96,6 +96,86 @@ export async function getSponsorConfig() {
     await loadAllConfigs()
   }
   return configCache.sponsor || {}
+}
+
+/**
+ * 获取许可协议配置
+ */
+export async function getLicenseConfig() {
+  if (!configCache.license) {
+    await loadAllConfigs()
+  }
+  return configCache.license || {}
+}
+
+/**
+ * 获取统计分析配置
+ */
+export async function getAnalyticsConfig() {
+  if (!configCache.analytics) {
+    await loadAllConfigs()
+  }
+  return configCache.analytics || {}
+}
+
+/**
+ * 获取字体配置
+ */
+export async function getFontConfig() {
+  if (!configCache.font) {
+    await loadAllConfigs()
+  }
+  return configCache.font || {}
+}
+
+/**
+ * 获取代码块配置
+ */
+export async function getCodeBlockConfig() {
+  if (!configCache.code_block) {
+    await loadAllConfigs()
+  }
+  return configCache.code_block || {}
+}
+
+/**
+ * 获取 Markdown 增强配置
+ */
+export async function getMarkdownConfig() {
+  if (!configCache.markdown) {
+    await loadAllConfigs()
+  }
+  return configCache.markdown || {}
+}
+
+/**
+ * 获取背景配置
+ */
+export async function getBackgroundConfig() {
+  if (!configCache.background) {
+    await loadAllConfigs()
+  }
+  return configCache.background || {}
+}
+
+/**
+ * 获取封面图配置
+ */
+export async function getCoverConfig() {
+  if (!configCache.cover) {
+    await loadAllConfigs()
+  }
+  return configCache.cover || {}
+}
+
+/**
+ * 获取留言板配置
+ */
+export async function getGuestbookConfig() {
+  if (!configCache.guestbook) {
+    await loadAllConfigs()
+  }
+  return configCache.guestbook || {}
 }
 
 /**

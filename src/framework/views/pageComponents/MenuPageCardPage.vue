@@ -1,5 +1,5 @@
 <template>
-  <div class="menu-page-card-list">
+  <div class="menu-page-card-list" :style="containerStyle">
     <component
       v-for="item in page.items"
       :is="resolveItemTag(item)"
@@ -11,13 +11,27 @@
       :rel="item.external ? 'noreferrer' : undefined"
     >
       <template v-if="usesArticleCard(item)">
-        <div v-if="hasItemCover(item)" class="h-48 overflow-hidden">
+        <div
+          v-if="showItemCover(item)"
+          class="menu-page-card-cover h-48 overflow-hidden"
+          :style="coverShellStyle"
+        >
           <img
             :src="getItemCover(item)"
             :alt="item.title"
-            class="h-full w-full object-cover transition-transform duration-500"
-            loading="lazy"
+            class="h-full w-full transition-transform duration-500"
+            :loading="coverListConfig.loading"
+            :style="coverImageStyle"
           />
+        </div>
+        <div
+          v-else-if="showCoverPlaceholder"
+          class="menu-page-card-cover-placeholder h-48"
+          :data-placeholder="coverListConfig.placeholder"
+        >
+          <svg v-if="coverListConfig.placeholder === 'icon'" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
         </div>
 
         <div class="article-card-body p-6 flex flex-col flex-grow">
@@ -148,6 +162,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useConfigStore } from '../../stores/config'
 import {
   getMenuItemActionLabel,
   getMenuItemCover,
@@ -160,10 +176,58 @@ import {
   resolveMenuItemTag
 } from './menuPageItemPresentation.js'
 
-defineProps({
+const props = defineProps({
   page: {
     type: Object,
     required: true
+  }
+})
+
+const configStore = useConfigStore()
+const coverResolveOptions = computed(() => ({
+  coverConfig: configStore.coverConfig,
+  style: configStore.coverStyle
+}))
+
+const coverListConfig = computed(() => {
+  const list = configStore.coverConfig?.list || {}
+
+  return {
+    showCover: list.showCover !== false,
+    loading: list.loading === 'eager' ? 'eager' : 'lazy',
+    aspectRatio: String(list.aspectRatio || '').trim(),
+    objectFit: String(list.objectFit || 'cover').trim() || 'cover',
+    placeholder: ['none', 'gradient', 'icon'].includes(String(list.placeholder || '').trim())
+      ? String(list.placeholder || '').trim()
+      : 'gradient'
+  }
+})
+
+const coverShellStyle = computed(() => (
+  coverListConfig.value.aspectRatio
+    ? { aspectRatio: coverListConfig.value.aspectRatio, height: 'auto' }
+    : {}
+))
+
+const coverImageStyle = computed(() => ({
+  objectFit: coverListConfig.value.objectFit
+}))
+
+const showCoverPlaceholder = computed(() => (
+  coverListConfig.value.showCover && coverListConfig.value.placeholder !== 'none'
+))
+
+const containerStyle = computed(() => {
+  const columns = Number.parseInt(props.page?.layout?.columns, 10)
+  const wideColumns = Number.parseInt(props.page?.layout?.wideColumns, 10)
+  const normalizedColumns = Number.isFinite(columns) && columns > 0 ? Math.min(columns, 4) : null
+  const normalizedWideColumns = Number.isFinite(wideColumns) && wideColumns > 0
+    ? Math.min(Math.max(wideColumns, normalizedColumns || 1), 4)
+    : normalizedColumns
+
+  return {
+    ...(normalizedColumns ? { '--menu-page-card-columns': String(normalizedColumns) } : {}),
+    ...(normalizedWideColumns ? { '--menu-page-card-wide-columns': String(normalizedWideColumns) } : {})
   }
 })
 
@@ -172,15 +236,19 @@ function resolveItemTag(item) {
 }
 
 function hasItemCover(item) {
-  return hasMenuItemCover(item)
+  return hasMenuItemCover(item, coverResolveOptions.value)
+}
+
+function showItemCover(item) {
+  return coverListConfig.value.showCover && hasItemCover(item)
 }
 
 function getItemCover(item) {
-  return getMenuItemCover(item)
+  return getMenuItemCover(item, coverResolveOptions.value)
 }
 
 function usesArticleCard(item) {
-  return isArticleLikeMenuItem(item)
+  return isArticleLikeMenuItem(item, coverResolveOptions.value)
 }
 
 function getPrimaryBadge(item) {
@@ -231,6 +299,21 @@ function getCardItemClass(item) {
 .menu-page-card-entry-description,
 .menu-page-card-entry-footer {
   overflow-wrap: anywhere;
+}
+
+.menu-page-card-cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(37 99 235);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(191, 219, 254, 0.82), transparent 34%),
+    linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(248, 250, 252, 0.96));
+}
+
+.menu-page-card-cover-placeholder[data-placeholder='icon'] {
+  background: rgba(248, 250, 252, 0.96);
+  color: rgb(148 163 184);
 }
 
 @media (max-width: 640px) {

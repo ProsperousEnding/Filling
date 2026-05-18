@@ -1,20 +1,8 @@
 import fm from 'front-matter'
-import MarkdownIt from 'markdown-it'
 import { resolveArticleCover } from '../../utils/articleCover.js'
+import { renderMarkdown } from '../../utils/markdownRenderer.js'
 
 const MENU_CONTENT_ROOT = '/blog/content'
-
-const markdown = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: true
-})
-
-const markdownValidateLink = markdown.validateLink.bind(markdown)
-markdown.validateLink = (url) => {
-  const normalizedUrl = String(url || '').trim()
-  return markdownValidateLink(normalizedUrl) && !/^(?:javascript|vbscript|data):/i.test(normalizedUrl)
-}
 
 const HTML_ENTITY_MAP = {
   '&nbsp;': ' ',
@@ -176,19 +164,22 @@ export function isMenuSourcePathInFolder(sourcePath, folderPrefix) {
   return Boolean(relativePath) && !relativePath.includes('/') && relativePath.endsWith('.md')
 }
 
-export function parseMenuContextSource(rawContent, sourcePath) {
+export function parseMenuContextSource(rawContent, sourcePath, options = {}) {
   const parsed = fm(rawContent || '')
   const frontmatter = parsed.attributes || {}
   const body = String(parsed.body || '').trim()
-  const contentHtml = body ? markdown.render(body) : ''
-  const plainText = normalizeTextValue(stripHtmlTags(contentHtml))
+  const contentHtml = body ? renderMarkdown(body, { codeBlockConfig: options.codeBlockConfig, markdownConfig: options.markdownConfig }) : ''
+  const plainHtml = body ? renderMarkdown(body, { enhanceCodeBlocks: false, markdownConfig: options.markdownConfig }) : ''
+  const plainText = normalizeTextValue(stripHtmlTags(plainHtml))
   const sourceName = resolveSourceName(sourcePath)
   const title = normalizeString(frontmatter.title || frontmatter.name || sourceName)
   const category = normalizeTextValue(frontmatter.category)
   const tags = normalizeFrontmatterList(frontmatter.tags).map(name => ({ name }))
+  const coverSource = normalizeTextValue(frontmatter.cover || frontmatter.image || frontmatter.thumbnail)
   const cover = resolveArticleCover(
-    frontmatter.cover || frontmatter.image || frontmatter.thumbnail,
-    frontmatter.slug || frontmatter.key || title || sourceName
+    coverSource,
+    frontmatter.slug || frontmatter.key || title || sourceName,
+    { coverConfig: options.coverConfig }
   )
 
   return {
@@ -199,6 +190,7 @@ export function parseMenuContextSource(rawContent, sourcePath) {
     createdAt: normalizeTextValue(frontmatter.date),
     category: category ? { name: category } : null,
     tags,
+    coverSource,
     cover,
     content: body,
     contentHtml,
@@ -207,12 +199,13 @@ export function parseMenuContextSource(rawContent, sourcePath) {
   }
 }
 
-function createMenuCollectionRecord(rawContent, sourcePath, { pagePath = '' } = {}) {
+function createMenuCollectionRecord(rawContent, sourcePath, { pagePath = '', codeBlockConfig = null, markdownConfig = null, coverConfig = null } = {}) {
   const parsed = fm(rawContent || '')
   const frontmatter = parsed.attributes || {}
   const body = String(parsed.body || '').trim()
-  const contentHtml = body ? markdown.render(body) : ''
-  const plainText = normalizeTextValue(stripHtmlTags(contentHtml))
+  const contentHtml = body ? renderMarkdown(body, { codeBlockConfig, markdownConfig }) : ''
+  const plainHtml = body ? renderMarkdown(body, { enhanceCodeBlocks: false, markdownConfig }) : ''
+  const plainText = normalizeTextValue(stripHtmlTags(plainHtml))
   const sourceName = resolveSourceName(sourcePath)
   const itemId = normalizeMenuCollectionItemId(frontmatter.slug || frontmatter.key || sourceName) || sourceName
   const title = normalizeString(frontmatter.title || frontmatter.name || resolveSourceName(sourcePath))
@@ -221,9 +214,11 @@ function createMenuCollectionRecord(rawContent, sourcePath, { pagePath = '' } = 
   const category = normalizeTextValue(frontmatter.category)
   const tags = normalizeFrontmatterList(frontmatter.tags).map(label => ({ label }))
   const details = normalizeFrontmatterList(frontmatter.details || frontmatter.highlights || frontmatter.points)
+  const coverSource = normalizeTextValue(frontmatter.cover || frontmatter.image || frontmatter.thumbnail)
   const cover = resolveArticleCover(
-    frontmatter.cover || frontmatter.image || frontmatter.thumbnail,
-    itemId || frontmatter.key || frontmatter.slug || title
+    coverSource,
+    itemId || frontmatter.key || frontmatter.slug || title,
+    { coverConfig }
   )
   const to = resolveMenuCollectionItemPath(pagePath, itemId)
 
@@ -236,6 +231,7 @@ function createMenuCollectionRecord(rawContent, sourcePath, { pagePath = '' } = 
     description,
     meta,
     footer: normalizeTextValue(frontmatter.footer || frontmatter.cta || frontmatter.note),
+    coverSource,
     cover,
     category: category ? { label: category } : null,
     tags,

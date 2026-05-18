@@ -6,6 +6,8 @@ export function parseToml(tomlString) {
   const lines = tomlString.split('\n')
   const result = createTomlObject()
   let currentSection = result
+  let currentArrayTablePath = []
+  let currentArrayItem = null
 
   for (let index = 0; index < lines.length; index += 1) {
     const rawLine = lines[index]
@@ -33,9 +35,11 @@ export function parseToml(tomlString) {
       const lastKey = keys[keys.length - 1]
       if (!current[lastKey]) current[lastKey] = []
       
-      const currentArrayItem = createTomlObject()
-      current[lastKey].push(currentArrayItem)
-      currentSection = currentArrayItem
+      const nextArrayItem = createTomlObject()
+      current[lastKey].push(nextArrayItem)
+      currentSection = nextArrayItem
+      currentArrayTablePath = keys
+      currentArrayItem = currentSection
       continue
     }
 
@@ -49,6 +53,17 @@ export function parseToml(tomlString) {
         continue
       }
       
+      const nestedArraySection = resolveNestedArrayTableSection(
+        keys,
+        currentArrayTablePath,
+        currentArrayItem
+      )
+
+      if (nestedArraySection) {
+        currentSection = nestedArraySection
+        continue
+      }
+
       let current = result
       for (const key of keys) {
         if (!current[key]) current[key] = createTomlObject()
@@ -56,6 +71,8 @@ export function parseToml(tomlString) {
       }
       
       currentSection = current
+      currentArrayTablePath = []
+      currentArrayItem = null
       continue
     }
 
@@ -78,6 +95,10 @@ export function parseToml(tomlString) {
         const parsedMultiline = parseMultilineTomlString(lines, index, value, delimiter)
         value = parsedMultiline.value
         index = parsedMultiline.nextIndex
+      } else if (value.startsWith('[') && !isBalancedTomlArray(value)) {
+        const parsedArray = parseMultilineTomlArray(lines, index, value)
+        value = parseTomlValue(parsedArray.value)
+        index = parsedArray.nextIndex
       } else {
         value = parseTomlValue(value)
       }
@@ -87,6 +108,33 @@ export function parseToml(tomlString) {
   }
 
   return result
+}
+
+function resolveNestedArrayTableSection(keys, currentArrayTablePath, currentArrayItem) {
+  if (
+    !currentArrayItem
+    || !Array.isArray(currentArrayTablePath)
+    || currentArrayTablePath.length === 0
+    || keys.length <= currentArrayTablePath.length
+  ) {
+    return null
+  }
+
+  const matchesCurrentArrayPath = currentArrayTablePath.every((key, index) => keys[index] === key)
+
+  if (!matchesCurrentArrayPath) {
+    return null
+  }
+
+  let current = currentArrayItem
+  keys.slice(currentArrayTablePath.length).forEach((key) => {
+    if (!current[key]) {
+      current[key] = createTomlObject()
+    }
+    current = current[key]
+  })
+
+  return current
 }
 
 function stripInlineComment(line) {
@@ -153,6 +201,138 @@ function parseMultilineTomlString(lines, startIndex, rawValue, delimiter) {
   }
 }
 
+function isBalancedTomlArray(value) {
+  const normalizedValue = String(value || '')
+  let inString = false
+  let escaped = false
+  let depth = 0
+
+  for (let index = 0; index < normalizedValue.length; index += 1) {
+    const char = normalizedValue[index]
+
+    if (escaped) {
+      escaped = false
+      continue
+    }
+
+    if (char === '\\' && inString) {
+      escaped = true
+      continue
+    }
+
+    if (char === '"') {
+      inString = !inString
+      continue
+    }
+
+    if (inString) {
+      continue
+    }
+
+    if (char === '[') {
+      depth += 1
+    }
+
+    if (char === ']') {
+      depth -= 1
+      if (depth <= 0) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
+function parseMultilineTomlArray(lines, startIndex, rawValue) {
+  const collectedLines = [stripInlineComment(rawValue)]
+  let nextIndex = startIndex
+
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const currentLine = stripInlineComment(lines[index])
+    collectedLines.push(currentLine)
+    nextIndex = index
+
+    if (isBalancedTomlArray(collectedLines.join('\n'))) {
+      break
+    }
+  }
+
+  return {
+    value: collectedLines.join('\n'),
+    nextIndex
+  }
+}
+
+function splitTomlArrayItems(arrayContent) {
+  const items = []
+  let current = ''
+  let inString = false
+  let escaped = false
+
+  for (let index = 0; index < arrayContent.length; index += 1) {
+    const char = arrayContent[index]
+
+    if (escaped) {
+      current += char
+      escaped = false
+      continue
+    }
+
+    if (char === '\\' && inString) {
+      current += char
+      escaped = true
+      continue
+    }
+
+    if (char === '"') {
+      inString = !inString
+      current += char
+      continue
+    }
+
+    if (char === ',' && !inString) {
+      items.push(current.trim())
+      current = ''
+      continue
+    }
+
+    current += char
+  }
+
+  if (current.trim()) {
+    items.push(current.trim())
+  }
+
+  return items
+}
+
+function parseTomlArrayItem(value) {
+  const normalizedItem = String(value || '').trim()
+
+  if (!normalizedItem) {
+    return ''
+  }
+
+  if (normalizedItem.startsWith('"') && normalizedItem.endsWith('"')) {
+    return normalizedItem.slice(1, -1)
+  }
+
+  if (normalizedItem === 'true') {
+    return true
+  }
+
+  if (normalizedItem === 'false') {
+    return false
+  }
+
+  if (!Number.isNaN(Number(normalizedItem)) && normalizedItem !== '') {
+    return parseFloat(normalizedItem)
+  }
+
+  return normalizedItem
+}
+
 function parseTomlValue(rawValue) {
   const value = stripInlineComment(String(rawValue || '').trim()).trim()
 
@@ -174,16 +354,9 @@ function parseTomlValue(rawValue) {
 
   if (value.startsWith('[') && value.endsWith(']')) {
     const arrayContent = value.slice(1, -1)
-    return arrayContent
-      .split(',')
-      .map(item => {
-        const normalizedItem = item.trim()
-        if (normalizedItem.startsWith('"') && normalizedItem.endsWith('"')) {
-          return normalizedItem.slice(1, -1)
-        }
-        return normalizedItem
-      })
-      .filter(item => item)
+    return splitTomlArrayItems(arrayContent)
+      .map(parseTomlArrayItem)
+      .filter(item => item !== '')
   }
 
   return value

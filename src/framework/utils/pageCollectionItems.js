@@ -70,14 +70,16 @@ export function createCollectionPage({
   title = '',
   description = '',
   items = [],
-  emptyText = '这个页面还没有内容。'
+  emptyText = '这个页面还没有内容。',
+  layout = null
 } = {}) {
   return {
     key,
     title,
     description,
     items,
-    emptyText
+    emptyText,
+    layout
   }
 }
 

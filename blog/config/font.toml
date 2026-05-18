@@ -1,0 +1,68 @@
+# 字体配置
+#
+# 建议只引用 public/ 下自托管的字体文件，不要依赖外部字体 CDN。
+# 例如把字体放在 public/fonts/ 目录，再通过 src = "fonts/xxx.woff2" 引用。
+
+enabled = true
+
+# 内置预设：system / sans / serif / mono
+# 也可以写 current_preset = "system"，两者等价
+preset = "sans"
+
+# 字体预加载策略，仅在配置 [[faces]] 字体文件后产生 preload 链接：
+# marked：只预加载 [[faces]] 中 preload = true 的字体
+# all：预加载全部字体文件
+# none：不预加载字体文件
+# preload = "marked"
+
+# 根字号，支持纯数字（按 px 处理）或完整 CSS 尺寸值
+base_size = "16px"
+
+[families]
+# 正文字体栈
+# sans = "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif"
+
+# 标题字体栈；不填时回退到 sans
+# heading = "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif"
+
+# 衬线字体栈
+# serif = "\"Source Han Serif SC\", Georgia, serif"
+
+# 等宽字体栈
+# mono = "\"JetBrains Mono\", \"SF Mono\", \"Cascadia Code\", monospace"
+
+# 暗色模式字体覆盖；只填写需要和亮色模式不同的字段
+# [dark_families]
+# sans = "\"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+# heading = "\"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+
+# 自定义预设，启用时把 preset 改成对应名称
+# [presets.reading]
+# base_size = "17px"
+# preload = "marked"
+#
+# [presets.reading.families]
+# sans = "\"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+# heading = "\"Noto Serif CJK SC\", \"Source Han Serif SC\", Georgia, serif"
+# mono = "\"JetBrains Mono\", \"SF Mono\", monospace"
+#
+# [presets.reading.dark_families]
+# heading = "\"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+
+# 自定义 @font-face
+# 每个字体文件对应一个 [[faces]] 条目
+#
+# [[faces]]
+# family = "JetBrains Mono"
+# src = "fonts/jetbrains-mono-regular.woff2"
+# weight = "400"
+# style = "normal"
+# display = "swap"
+# preload = true
+#
+# [[faces]]
+# family = "JetBrains Mono"
+# src = "fonts/jetbrains-mono-semibold.woff2"
+# weight = "600"
+# style = "normal"
+# display = "swap"
