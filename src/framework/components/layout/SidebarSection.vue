@@ -92,11 +92,11 @@ defineProps({
   box-shadow: none;
 }
 
-.dark .sidebar-section-title {
+:global(.dark) .sidebar-section-title {
   color: rgb(226 232 240);
 }
 
-.dark .sidebar-section-count {
+:global(.dark) .sidebar-section-count {
   background: rgba(30, 41, 59, 0.88);
   border-color: rgba(71, 85, 105, 0.82);
   color: rgb(156 163 175);

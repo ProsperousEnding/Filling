@@ -10,6 +10,7 @@ const COVER_LOADING_VALUES = new Set(['lazy', 'eager'])
 const COVER_OBJECT_FIT_VALUES = new Set(['fill', 'contain', 'cover', 'none', 'scale-down'])
 const COVER_PLACEHOLDER_VALUES = new Set(['none', 'gradient', 'icon'])
 const COVER_DETAIL_DISPLAY_MODE_VALUES = new Set(['image', 'header-background', 'page-background'])
+const COVER_PAGE_BACKGROUND_CONTENT_STYLE_VALUES = new Set(['transparent', 'glass'])
 const COVER_WATERMARK_POSITION_VALUES = new Set(['top-left', 'top-right', 'bottom-left', 'bottom-right'])
 const DEFAULT_COVER_STYLE_LABELS = Object.freeze({
   picsum: 'Picsum',
@@ -55,6 +56,9 @@ export const DEFAULT_COVER_CONFIG = Object.freeze({
     aspect_ratio: '',
     object_fit: 'cover',
     placeholder: 'gradient',
+    page_background: {
+      content_style: 'transparent'
+    },
     watermark: {
       enabled: false,
       text: '',
@@ -128,6 +132,11 @@ function normalizePlaceholder(value, fallback = 'gradient') {
 function normalizeDetailDisplayMode(value, fallback = DEFAULT_COVER_CONFIG.detail.display_mode) {
   const normalized = normalizeString(value).toLowerCase()
   return COVER_DETAIL_DISPLAY_MODE_VALUES.has(normalized) ? normalized : fallback
+}
+
+function normalizePageBackgroundContentStyle(value, fallback = DEFAULT_COVER_CONFIG.detail.page_background.content_style) {
+  const normalized = normalizeString(value).toLowerCase()
+  return COVER_PAGE_BACKGROUND_CONTENT_STYLE_VALUES.has(normalized) ? normalized : fallback
 }
 
 function normalizeOpacity(value, fallback) {
@@ -232,6 +241,15 @@ function normalizeWatermarkConfig(watermark = {}) {
   }
 }
 
+function normalizePageBackgroundConfig(pageBackground = {}) {
+  const normalizedPageBackground = isPlainObject(pageBackground) ? toCamelCase(pageBackground) : {}
+  const defaults = DEFAULT_COVER_CONFIG.detail.page_background
+
+  return {
+    contentStyle: normalizePageBackgroundContentStyle(normalizedPageBackground.contentStyle, defaults.content_style)
+  }
+}
+
 function normalizeDetailConfig(detail = {}) {
   const normalizedDetail = isPlainObject(detail) ? toCamelCase(detail) : {}
   const defaults = DEFAULT_COVER_CONFIG.detail
@@ -244,6 +262,7 @@ function normalizeDetailConfig(detail = {}) {
     aspectRatio: normalizeString(normalizedDetail.aspectRatio),
     objectFit: normalizeObjectFit(normalizedDetail.objectFit, defaults.object_fit),
     placeholder: normalizePlaceholder(normalizedDetail.placeholder, defaults.placeholder),
+    pageBackground: normalizePageBackgroundConfig(normalizedDetail.pageBackground),
     watermark: normalizeWatermarkConfig(normalizedDetail.watermark)
   }
 }

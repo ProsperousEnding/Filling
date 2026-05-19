@@ -56,7 +56,7 @@ import Pagination from '../components/core/Pagination.vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { usePageMetadata } from '../composables/usePageMetadata'
-import { createCollectionPage, createContentCollectionItems } from '../utils/pageCollectionItems'
+import { createArticleCollectionItems, createCollectionPage } from '../utils/pageCollectionItems'
 import { resolveMenuPage } from '../utils/menuConfig'
 import { getTagRoute } from '../utils/routeLinks'
 import { resolveBuiltInPageComponent } from './pageComponentRegistry'
@@ -142,7 +142,7 @@ const resolvedPage = computed(() => createCollectionPage({
   key: `tag-${tagId.value}`,
   title: tag.value?.name || '标签',
   description: pageDescription.value,
-  items: createContentCollectionItems(items.value),
+  items: createArticleCollectionItems(items.value),
   emptyText: '这个标签下还没有内容。',
   layout: collectionLayout.value
 }))

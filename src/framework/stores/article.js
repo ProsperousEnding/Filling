@@ -29,6 +29,23 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
+    async fetchHomeArticles(params = { page: 1, pageSize: 8, config: {} }) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = contentService.getHomeArticleList(params)
+        this.articles = response.data
+        this.total = response.total
+        return response
+      } catch (error) {
+        this.error = error.message || '获取首页文章列表失败'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
     async fetchArticleDetail(id) {
       this.loading = true
       this.error = null

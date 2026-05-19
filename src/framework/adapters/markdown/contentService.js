@@ -38,6 +38,10 @@ function toSlugId(input) {
     .replace(/^-|-$/g, '')
 }
 
+function toLookupId(input) {
+  return toSlugId(normalizeArticleLookupId(input))
+}
+
 function normalizeTextValue(input) {
   return String(input || '')
     .replace(/\r\n/g, '\n')
@@ -116,6 +120,125 @@ function hydrateArticleCover(article = {}) {
       article?.slug || article?.id || article?.title
     )
   }
+}
+
+function getArticleIdentityValues(article = {}) {
+  return [
+    article.id,
+    article.slug,
+    article.title,
+    article.sourcePath
+  ]
+    .map(toLookupId)
+    .filter(Boolean)
+}
+
+function articleMatchesAnyIdentity(article, lookupSet) {
+  if (!(lookupSet instanceof Set) || lookupSet.size === 0) {
+    return false
+  }
+
+  return getArticleIdentityValues(article).some(value => lookupSet.has(value))
+}
+
+function createLookupSet(values = []) {
+  return new Set((Array.isArray(values) ? values : [])
+    .map(toLookupId)
+    .filter(Boolean))
+}
+
+function createNameSet(values = []) {
+  return new Set((Array.isArray(values) ? values : [])
+    .map(toSlugId)
+    .filter(Boolean))
+}
+
+function articleMatchesCategory(article, categorySet) {
+  if (!(categorySet instanceof Set) || categorySet.size === 0) {
+    return true
+  }
+
+  return categorySet.has(toSlugId(article?.category?.id || article?.category?.name || article?.category))
+}
+
+function articleMatchesTags(article, tagSet) {
+  if (!(tagSet instanceof Set) || tagSet.size === 0) {
+    return true
+  }
+
+  return Array.isArray(article?.tags) && article.tags.some(tag => (
+    tagSet.has(toSlugId(tag?.id || tag?.name || tag))
+  ))
+}
+
+function sortHomeArticles(left, right, stickyFirst = true) {
+  if (stickyFirst && Boolean(left?.sticky) !== Boolean(right?.sticky)) {
+    return left?.sticky ? -1 : 1
+  }
+
+  const weightDiff = (Number(right?.weight) || 0) - (Number(left?.weight) || 0)
+
+  if (weightDiff !== 0) {
+    return weightDiff
+  }
+
+  return new Date(right?.date || 0) - new Date(left?.date || 0)
+}
+
+function resolveHomeArticleList(config = {}) {
+  const mode = String(config.mode || 'latest').trim().toLowerCase()
+  const includeIds = createLookupSet(config.includeIds)
+  const excludeIds = createLookupSet(config.excludeIds)
+  const categories = createNameSet(config.categories)
+  const tags = createNameSet(config.tags)
+  const excludeCategories = createNameSet(config.excludeCategories)
+  const excludeTags = createNameSet(config.excludeTags)
+  const includeSticky = config.includeSticky !== false
+  const stickyFirst = config.stickyFirst !== false
+  const fallbackToLatest = config.fallbackToLatest !== false
+
+  const baseArticles = allArticles.filter((article) => {
+    if (article.homeHidden || articleMatchesAnyIdentity(article, excludeIds)) {
+      return false
+    }
+
+    if (excludeCategories.size > 0 && articleMatchesCategory(article, excludeCategories)) {
+      return false
+    }
+
+    if (excludeTags.size > 0 && articleMatchesTags(article, excludeTags)) {
+      return false
+    }
+
+    const explicitlyIncluded = articleMatchesAnyIdentity(article, includeIds)
+
+    return explicitlyIncluded
+      || (articleMatchesCategory(article, categories) && articleMatchesTags(article, tags))
+  })
+
+  let selectedArticles = baseArticles
+
+  if (mode === 'featured') {
+    selectedArticles = baseArticles.filter(article => article.featured || articleMatchesAnyIdentity(article, includeIds))
+  } else if (mode === 'sticky') {
+    selectedArticles = baseArticles.filter(article => article.sticky || articleMatchesAnyIdentity(article, includeIds))
+  } else if (mode === 'mixed') {
+    selectedArticles = baseArticles.filter(article => (
+      article.featured
+      || article.sticky
+      || articleMatchesAnyIdentity(article, includeIds)
+    ))
+  }
+
+  if (selectedArticles.length === 0 && fallbackToLatest) {
+    selectedArticles = baseArticles
+  }
+
+  return selectedArticles
+    .filter(article => includeSticky || !article.sticky || articleMatchesAnyIdentity(article, includeIds))
+    .slice()
+    .sort((left, right) => sortHomeArticles(left, right, stickyFirst))
+    .map(hydrateArticleCover)
 }
 
 function hydrateEntryCover(entry = {}) {
@@ -398,6 +521,24 @@ const contentService = {
     const tagId = params.tag ? toSlugId(String(params.tag)) : null
 
     const filtered = [...getScopedArticles(categoryId, tagId)]
+
+    return paginate(filtered, page, pageSize)
+  },
+
+  getHomeArticleList(params = {}) {
+    const config = params.config || {}
+    const page = params.page ?? 1
+    const pageSize = params.pageSize ?? config.pageSize ?? 8
+    const filtered = resolveHomeArticleList(config)
+
+    if (config.paginate === false) {
+      return {
+        data: filtered.slice(0, pageSize),
+        total: Math.min(filtered.length, pageSize),
+        page: 1,
+        pageSize
+      }
+    }
 
     return paginate(filtered, page, pageSize)
   },

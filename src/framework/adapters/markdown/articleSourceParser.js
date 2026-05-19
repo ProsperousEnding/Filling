@@ -227,6 +227,12 @@ function normalizeCoverDisplayMode(value) {
   return ['image', 'header-background', 'page-background'].includes(normalized) ? normalized : ''
 }
 
+function normalizeNumericFrontmatterValue(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10)
+
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
 function estimateReadTime(text) {
   const normalized = normalizeTextValue(text)
   if (!normalized) return 1
@@ -305,6 +311,32 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false, d
     ?? frontmatter.cover_mode
     ?? frontmatter.coverMode
   )
+  const sticky = normalizeOptionalBoolean(
+    frontmatter.sticky
+    ?? frontmatter.pinned
+    ?? frontmatter.pin
+    ?? frontmatter.top
+  ) === true
+  const featured = normalizeOptionalBoolean(
+    frontmatter.featured
+    ?? frontmatter.highlight
+    ?? frontmatter.recommended
+    ?? frontmatter.recommend
+  ) === true
+  const homeHidden = normalizeOptionalBoolean(
+    frontmatter.home_hidden
+    ?? frontmatter.hide_home
+    ?? frontmatter.hideHome
+    ?? frontmatter.homeHidden
+    ?? frontmatter.exclude_home
+    ?? frontmatter.excludeHome
+  ) === true
+  const weight = normalizeNumericFrontmatterValue(
+    frontmatter.weight
+    ?? frontmatter.order
+    ?? frontmatter.priority,
+    0
+  )
 
   const article = {
     id: fileName,
@@ -328,6 +360,10 @@ function createArticleRecord(rawContent, sourcePath, { includeContent = false, d
     licenseDisabled,
     outdatedThresholdDays,
     showOutdatedNotice,
+    sticky,
+    featured,
+    homeHidden,
+    weight,
     sourcePath
   }
 

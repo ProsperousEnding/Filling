@@ -1,8 +1,9 @@
 ﻿import { applyConfigEnvOverrides } from './configEnvOverrides.js'
 import { parseToml } from '../utils/tomlParser.js'
 
-// 动态导入所有配置文件
-const configFiles = import.meta.glob('/blog/config/*.toml', {
+// 动态导入基础配置和 optional 细节配置。
+// 子目录里的配置仍按文件名注册，例如 optional/markdown.toml => configs.markdown。
+const configFiles = import.meta.glob('/blog/config/**/*.toml', {
   eager: false,
   query: '?raw',
   import: 'default'
@@ -16,14 +17,23 @@ let configCache = {}
  */
 export async function loadAllConfigs() {
   const configs = {}
-  
-  for (const path in configFiles) {
+
+  const configEntries = Object.entries(configFiles).sort(([leftPath], [rightPath]) => (
+    leftPath.localeCompare(rightPath, 'en')
+  ))
+
+  for (const [path, loadConfigFile] of configEntries) {
     const fileName = path.split('/').pop().replace('.toml', '')
+
+    if (Object.prototype.hasOwnProperty.call(configs, fileName)) {
+      console.warn(`⚠️ 跳过重复配置文件 ${path}，请只保留一个 ${fileName}.toml`)
+      continue
+    }
     
     try {
       // 统一走 import.meta.glob 生成的 loader，确保 Vite 将 TOML 作为 raw 字符串模块处理。
       // 在 Vite 7 下，手写的动态 import(`${path}?raw&t=...`) 会直接请求 TOML 资源并触发 MIME 错误。
-      const content = await configFiles[path]()
+      const content = await loadConfigFile()
       configs[fileName] = parseToml(content)
     } catch (error) {
       console.error(`❌ 解析配置文件 ${fileName}.toml 失败:`, error)

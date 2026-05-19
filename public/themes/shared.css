@@ -357,10 +357,6 @@ a {
   box-shadow: none !important;
 }
 
-:root .sidebar-mobile-actions {
-  background: transparent !important;
-}
-
 :root .sidebar-close-button,
 :root .sidebar-search-clear {
   color: var(--theme-text-soft) !important;

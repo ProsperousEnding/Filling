@@ -1,5 +1,6 @@
 import FriendLinksPage from './pageComponents/FriendLinksPage.vue'
 import GuestbookPage from './pageComponents/GuestbookPage.vue'
+import ArchiveTimelinePage from './pageComponents/ArchiveTimelinePage.vue'
 import MenuPageCardPage from './pageComponents/MenuPageCardPage.vue'
 import MenuPageContextPage from './pageComponents/MenuPageContextPage.vue'
 import MenuPageGridPage from './pageComponents/MenuPageGridPage.vue'
@@ -26,6 +27,9 @@ const MENU_PAGE_COMPONENTS = Object.freeze({
 
 export function resolveBuiltInPageComponent(pageKey, requestedComponent) {
   const componentKey = resolveBuiltInPageComponentKey(pageKey, requestedComponent)
+  if (pageKey === 'archive' && componentKey === 'timeline') {
+    return ArchiveTimelinePage
+  }
   return MENU_PAGE_COMPONENTS[componentKey] || MenuPageListPage
 }
 

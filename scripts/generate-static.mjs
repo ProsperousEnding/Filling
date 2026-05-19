@@ -606,55 +606,205 @@ const STATIC_STYLE = `
     line-height: 1.85;
   }
 
+  .ssg-related-section {
+    margin-top: 28px;
+    padding: 18px;
+    border: 1px solid rgba(226, 232, 240, 0.82);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at top left, rgba(219, 234, 254, 0.2), transparent 32%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.86));
+    box-shadow: 0 18px 46px rgba(15, 23, 42, 0.06);
+  }
+
+  .ssg-related-head {
+    margin-bottom: 16px;
+  }
+
+  .ssg-related-kicker {
+    margin: 0 0 7px;
+    color: var(--ssg-text-muted);
+    font-size: 0.72rem;
+    font-weight: 760;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .ssg-related-heading {
+    margin: 0;
+    color: var(--ssg-text);
+    font-size: 1.32rem;
+    line-height: 1.25;
+    font-weight: 780;
+    letter-spacing: -0.03em;
+  }
+
   .ssg-related-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
   }
 
   .ssg-related-card {
-    border-radius: 18px;
-    border: 1px solid var(--ssg-line);
-    background: var(--ssg-panel);
-    box-shadow: var(--ssg-shadow-sm);
+    min-width: 0;
     overflow: hidden;
+    border: 1px solid rgba(226, 232, 240, 0.82);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.82);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .ssg-related-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(37, 99, 235, 0.22);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
   }
 
   .ssg-related-link {
-    display: block;
+    display: flex;
     height: 100%;
+    min-width: 0;
+    flex-direction: column;
     color: inherit;
     text-decoration: none;
   }
 
   .ssg-related-cover-shell {
     overflow: hidden;
-    background: #e2e8f0;
+    background:
+      radial-gradient(circle at 18% 18%, rgba(191, 219, 254, 0.82), transparent 34%),
+      linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(248, 250, 252, 0.96));
+  }
+
+  .ssg-related-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ssg-accent);
+    background:
+      radial-gradient(circle at 18% 18%, rgba(191, 219, 254, 0.82), transparent 34%),
+      linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(248, 250, 252, 0.96));
+  }
+
+  .ssg-related-placeholder[data-placeholder='icon'] {
+    color: var(--ssg-text-muted);
+    background: rgba(248, 250, 252, 0.96);
   }
 
   .ssg-related-cover {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
     background: #e2e8f0;
   }
 
   .ssg-related-body {
-    padding: 14px 16px 16px;
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    padding: 15px;
+  }
+
+  .ssg-related-meta,
+  .ssg-related-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .ssg-related-meta {
+    margin-bottom: 10px;
+  }
+
+  .ssg-related-chip,
+  .ssg-related-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    border: 1px solid rgba(226, 232, 240, 0.82);
+    border-radius: 999px;
+    background: rgba(248, 250, 252, 0.82);
+    padding: 0 8px;
+    color: var(--ssg-accent);
+    font-size: 0.72rem;
+    line-height: 1;
+    font-weight: 700;
   }
 
   .ssg-related-title {
-    margin: 0 0 8px;
+    display: -webkit-box;
+    margin: 0 0 9px;
+    overflow: hidden;
+    color: var(--ssg-text);
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 760;
+    line-height: 1.42;
+    letter-spacing: -0.02em;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .ssg-related-date,
+  .ssg-related-muted {
+    color: var(--ssg-text-muted);
+    font-size: 0.78rem;
     line-height: 1.45;
   }
 
   .ssg-related-date {
-    margin: 0;
-    color: var(--ssg-text-muted);
-    font-size: 0.92rem;
+    margin: auto 0 11px;
+  }
+
+  .ssg-related-tags {
+    margin-top: auto;
+  }
+
+  .ssg-related-tag {
+    color: rgb(71, 85, 105);
+    font-size: 0.7rem;
+    font-weight: 650;
+  }
+
+  @media (max-width: 640px) {
+    .ssg-related-section {
+      padding: 14px;
+      border-radius: 19px;
+    }
+
+    .ssg-related-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .ssg-related-card {
+      border-radius: 16px;
+    }
+
+    .ssg-related-link {
+      display: grid;
+      grid-template-columns: minmax(6rem, 0.42fr) minmax(0, 1fr);
+    }
+
+    .ssg-related-cover-shell,
+    .ssg-related-placeholder {
+      height: 100%;
+      min-height: 8.2rem;
+      aspect-ratio: auto !important;
+    }
+
+    .ssg-related-body {
+      padding: 13px;
+    }
+
+    .ssg-related-title {
+      font-size: 0.95rem;
+    }
+
+    .ssg-related-tags {
+      display: none;
+    }
   }
 
   .ssg-license-card {
@@ -2195,6 +2345,408 @@ const STATIC_STYLE = `
     box-shadow: 0 22px 36px rgba(15, 23, 42, 0.08);
   }
 
+  .ssg-taxonomy-index {
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+
+  .ssg-taxonomy-panel,
+  .ssg-taxonomy-tag-cloud {
+    border: 1px solid rgba(226, 232, 240, 0.82);
+    border-radius: 1.25rem;
+    background:
+      radial-gradient(circle at top left, rgba(219, 234, 254, 0.24), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.88));
+    box-shadow: 0 18px 46px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(18px) saturate(1.05);
+  }
+
+  .ssg-taxonomy-panel {
+    overflow: hidden;
+  }
+
+  .ssg-taxonomy-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    align-items: center;
+    min-width: 0;
+    padding: 1rem 1.05rem;
+    color: inherit;
+    text-decoration: none;
+    transition: background 0.18s ease, transform 0.18s ease;
+  }
+
+  .ssg-taxonomy-row + .ssg-taxonomy-row {
+    border-top: 1px solid rgba(226, 232, 240, 0.72);
+  }
+
+  .ssg-taxonomy-row:hover {
+    background: rgba(241, 245, 249, 0.72);
+    transform: translateY(-1px);
+  }
+
+  .ssg-taxonomy-row-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border: 1px solid rgba(37, 99, 235, 0.14);
+    border-radius: 0.78rem;
+    background: rgba(255, 255, 255, 0.74);
+    color: var(--ssg-accent);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
+  }
+
+  .ssg-taxonomy-row-icon svg {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .ssg-taxonomy-row-main {
+    min-width: 0;
+  }
+
+  .ssg-taxonomy-row-title {
+    display: block;
+    color: var(--ssg-text);
+    font-size: 1rem;
+    font-weight: 780;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  .ssg-taxonomy-row-description {
+    display: block;
+    margin-top: 0.26rem;
+    color: var(--ssg-text-soft);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .ssg-taxonomy-row-meta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    color: var(--ssg-text-muted);
+    white-space: nowrap;
+  }
+
+  .ssg-taxonomy-row-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.4rem;
+    height: 1.5rem;
+    padding: 0 0.6rem;
+    border: 1px solid rgba(226, 232, 240, 0.76);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--ssg-text-muted);
+    font-size: 0.74rem;
+    font-weight: 680;
+  }
+
+  .ssg-taxonomy-row-arrow {
+    color: rgb(148, 163, 184);
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .ssg-taxonomy-tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    padding: 1rem;
+  }
+
+  .ssg-taxonomy-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.25rem;
+    padding: 0 0.82rem;
+    border: 1px solid rgba(226, 232, 240, 0.82);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--ssg-accent);
+    font-size: calc(0.82rem * var(--ssg-taxonomy-weight, 1));
+    font-weight: 720;
+    text-decoration: none;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .ssg-taxonomy-tag-pill:hover {
+    transform: translateY(-1px);
+    border-color: rgba(37, 99, 235, 0.22);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.08);
+  }
+
+  .ssg-taxonomy-tag-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.38rem;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.09);
+    color: rgb(71, 85, 105);
+    font-size: 0.72rem;
+    font-weight: 720;
+  }
+
+  @media (max-width: 640px) {
+    .ssg-taxonomy-index {
+      max-width: 100%;
+    }
+
+    .ssg-taxonomy-panel,
+    .ssg-taxonomy-tag-cloud {
+      border-radius: 1rem;
+    }
+
+    .ssg-taxonomy-row {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 0.65rem;
+      padding: 0.82rem 0.9rem;
+    }
+
+    .ssg-taxonomy-row-icon {
+      width: 1.95rem;
+      height: 1.95rem;
+      border-radius: 0.68rem;
+    }
+
+    .ssg-taxonomy-row-title {
+      font-size: 0.95rem;
+    }
+
+    .ssg-taxonomy-row-description {
+      font-size: 0.78rem;
+    }
+
+    .ssg-taxonomy-row-count {
+      min-width: 2rem;
+      height: 1.35rem;
+      padding: 0 0.48rem;
+    }
+
+    .ssg-taxonomy-row-arrow {
+      display: none;
+    }
+
+    .ssg-taxonomy-tag-cloud {
+      gap: 0.55rem;
+      padding: 0.82rem;
+    }
+
+    .ssg-taxonomy-tag-pill {
+      min-height: 2rem;
+      padding: 0 0.68rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  .ssg-archive-timeline-page {
+    max-width: 64rem;
+    margin: 0 auto;
+  }
+
+  .ssg-archive-timeline {
+    --ssg-archive-axis-x: 50%;
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+    padding: 0.5rem 0;
+  }
+
+  .ssg-archive-timeline::before {
+    content: "";
+    position: absolute;
+    top: 0.8rem;
+    bottom: 0.8rem;
+    left: var(--ssg-archive-axis-x);
+    z-index: 0;
+    width: 2px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.22) 8%, rgba(148, 163, 184, 0.46) 50%, rgba(148, 163, 184, 0.22) 92%, transparent);
+    transform: translateX(-1px);
+  }
+
+  .ssg-archive-day {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 5.2rem minmax(0, 1fr);
+    align-items: start;
+    min-height: 7.2rem;
+  }
+
+  .ssg-archive-day:nth-child(odd) .ssg-archive-day-panel {
+    grid-column: 1;
+    justify-self: end;
+  }
+
+  .ssg-archive-day:nth-child(even) .ssg-archive-day-panel {
+    grid-column: 3;
+    justify-self: start;
+  }
+
+  .ssg-archive-day-stamp {
+    position: relative;
+    z-index: 2;
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.56rem;
+    padding-top: 0.82rem;
+  }
+
+  .ssg-archive-day-date {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: max-content;
+    height: 1.82rem;
+    padding: 0 0.72rem;
+    border: 1px solid rgba(226, 232, 240, 0.86);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.86)), rgba(255, 255, 255, 0.82);
+    color: rgb(100, 116, 139);
+    font-size: 0.8rem;
+    line-height: 1;
+    font-weight: 750;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(14px) saturate(1.06);
+  }
+
+  .ssg-archive-day-dot {
+    width: 0.74rem;
+    height: 0.74rem;
+    border: 3px solid rgba(219, 234, 254, 0.96);
+    border-radius: 999px;
+    background: var(--ssg-accent);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), 0 8px 18px rgba(37, 99, 235, 0.16);
+  }
+
+  .ssg-archive-day-panel {
+    position: relative;
+    width: min(100%, 28rem);
+    overflow: hidden;
+    border: 1px solid rgba(226, 232, 240, 0.82);
+    border-radius: 1.22rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.72)), rgba(255, 255, 255, 0.76);
+    box-shadow: 0 18px 46px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(18px) saturate(1.06);
+  }
+
+  .ssg-archive-day-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  }
+
+  .ssg-archive-day-panel::after {
+    content: "";
+    position: absolute;
+    top: 1.72rem;
+    width: 2.65rem;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.08), rgba(148, 163, 184, 0.46));
+  }
+
+  .ssg-archive-day:nth-child(odd) .ssg-archive-day-panel::after {
+    right: -2.65rem;
+  }
+
+  .ssg-archive-day:nth-child(even) .ssg-archive-day-panel::after {
+    left: -2.65rem;
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.46), rgba(148, 163, 184, 0.08));
+  }
+
+  .ssg-archive-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.9rem;
+    align-items: center;
+    min-height: 4.05rem;
+    padding: 0.86rem 0.95rem;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color 0.16s ease, color 0.16s ease;
+  }
+
+  .ssg-archive-row + .ssg-archive-row {
+    border-top: 1px solid rgba(226, 232, 240, 0.66);
+  }
+
+  .ssg-archive-row:hover {
+    background: rgba(241, 245, 249, 0.76);
+  }
+
+  .ssg-archive-row-title {
+    display: block;
+    color: var(--ssg-text);
+    font-size: 1rem;
+    line-height: 1.35;
+    font-weight: 780;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  .ssg-archive-row-description {
+    display: -webkit-box;
+    margin-top: 0.34rem;
+    overflow: hidden;
+    color: var(--ssg-text-soft);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .ssg-archive-row-meta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.44rem;
+    color: var(--ssg-text-muted);
+    white-space: nowrap;
+  }
+
+  .ssg-archive-row-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.38rem;
+    padding: 0.14rem 0.5rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 999px;
+    background: rgba(248, 250, 252, 0.82);
+    color: rgb(100, 116, 139);
+    font-size: 0.72rem;
+    line-height: 1.1;
+    font-weight: 650;
+  }
+
+  .ssg-archive-row-arrow {
+    color: rgb(148, 163, 184);
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+
   @media (max-width: 960px) {
     .ssg-header-inner,
     .ssg-footer-inner {
@@ -2283,6 +2835,52 @@ const STATIC_STYLE = `
       left: -24px;
       width: 24px;
     }
+
+    .ssg-archive-timeline {
+      --ssg-archive-axis-x: 1.05rem;
+      gap: 0.95rem;
+      padding-left: 0;
+    }
+
+    .ssg-archive-day {
+      grid-template-columns: 2.15rem minmax(0, 1fr);
+      min-height: 0;
+    }
+
+    .ssg-archive-day:nth-child(odd) .ssg-archive-day-panel,
+    .ssg-archive-day:nth-child(even) .ssg-archive-day-panel {
+      grid-column: 2;
+      justify-self: stretch;
+    }
+
+    .ssg-archive-day-stamp {
+      grid-column: 1;
+      align-items: center;
+      padding-top: 0.3rem;
+    }
+
+    .ssg-archive-day-date {
+      position: absolute;
+      left: 2.55rem;
+      top: 0;
+      z-index: 2;
+      height: 1.56rem;
+      font-size: 0.74rem;
+    }
+
+    .ssg-archive-day-panel {
+      width: 100%;
+      border-radius: 1.05rem;
+      padding-top: 1.05rem;
+    }
+
+    .ssg-archive-day:nth-child(odd) .ssg-archive-day-panel::after,
+    .ssg-archive-day:nth-child(even) .ssg-archive-day-panel::after {
+      top: 1.66rem;
+      left: -1.08rem;
+      width: 1.08rem;
+      background: rgba(148, 163, 184, 0.38);
+    }
   }
 
   @media (max-width: 640px) {
@@ -2355,6 +2953,25 @@ const STATIC_STYLE = `
     .ssg-configured-timeline-card::before {
       left: -18px;
       width: 18px;
+    }
+
+    .ssg-archive-row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.48rem;
+      min-height: 0;
+      padding: 0.78rem 0.8rem;
+    }
+
+    .ssg-archive-row-title {
+      font-size: 0.95rem;
+    }
+
+    .ssg-archive-row-meta {
+      justify-content: flex-start;
+    }
+
+    .ssg-archive-row-arrow {
+      display: none;
     }
 
     .ssg-guestbook-title {
@@ -2477,6 +3094,10 @@ function normalizeArticleLookupId(input) {
   return toTrimmedString(input)
     .replace(/^\/+|\/+$/g, '')
     .replace(/\.md$/i, '')
+}
+
+function toArticleLookupId(input) {
+  return toSlugId(normalizeArticleLookupId(input))
 }
 
 function normalizeSiteUrl(value) {
@@ -2633,6 +3254,18 @@ function normalizeDateValue(value) {
   return toTrimmedString(value)
 }
 
+function resolveValidDate(value) {
+  const normalizedValue = toTrimmedString(value)
+
+  if (!normalizedValue) {
+    return null
+  }
+
+  const date = new Date(normalizedValue)
+
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 function formatDateLabel(value) {
   const date = new Date(value)
 
@@ -2682,9 +3315,21 @@ function resolveThemeCssFile(themeConfig = {}) {
 }
 
 async function loadTomlConfig(name) {
-  const filePath = path.join(CONFIG_DIR, `${name}.toml`)
-  const raw = await readFile(filePath, 'utf8')
-  return parseToml(raw)
+  const candidatePaths = [
+    path.join(CONFIG_DIR, `${name}.toml`),
+    path.join(CONFIG_DIR, 'optional', `${name}.toml`)
+  ]
+
+  for (const filePath of candidatePaths) {
+    try {
+      const raw = await readFile(filePath, 'utf8')
+      return parseToml(raw)
+    } catch {
+      // Try the next supported config location.
+    }
+  }
+
+  return {}
 }
 
 async function loadConfigs() {
@@ -2809,7 +3454,9 @@ function buildCollections(entries) {
       tags.set(tag.id, current)
     })
 
-    const year = new Date(entry.createdAt || 0).getFullYear()
+    const date = resolveValidDate(entry.createdAt)
+    const year = date ? date.getFullYear() : null
+
     if (Number.isFinite(year) && year > 0) {
       const current = archive.get(year) || []
       current.push(entry)
@@ -4248,13 +4895,40 @@ function renderRelatedArticlesDetail(articles, basePath, detailConfig = {}) {
   const aspectRatio = toTrimmedString(detailConfig.aspectRatio || '') || '16 / 9'
   const coverShellStyle = ` style="${escapeAttribute(`aspect-ratio: ${aspectRatio};`)}"`
   const coverImageStyle = ` style="${escapeAttribute(`object-fit: ${objectFit};`)}"`
+  const placeholderMode = toTrimmedString(detailConfig.placeholder || 'gradient') || 'gradient'
+  const showPlaceholder = detailConfig.showRelatedCover !== false && placeholderMode !== 'none'
+  const placeholderIcon = `
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7">
+      <path d="m3 16 4.4-4.4a2 2 0 0 1 2.8 0L15 16" />
+      <path d="m14 15 1.5-1.5a2 2 0 0 1 2.8 0L21 16" />
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+    </svg>
+  `
 
   return `
-    <section>
-      <h2 class="ssg-archive-year">相关文章</h2>
+    <section class="ssg-related-section">
+      <div class="ssg-related-head">
+        <p class="ssg-related-kicker">Related</p>
+        <h2 class="ssg-related-heading">相关文章</h2>
+      </div>
       <div class="ssg-related-grid">
         ${normalizedArticles.map((article) => {
           const href = resolveInternalHref(basePath, resolveArticleHref(article))
+          const categoryLabel = typeof article.category === 'string'
+            ? article.category
+            : article.category?.name || article.category?.label || ''
+          const tags = Array.isArray(article.tags)
+            ? article.tags
+              .map((tag) => (typeof tag === 'string' ? tag : tag?.name || tag?.label || ''))
+              .filter(Boolean)
+            : []
+          const visibleTags = tags.slice(0, 2)
+          const remainingTagCount = Math.max(0, tags.length - visibleTags.length)
+          const readTime = Number(article.readTime)
+          const readTimeLabel = Number.isFinite(readTime) && readTime > 0
+            ? `约 ${readTime} 分钟阅读`
+            : ''
           const cover = detailConfig.showRelatedCover !== false && article.cover
             ? (() => {
               const coverUrl = resolveStaticAssetUrl(basePath, article.cover)
@@ -4267,14 +4941,34 @@ function renderRelatedArticlesDetail(articles, basePath, detailConfig = {}) {
                 : ''
             })()
             : ''
+          const placeholder = !cover && showPlaceholder
+            ? `
+                <div class="ssg-related-placeholder" data-placeholder="${escapeAttribute(placeholderMode)}"${coverShellStyle}>
+                  ${placeholderMode === 'icon' ? placeholderIcon : ''}
+                </div>
+              `
+            : ''
 
           return `
             <article class="ssg-related-card">
               <a class="ssg-related-link" href="${escapeAttribute(href)}">
                 ${cover}
+                ${placeholder}
                 <div class="ssg-related-body">
+                  <div class="ssg-related-meta">
+                    ${categoryLabel ? `<span class="ssg-related-chip">${escapeHtml(categoryLabel)}</span>` : ''}
+                    ${readTimeLabel ? `<span class="ssg-related-muted">${escapeHtml(readTimeLabel)}</span>` : ''}
+                  </div>
                   <h3 class="ssg-related-title">${escapeHtml(article.title)}</h3>
                   <p class="ssg-related-date">${escapeHtml(formatDateLabel(article.createdAt || article.date))}</p>
+                  ${visibleTags.length > 0
+                    ? `
+                        <div class="ssg-related-tags">
+                          ${visibleTags.map((tag) => `<span class="ssg-related-tag">#${escapeHtml(tag)}</span>`).join('')}
+                          ${remainingTagCount > 0 ? `<span class="ssg-related-tag">+${remainingTagCount}</span>` : ''}
+                        </div>
+                      `
+                    : ''}
                 </div>
               </a>
             </article>
@@ -4638,17 +5332,167 @@ function createStaticArticleCollectionItems(items = []) {
   return (Array.isArray(items) ? items : []).map(article => {
     const categoryName = String(article?.category?.name || article?.category || '').trim()
     const dateLabel = formatStaticDateLabel(article?.createdAt || article?.date)
+    const readTime = Number(article?.readTime)
+    const routePath = String(article?.to || '').trim() || getArticlePath(article)
 
     return {
       key: `article-${String(article?.id || article?.slug || article?.title || '').trim()}`,
       kind: 'article',
+      iconKind: 'article',
       title: String(article?.title || '').trim(),
       description: pickStaticText(article?.summary, article?.description, article?.excerpt),
-      meta: [dateLabel, categoryName].filter(Boolean).join(' · '),
-      cover: article?.cover || '',
-      to: getArticlePath(article)
+      meta: dateLabel,
+      footer: Number.isFinite(readTime) && readTime > 0 ? `约 ${readTime} 分钟阅读` : '',
+      cover: article?.cover || article?.imageUrl || '',
+      category: categoryName ? { label: categoryName } : null,
+      tags: (Array.isArray(article?.tags) ? article.tags : [])
+        .map(tag => ({ label: String(tag?.name || tag?.label || tag || '').trim() }))
+        .filter(tag => tag.label),
+      to: routePath
     }
   })
+}
+
+const STATIC_HOME_ARTICLE_MODES = new Set(['latest', 'featured', 'sticky', 'mixed'])
+
+function createStaticLookupSet(values = [], normalize = toSlugId) {
+  return new Set((Array.isArray(values) ? values : [])
+    .map(value => normalize(value))
+    .filter(Boolean))
+}
+
+function normalizeStaticHomeArticlesConfig(source = {}, fallbackPageSize = 10) {
+  const rawMode = toTrimmedString(source.mode).toLowerCase()
+
+  return {
+    mode: STATIC_HOME_ARTICLE_MODES.has(rawMode) ? rawMode : 'latest',
+    pageSize: normalizePositiveInteger(source.page_size ?? source.pageSize, fallbackPageSize || 8),
+    paginate: normalizeStaticBoolean(source.paginate, true),
+    includeSticky: normalizeStaticBoolean(source.include_sticky ?? source.includeSticky, true),
+    stickyFirst: normalizeStaticBoolean(source.sticky_first ?? source.stickyFirst, true),
+    categories: Array.isArray(source.categories) ? source.categories : [],
+    tags: Array.isArray(source.tags) ? source.tags : [],
+    excludeCategories: Array.isArray(source.exclude_categories ?? source.excludeCategories)
+      ? (source.exclude_categories ?? source.excludeCategories)
+      : [],
+    excludeTags: Array.isArray(source.exclude_tags ?? source.excludeTags)
+      ? (source.exclude_tags ?? source.excludeTags)
+      : [],
+    includeIds: Array.isArray(source.include_ids ?? source.includeIds)
+      ? (source.include_ids ?? source.includeIds)
+      : [],
+    excludeIds: Array.isArray(source.exclude_ids ?? source.excludeIds)
+      ? (source.exclude_ids ?? source.excludeIds)
+      : [],
+    fallbackToLatest: normalizeStaticBoolean(source.fallback_to_latest ?? source.fallbackToLatest, true)
+  }
+}
+
+function getStaticArticleIdentityValues(article = {}) {
+  return [
+    article.id,
+    article.slug,
+    article.title,
+    article.sourcePath
+  ]
+    .map(toArticleLookupId)
+    .filter(Boolean)
+}
+
+function staticArticleMatchesAnyIdentity(article, lookupSet) {
+  if (!(lookupSet instanceof Set) || lookupSet.size === 0) {
+    return false
+  }
+
+  return getStaticArticleIdentityValues(article).some(value => lookupSet.has(value))
+}
+
+function staticArticleMatchesCategory(article, categorySet) {
+  if (!(categorySet instanceof Set) || categorySet.size === 0) {
+    return true
+  }
+
+  return categorySet.has(toSlugId(article?.category?.id || article?.category?.name || article?.category))
+}
+
+function staticArticleMatchesTags(article, tagSet) {
+  if (!(tagSet instanceof Set) || tagSet.size === 0) {
+    return true
+  }
+
+  return Array.isArray(article?.tags) && article.tags.some(tag => (
+    tagSet.has(toSlugId(tag?.id || tag?.name || tag))
+  ))
+}
+
+function sortStaticHomeArticles(left, right, stickyFirst = true) {
+  if (stickyFirst && Boolean(left?.sticky) !== Boolean(right?.sticky)) {
+    return left?.sticky ? -1 : 1
+  }
+
+  const weightDiff = (Number(right?.weight) || 0) - (Number(left?.weight) || 0)
+
+  if (weightDiff !== 0) {
+    return weightDiff
+  }
+
+  return new Date(right?.date || 0) - new Date(left?.date || 0)
+}
+
+function resolveStaticHomeArticles(articles = [], config = {}) {
+  const normalizedArticles = Array.isArray(articles) ? articles : []
+  const mode = toTrimmedString(config.mode || 'latest').toLowerCase()
+  const includeIds = createStaticLookupSet(config.includeIds, toArticleLookupId)
+  const excludeIds = createStaticLookupSet(config.excludeIds, toArticleLookupId)
+  const categories = createStaticLookupSet(config.categories, toSlugId)
+  const tags = createStaticLookupSet(config.tags, toSlugId)
+  const excludeCategories = createStaticLookupSet(config.excludeCategories, toSlugId)
+  const excludeTags = createStaticLookupSet(config.excludeTags, toSlugId)
+  const includeSticky = config.includeSticky !== false
+  const stickyFirst = config.stickyFirst !== false
+  const fallbackToLatest = config.fallbackToLatest !== false
+
+  const baseArticles = normalizedArticles.filter((article) => {
+    if (article.homeHidden || staticArticleMatchesAnyIdentity(article, excludeIds)) {
+      return false
+    }
+
+    if (excludeCategories.size > 0 && staticArticleMatchesCategory(article, excludeCategories)) {
+      return false
+    }
+
+    if (excludeTags.size > 0 && staticArticleMatchesTags(article, excludeTags)) {
+      return false
+    }
+
+    const explicitlyIncluded = staticArticleMatchesAnyIdentity(article, includeIds)
+
+    return explicitlyIncluded
+      || (staticArticleMatchesCategory(article, categories) && staticArticleMatchesTags(article, tags))
+  })
+
+  let selectedArticles = baseArticles
+
+  if (mode === 'featured') {
+    selectedArticles = baseArticles.filter(article => article.featured || staticArticleMatchesAnyIdentity(article, includeIds))
+  } else if (mode === 'sticky') {
+    selectedArticles = baseArticles.filter(article => article.sticky || staticArticleMatchesAnyIdentity(article, includeIds))
+  } else if (mode === 'mixed') {
+    selectedArticles = baseArticles.filter(article => (
+      article.featured
+      || article.sticky
+      || staticArticleMatchesAnyIdentity(article, includeIds)
+    ))
+  }
+
+  if (selectedArticles.length === 0 && fallbackToLatest) {
+    selectedArticles = baseArticles
+  }
+
+  return selectedArticles
+    .filter(article => includeSticky || !article.sticky || staticArticleMatchesAnyIdentity(article, includeIds))
+    .slice()
+    .sort((left, right) => sortStaticHomeArticles(left, right, stickyFirst))
 }
 
 function createStaticContentCollectionItems(items = []) {
@@ -4686,6 +5530,7 @@ function createStaticCategoryCollectionItems(items = []) {
       kind: 'category',
       title: name,
       description: pickStaticText(category?.description, `查看 ${name} 分类下的全部内容`),
+      count,
       meta: `${count} 项内容`,
       to: getCategoryPath(category)
     }
@@ -4702,6 +5547,7 @@ function createStaticTagCollectionItems(items = []) {
       kind: 'tag',
       title: name,
       description: pickStaticText(tag?.description, `查看 ${name} 标签下的全部内容`),
+      count,
       meta: `${count} 项内容`,
       to: getTagPath(tag)
     }
@@ -4728,6 +5574,217 @@ function createStaticArchiveOverviewItems(items = []) {
       }
     })
     .filter(Boolean)
+}
+
+function normalizeStaticArchiveStamp(value) {
+  const normalizedValue = String(value || '').trim()
+  const dateMatch = normalizedValue.match(/\d{4}-\d{2}-\d{2}/)
+
+  if (dateMatch) {
+    return dateMatch[0]
+  }
+
+  const yearMatch = normalizedValue.match(/\d{4}/)
+
+  if (yearMatch && !normalizedValue.includes('-')) {
+    return yearMatch[0]
+  }
+
+  return normalizedValue || '未注明日期'
+}
+
+function normalizeStaticArchiveItem(item = {}) {
+  const kind = String(item?.kind || '').trim().toLowerCase()
+  const archiveYear = kind === 'archive'
+    ? normalizeStaticArchiveStamp(`${item?.title || ''} ${item?.key || ''} ${item?.date || ''}`)
+    : ''
+  const category = item?.category?.label || item?.category?.name || item?.category || ''
+  const footer = item?.footer || ''
+  const meta = String(item?.meta || '').split(' · ')
+  const date = archiveYear || normalizeStaticArchiveStamp(item?.createdAt || item?.date || meta[0])
+
+  return {
+    key: item?.key || item?.id || item?.to || item?.title,
+    title: String(item?.title || '').trim(),
+    description: pickStaticText(item?.description, item?.excerpt, item?.summary),
+    date,
+    to: String(item?.to || '').trim(),
+    category: String(category || '').trim(),
+    readTime: String(footer || meta.slice(1).join(' · ') || '').trim()
+  }
+}
+
+function groupStaticArchiveItems(items = []) {
+  const groups = new Map()
+
+  ;(Array.isArray(items) ? items : [])
+    .map(normalizeStaticArchiveItem)
+    .filter(item => item.title)
+    .forEach((item) => {
+      if (!groups.has(item.date)) {
+        groups.set(item.date, [])
+      }
+
+      groups.get(item.date).push(item)
+    })
+
+  return Array.from(groups.entries()).map(([date, groupItems]) => ({
+    key: `archive-day-${date}`,
+    date,
+    items: groupItems
+  }))
+}
+
+function renderStaticArchiveTimeline(page, basePath) {
+  const groupedItems = groupStaticArchiveItems(page?.items)
+
+  if (groupedItems.length === 0) {
+    return `<div class="ssg-empty">${escapeHtml(page?.emptyText || '这里还没有归档内容。')}</div>`
+  }
+
+  return `
+    <div class="ssg-archive-timeline-page">
+      <div class="ssg-archive-timeline">
+        ${groupedItems.map(group => `
+          <section class="ssg-archive-day">
+            <div class="ssg-archive-day-stamp">
+              <span class="ssg-archive-day-date">${escapeHtml(group.date)}</span>
+              <span class="ssg-archive-day-dot" aria-hidden="true"></span>
+            </div>
+            <div class="ssg-archive-day-panel">
+              ${group.items.map((item) => {
+                const href = item.to ? resolveInternalHref(basePath, item.to) : '#'
+
+                return `
+                  <a class="ssg-archive-row" href="${escapeAttribute(href)}">
+                    <span>
+                      <span class="ssg-archive-row-title">${escapeHtml(item.title)}</span>
+                      ${item.description ? `<span class="ssg-archive-row-description">${escapeHtml(item.description)}</span>` : ''}
+                    </span>
+                    <span class="ssg-archive-row-meta">
+                      ${item.category ? `<span class="ssg-archive-row-chip">${escapeHtml(item.category)}</span>` : ''}
+                      ${item.readTime ? `<span class="ssg-archive-row-chip">${escapeHtml(item.readTime)}</span>` : ''}
+                      <span class="ssg-archive-row-arrow" aria-hidden="true">›</span>
+                    </span>
+                  </a>
+                `
+              }).join('')}
+            </div>
+          </section>
+        `).join('')}
+      </div>
+    </div>
+  `
+}
+
+function getStaticTaxonomyCount(item = {}) {
+  const explicitCount = Number(item?.count ?? item?.articleCount)
+
+  if (Number.isFinite(explicitCount) && explicitCount >= 0) {
+    return explicitCount
+  }
+
+  const metaMatch = String(item?.meta || '').match(/\d+/)
+
+  return metaMatch ? Number.parseInt(metaMatch[0], 10) : 0
+}
+
+function normalizeStaticTaxonomyItems(items = []) {
+  const normalizedItems = (Array.isArray(items) ? items : [])
+    .map((item) => {
+      const title = String(item?.title || item?.name || '').trim()
+
+      if (!title) {
+        return null
+      }
+
+      return {
+        ...item,
+        title,
+        description: pickStaticText(item?.description),
+        count: getStaticTaxonomyCount(item),
+        to: String(item?.to || '').trim()
+      }
+    })
+    .filter(Boolean)
+  const maxCount = Math.max(...normalizedItems.map(item => item.count), 1)
+
+  return normalizedItems.map(item => ({
+    ...item,
+    weight: (0.78 + Math.min(item.count / maxCount, 1) * 0.42).toFixed(2)
+  }))
+}
+
+function renderStaticTaxonomyIcon(kind = 'category') {
+  if (kind === 'tag') {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none">
+        <path d="M4.5 12.2V6.8A2.3 2.3 0 0 1 6.8 4.5h5.4a2.5 2.5 0 0 1 1.77.73l4.8 4.8a2.5 2.5 0 0 1 0 3.54l-5.2 5.2a2.5 2.5 0 0 1-3.54 0l-4.8-4.8a2.5 2.5 0 0 1-.73-1.77Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        <path d="M8.6 8.6h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+      </svg>
+    `
+  }
+
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <path d="M3.8 7.3A2.3 2.3 0 0 1 6.1 5h4.05l2 2.2h5.75a2.3 2.3 0 0 1 2.3 2.3v7.2a2.3 2.3 0 0 1-2.3 2.3H6.1a2.3 2.3 0 0 1-2.3-2.3V7.3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+    </svg>
+  `
+}
+
+function renderStaticTaxonomyPage(page, basePath) {
+  const items = normalizeStaticTaxonomyItems(page?.items)
+  const isTagPage = page?.key === 'tags'
+
+  if (items.length === 0) {
+    return `<div class="ssg-empty">${escapeHtml(page?.emptyText || '这里还没有内容。')}</div>`
+  }
+
+  if (isTagPage) {
+    return `
+      <section class="ssg-taxonomy-index ssg-taxonomy-index-tags">
+        <div class="ssg-taxonomy-tag-cloud">
+          ${items.map((item) => {
+            const href = item.to ? resolveInternalHref(basePath, item.to) : '#'
+            const title = item.title.startsWith('#') ? item.title : `#${item.title}`
+            const countLabel = String(item.count)
+
+            return `
+              <a class="ssg-taxonomy-tag-pill" href="${escapeAttribute(href)}" style="--ssg-taxonomy-weight: ${escapeAttribute(item.weight)}">
+                <span>${escapeHtml(title)}</span>
+                <span class="ssg-taxonomy-tag-count">${escapeHtml(countLabel)}</span>
+              </a>
+            `
+          }).join('')}
+        </div>
+      </section>
+    `
+  }
+
+  return `
+    <section class="ssg-taxonomy-index ssg-taxonomy-index-categories">
+      <div class="ssg-taxonomy-panel">
+        ${items.map((item) => {
+          const href = item.to ? resolveInternalHref(basePath, item.to) : '#'
+          const countLabel = String(item.count)
+
+          return `
+            <a class="ssg-taxonomy-row" href="${escapeAttribute(href)}">
+              <span class="ssg-taxonomy-row-icon" aria-hidden="true">${renderStaticTaxonomyIcon(item.kind)}</span>
+              <span class="ssg-taxonomy-row-main">
+                <span class="ssg-taxonomy-row-title">${escapeHtml(item.title)}</span>
+                ${item.description ? `<span class="ssg-taxonomy-row-description">${escapeHtml(item.description)}</span>` : ''}
+              </span>
+              <span class="ssg-taxonomy-row-meta">
+                <span class="ssg-taxonomy-row-count">${escapeHtml(countLabel)} 项</span>
+                <span class="ssg-taxonomy-row-arrow" aria-hidden="true">›</span>
+              </span>
+            </a>
+          `
+        }).join('')}
+      </div>
+    </section>
+  `
 }
 
 async function loadStaticMenuPageSource(page, componentKey, codeBlockConfig = null, markdownConfig = null, coverConfig = null) {
@@ -4938,6 +5995,14 @@ function renderMenuPage(page, basePath) {
   const contentHtml = String(page?.contentHtml || '').trim()
   const contentBlocks = splitMenuPageContent(page?.content)
   const component = resolveMenuPageComponentKey(page?.component)
+
+  if (page?.key === 'archive' && component === 'timeline') {
+    return renderStaticArchiveTimeline(page, basePath)
+  }
+
+  if (page?.key === 'categories' || page?.key === 'tags') {
+    return renderStaticTaxonomyPage(page, basePath)
+  }
 
   if (component === 'context') {
     return `
@@ -5744,6 +6809,15 @@ function getRelatedArticles(currentArticle, articles) {
 async function createPageRoutes(context) {
   const { site, articles, categories, tags, archive, friendLinks, basePath, pageSize, routePatterns, menus } = context
   const articlePages = paginateItems(articles, pageSize)
+  const homeArticleConfig = normalizeStaticHomeArticlesConfig(site.home_articles || site.homeArticles, pageSize || 8)
+  const homeArticles = resolveStaticHomeArticles(articles, homeArticleConfig)
+  const homeArticlePages = homeArticleConfig.paginate === false
+    ? [{
+      page: 1,
+      totalPages: 1,
+      items: homeArticles.slice(0, homeArticleConfig.pageSize)
+    }]
+    : paginateItems(homeArticles, homeArticleConfig.pageSize)
   const homePage = resolveMenuPage('home', menus, routePatterns)
   const articlesPageConfig = resolveMenuPage('articles', menus, routePatterns)
   const categoriesPage = resolveMenuPage('categories', menus, routePatterns)
@@ -5764,7 +6838,7 @@ async function createPageRoutes(context) {
     component: homeComponent,
     layout: homeLayout,
     coverConfig: context.cover,
-    items: createStaticArticleCollectionItems(articlePages[0]?.items || []),
+    items: createStaticArticleCollectionItems(homeArticlePages[0]?.items || []),
     emptyText: '这里还没有文章。'
   }
   const firstArticlesCollectionPage = {
@@ -5775,6 +6849,7 @@ async function createPageRoutes(context) {
     emptyText: '这里还没有文章。'
   }
   const categoriesCollectionPage = {
+    key: 'categories',
     component: categoriesComponent,
     layout: categoriesLayout,
     coverConfig: context.cover,
@@ -5782,6 +6857,7 @@ async function createPageRoutes(context) {
     emptyText: '目前还没有分类。'
   }
   const tagsCollectionPage = {
+    key: 'tags',
     component: tagsComponent,
     layout: tagsLayout,
     coverConfig: context.cover,
@@ -5789,6 +6865,7 @@ async function createPageRoutes(context) {
     emptyText: '目前还没有标签。'
   }
   const archiveOverviewCollectionPage = {
+    key: 'archive',
     component: archiveComponent,
     layout: archiveLayout,
     coverConfig: context.cover,
@@ -5811,7 +6888,12 @@ async function createPageRoutes(context) {
           <h1 class="ssg-page-title">${escapeHtml(homeTitle)}</h1>
           <p class="ssg-page-description">${escapeHtml(homeDescription)}</p>
         </header>
-        ${renderMenuPage(homeCollectionPage, basePath)}
+        ${renderPaginatedMenuPage(homeCollectionPage, {
+          currentPage: 1,
+          totalPages: homeArticleConfig.paginate === false ? 1 : homeArticlePages[0]?.totalPages || 1,
+          resolvePagePath: (page) => page <= 1 ? getHomePath() : `${getHomePath()}?page=${page}`,
+          basePath
+        })}
       `
     })
   }
@@ -5937,7 +7019,7 @@ async function createPageRoutes(context) {
         component: articlesComponent,
         layout: articlesLayout,
         coverConfig: context.cover,
-        items: createStaticContentCollectionItems(categoryPages[0]?.items || []),
+        items: createStaticArticleCollectionItems(categoryPages[0]?.items || []),
         emptyText: '这个分类下还没有内容。'
       }
 
@@ -5965,7 +7047,7 @@ async function createPageRoutes(context) {
           component: articlesComponent,
           layout: articlesLayout,
           coverConfig: context.cover,
-          items: createStaticContentCollectionItems(pageGroup.items),
+          items: createStaticArticleCollectionItems(pageGroup.items),
           emptyText: '这个分类下还没有内容。'
         }
 
@@ -5998,7 +7080,7 @@ async function createPageRoutes(context) {
         component: articlesComponent,
         layout: articlesLayout,
         coverConfig: context.cover,
-        items: createStaticContentCollectionItems(tagPages[0]?.items || []),
+        items: createStaticArticleCollectionItems(tagPages[0]?.items || []),
         emptyText: '这个标签下还没有内容。'
       }
 
@@ -6026,7 +7108,7 @@ async function createPageRoutes(context) {
           component: articlesComponent,
           layout: articlesLayout,
           coverConfig: context.cover,
-          items: createStaticContentCollectionItems(pageGroup.items),
+          items: createStaticArticleCollectionItems(pageGroup.items),
           emptyText: '这个标签下还没有内容。'
         }
 
@@ -6072,6 +7154,7 @@ async function createPageRoutes(context) {
           <p class="ssg-page-description">浏览 ${escapeHtml(String(year))} 年发布的归档内容。</p>
         </header>
         ${renderMenuPage({
+          key: 'archive',
           component: archiveComponent,
           layout: archiveLayout,
           coverConfig: context.cover,

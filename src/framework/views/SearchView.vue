@@ -65,7 +65,7 @@
     <div v-else-if="searchPerformed">
       <!-- 有结果 -->
       <div v-if="articles.length > 0">
-        <div class="space-y-6">
+        <div class="search-result-list">
           <SearchResultCard
             v-for="article in articles"
             :key="article.id"
@@ -79,6 +79,7 @@
           <pagination 
             :current-page="currentPage" 
             :total-pages="totalPages"
+            :total-items="total"
             @page-change="handlePageChange"
           />
         </div>
@@ -286,6 +287,11 @@ const handlePageChange = (page) => {
   max-width: 56rem;
 }
 
+.search-result-list {
+  display: grid;
+  gap: 1.25rem;
+}
+
 .search-bar {
   display: flex;
   align-items: center;
@@ -395,29 +401,29 @@ const handlePageChange = (page) => {
   pointer-events: none;
 }
 
-.dark .search-bar {
+:global(.dark) .search-bar {
   border-color: rgba(96, 165, 250, 0.55);
   background: rgba(31, 41, 55, 0.84);
 }
 
-.dark .search-bar:focus-within {
+:global(.dark) .search-bar:focus-within {
   border-color: rgba(96, 165, 250, 0.9);
   box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
 }
 
-.dark .search-input {
+:global(.dark) .search-input {
   color: rgb(243 244 246);
 }
 
-.dark .search-input::placeholder {
+:global(.dark) .search-input::placeholder {
   color: rgb(156 163 175);
 }
 
-.dark .search-clear-btn {
+:global(.dark) .search-clear-btn {
   color: rgb(156 163 175);
 }
 
-.dark .search-clear-btn:hover {
+:global(.dark) .search-clear-btn:hover {
   background: rgb(55 65 81);
   color: rgb(229 231 235);
 }
@@ -427,6 +433,10 @@ const handlePageChange = (page) => {
     min-height: 2.86rem;
     padding: 0.26rem 0.36rem 0.26rem 0.62rem;
     gap: 0.35rem;
+  }
+
+  .search-result-list {
+    gap: 1rem;
   }
 }
 </style>

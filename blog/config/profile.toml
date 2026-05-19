@@ -1,50 +1,16 @@
-# 个人信息配置
-# 会展示在侧边栏的个人卡片中
+# 侧边栏个人资料卡
 
-# 展示名称，优先于 username 显示
 display_name = "Filling"
-
-# 用户名，会显示为 @prosperousEnding
 username = "prosperousEnding"
-
-# 副标题，不填时会回退显示站点 description
 tagline = "记录前端工程化、静态博客和内容系统。"
-
-# 头像地址
-# 支持:
-# - 远程 URL，例如 "https://example.com/avatar.png"
-# - public/ 下相对路径，例如 "icons/avatar.png"
 avatar_url = "icons/points.png"
-
-# 个人简介
 bio = "专注于前端工程化、静态博客和内容系统。"
-
-# 地理位置
 location = "Hangzhou, China"
-
-# 个人网站
 website = "https://filling.initzo.com"
 
-# 资料卡显示开关
-[display]
-show_avatar = true
-show_name = true
-show_username = true
-show_tagline = true
-show_bio = true
-show_location = true
-show_website = true
-show_social_links = true
-
-# 社交链接
-# enabled: 是否启用
-# icon: 短文本图标，例如 "GH"、"X"、"B"
-# show_name: 是否在图标旁显示名称
-# weight: 排序权重，数字越大越靠前
 [[social_links]]
 name = "GitHub"
 url = "https://github.com/ProsperousEnding/Filling"
 icon = "GH"
 show_name = true
-enabled = true
 weight = 100

@@ -3,12 +3,6 @@
     <div class="theme-page-header mb-8">
       <h1 class="theme-page-title text-3xl font-bold mb-4">{{ pageTitle }}</h1>
       <p class="theme-page-description">{{ pageDescription }}</p>
-      <div v-if="layoutSwitcherVisible" class="built-in-page-toolbar">
-        <CollectionLayoutSwitcher
-          v-model="layoutModel"
-          :options="collectionLayout.availableLayouts"
-        />
-      </div>
     </div>
 
     <div v-if="loading" class="py-12 flex justify-center">
@@ -21,9 +15,8 @@
       </div>
     </div>
 
-    <component
+    <TaxonomyIndexPage
       v-else
-      :is="resolvedComponent"
       :page="resolvedPage"
     />
   </div>
@@ -31,14 +24,13 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import CollectionLayoutSwitcher from '../components/core/CollectionLayoutSwitcher.vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { useCategoryStore } from '../stores/category'
 import { useConfigStore } from '../stores/config'
 import { usePageMetadata } from '../composables/usePageMetadata'
 import { createCategoryCollectionItems, createCollectionPage } from '../utils/pageCollectionItems'
 import { resolveMenuPage } from '../utils/menuConfig'
-import { resolveBuiltInPageComponent } from './pageComponentRegistry'
+import TaxonomyIndexPage from './pageComponents/TaxonomyIndexPage.vue'
 
 const categoryStore = useCategoryStore()
 const configStore = useConfigStore()
@@ -54,12 +46,8 @@ const pageDescription = computed(() => (
   pageConfig.value?.description || '浏览所有内容分类，发现你感兴趣的主题'
 ))
 const {
-  collectionLayout,
-  currentLayout,
-  modelValue: layoutModel,
-  switcherVisible: layoutSwitcherVisible
+  collectionLayout
 } = useBuiltInPageLayout('categories', () => pageConfig.value?.component)
-const resolvedComponent = computed(() => resolveBuiltInPageComponent('categories', currentLayout.value))
 const resolvedPage = computed(() => createCollectionPage({
   key: 'categories',
   title: pageTitle.value,

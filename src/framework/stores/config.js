@@ -99,6 +99,20 @@ const DEFAULT_SITE_CONFIG = {
   menus: {},
   pagination: {
     page_size: 10
+  },
+  home_articles: {
+    mode: 'latest',
+    page_size: 8,
+    paginate: true,
+    include_sticky: true,
+    sticky_first: true,
+    categories: [],
+    tags: [],
+    exclude_categories: [],
+    exclude_tags: [],
+    include_ids: [],
+    exclude_ids: [],
+    fallback_to_latest: true
   }
 }
 
@@ -403,6 +417,9 @@ const DEFAULT_COVER_CONFIG = {
     aspect_ratio: '',
     object_fit: 'cover',
     placeholder: 'gradient',
+    page_background: {
+      content_style: 'transparent'
+    },
     watermark: {
       enabled: false,
       text: '',
@@ -450,7 +467,9 @@ const RAW_SITE_CONFIG_KEYS = new Set([
   'sidebar',
   'routing',
   'menus',
-  'pagination'
+  'pagination',
+  'home_articles',
+  'homeArticles'
 ])
 const RAW_PROFILE_CONFIG_KEYS = new Set([
   'display_name',
@@ -897,6 +916,30 @@ function normalizeFeatureBoolean(value, fallback = false) {
 function normalizePositiveFeatureInteger(value, fallback) {
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const HOME_ARTICLE_MODES = new Set(['latest', 'featured', 'sticky', 'mixed'])
+
+function normalizeHomeArticleConfig(source = {}) {
+  const defaults = DEFAULT_SITE_CONFIG.home_articles
+  const normalizedSource = isPlainObject(source) ? toCamelCase(source) : {}
+  const rawMode = String(normalizedSource.mode || defaults.mode).trim().toLowerCase()
+  const mode = HOME_ARTICLE_MODES.has(rawMode) ? rawMode : defaults.mode
+
+  return {
+    mode,
+    pageSize: normalizePositiveFeatureInteger(normalizedSource.pageSize, defaults.page_size),
+    paginate: normalizeFeatureBoolean(normalizedSource.paginate, defaults.paginate),
+    includeSticky: normalizeFeatureBoolean(normalizedSource.includeSticky, defaults.include_sticky),
+    stickyFirst: normalizeFeatureBoolean(normalizedSource.stickyFirst, defaults.sticky_first),
+    categories: normalizeStringList(normalizedSource.categories),
+    tags: normalizeStringList(normalizedSource.tags),
+    excludeCategories: normalizeStringList(normalizedSource.excludeCategories),
+    excludeTags: normalizeStringList(normalizedSource.excludeTags),
+    includeIds: normalizeStringList(normalizedSource.includeIds),
+    excludeIds: normalizeStringList(normalizedSource.excludeIds),
+    fallbackToLatest: normalizeFeatureBoolean(normalizedSource.fallbackToLatest, defaults.fallback_to_latest)
+  }
 }
 
 function normalizeProfileLinkUrl(value) {
@@ -1727,6 +1770,7 @@ function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {},
       ...DEFAULT_SITE_CONFIG.pagination,
       ...(site.pagination || {})
     },
+    home_articles: normalizeHomeArticleConfig(site.home_articles || site.homeArticles),
     page_layouts: normalizeBuiltInPageLayoutsConfig(site.page_layouts || site.pageLayouts)
   }
 
@@ -1776,6 +1820,7 @@ function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {},
     outdatedThresholdDays: mergedSite.features.outdated_threshold_days,
     showProfileInSidebar: mergedSite.features.show_profile_in_sidebar,
     sidebarLayout: normalizeSidebarLayout(mergedSite.sidebar),
+    homeArticleConfig: mergedSite.home_articles,
     pageLayouts: mergedSite.page_layouts,
     routePatterns,
     menus,
@@ -1908,7 +1953,15 @@ function normalizeRuntimeConfigInput(config = {}) {
 
 function applyDocumentTheme(theme) {
   if (typeof document === 'undefined') return
-  document.documentElement.classList.toggle('dark', theme === 'dark')
+
+  const normalizedTheme = theme === 'dark' ? 'dark' : 'light'
+  const isDark = normalizedTheme === 'dark'
+  const root = document.documentElement
+
+  root.classList.toggle('dark', isDark)
+  root.dataset.theme = normalizedTheme
+  root.style.colorScheme = normalizedTheme
+  document.body?.classList.toggle('dark', isDark)
 }
 
 function syncConfiguredRoutePatterns(configPatch = {}) {

@@ -54,7 +54,7 @@ import Pagination from '../components/core/Pagination.vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { usePageMetadata } from '../composables/usePageMetadata'
-import { createCollectionPage, createContentCollectionItems } from '../utils/pageCollectionItems'
+import { createArticleCollectionItems, createCollectionPage } from '../utils/pageCollectionItems'
 import { resolveMenuPage } from '../utils/menuConfig'
 import { getCategoryRoute } from '../utils/routeLinks'
 import { resolveBuiltInPageComponent } from './pageComponentRegistry'
@@ -140,7 +140,7 @@ const resolvedPage = computed(() => createCollectionPage({
   key: `category-${categoryId.value}`,
   title: category.value?.name || '分类',
   description: pageDescription.value,
-  items: createContentCollectionItems(items.value),
+  items: createArticleCollectionItems(items.value),
   emptyText: '这个分类下还没有内容。',
   layout: collectionLayout.value
 }))

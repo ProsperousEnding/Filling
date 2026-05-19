@@ -137,7 +137,7 @@
   font-weight: var(--font-weight-regular);
   font-size: var(--font-root-size);
   
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--color-gray-900);
   background-color: var(--color-white);
   
@@ -795,101 +795,108 @@ label {
   .lg\:grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
 }
 
-/* 暗色模式 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: var(--color-gray-300);
-    background-color: var(--color-gray-900);
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background-color: var(--color-gray-700);
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-gray-600);
-  }
-  
-  body {
-    background-color: var(--color-black);
-  }
-  
-  .article-card {
-    background-color: rgba(38, 38, 42, 0.8);
-    box-shadow: var(--shadow-sm);
-    border-color: var(--color-gray-800);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-  
-  .article-title {
-    color: var(--color-gray-100);
-  }
-  
-  .article-excerpt {
-    color: var(--color-gray-400);
-  }
-  
-  .tag {
-    background-color: rgba(142, 142, 147, 0.15);
-    color: var(--color-gray-400);
-  }
-  
-  .btn-secondary {
-    background-color: rgba(142, 142, 147, 0.15);
-    color: var(--color-gray-200);
-  }
-  
-  .btn-secondary:hover {
-    background-color: rgba(142, 142, 147, 0.25);
-  }
-  
-  .pagination-item {
-    color: var(--color-gray-400);
-  }
-  
-  .pagination-item:hover {
-    background-color: rgba(142, 142, 147, 0.15);
-  }
-  
-  h1, h2, h3, h4, h5, h6 {
-    color: var(--color-gray-100);
-  }
-  
-  button {
-    background-color: rgba(142, 142, 147, 0.15);
-    color: var(--color-gray-300);
-  }
-  
-  button:hover {
-    background-color: rgba(142, 142, 147, 0.25);
-  }
-  
-  .card, .content-container {
-    background-color: rgba(38, 38, 42, 0.8);
-    box-shadow: var(--shadow-sm);
-    border-color: var(--color-gray-800);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-  
-  input, textarea, select {
-    color: var(--color-gray-300);
-    background-color: rgba(38, 38, 42, 0.8);
-    border-color: var(--color-gray-700);
-  }
-  
-  select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23999999'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  }
-  
-  label {
-    color: var(--color-gray-300);
-  }
-  
-  a.animated-underline {
-    background-image: linear-gradient(transparent calc(100% - 1px), var(--color-primary-light) 1px);
-  }
+/* 暗色模式：只由手动主题类控制，避免系统主题覆盖站内切换 */
+:root.dark {
+  color-scheme: dark;
+  color: var(--color-gray-300);
+  background-color: var(--color-gray-900);
+}
+
+:root.dark ::-webkit-scrollbar-thumb {
+  background-color: var(--color-gray-700);
+}
+
+:root.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-gray-600);
+}
+
+:root.dark body {
+  background-color: var(--color-black);
+}
+
+:root.dark .article-card {
+  background-color: rgba(38, 38, 42, 0.8);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-gray-800);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+:root.dark .article-title {
+  color: var(--color-gray-100);
+}
+
+:root.dark .article-excerpt {
+  color: var(--color-gray-400);
+}
+
+:root.dark .tag {
+  background-color: rgba(142, 142, 147, 0.15);
+  color: var(--color-gray-400);
+}
+
+:root.dark .btn-secondary {
+  background-color: rgba(142, 142, 147, 0.15);
+  color: var(--color-gray-200);
+}
+
+:root.dark .btn-secondary:hover {
+  background-color: rgba(142, 142, 147, 0.25);
+}
+
+:root.dark .pagination-item {
+  color: var(--color-gray-400);
+}
+
+:root.dark .pagination-item:hover {
+  background-color: rgba(142, 142, 147, 0.15);
+}
+
+:root.dark h1,
+:root.dark h2,
+:root.dark h3,
+:root.dark h4,
+:root.dark h5,
+:root.dark h6 {
+  color: var(--color-gray-100);
+}
+
+:root.dark button {
+  background-color: rgba(142, 142, 147, 0.15);
+  color: var(--color-gray-300);
+}
+
+:root.dark button:hover {
+  background-color: rgba(142, 142, 147, 0.25);
+}
+
+:root.dark .card,
+:root.dark .content-container {
+  background-color: rgba(38, 38, 42, 0.8);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-gray-800);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+:root.dark input,
+:root.dark textarea,
+:root.dark select {
+  color: var(--color-gray-300);
+  background-color: rgba(38, 38, 42, 0.8);
+  border-color: var(--color-gray-700);
+}
+
+:root.dark select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23999999'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+}
+
+:root.dark label {
+  color: var(--color-gray-300);
+}
+
+:root.dark a.animated-underline {
+  background-image: linear-gradient(transparent calc(100% - 1px), var(--color-primary-light) 1px);
 }
 
 /* 动画效果 */

@@ -19,10 +19,10 @@
     <Transition :name="sidebarDrawerTransition">
       <div
         v-if="showMobileSidebar"
-        class="theme-sidebar-drawer fixed inset-y-0 z-[1400] w-[min(22rem,calc(100vw-1rem))] max-w-full p-1.5 sm:p-2 md:hidden"
+        class="theme-sidebar-drawer fixed inset-y-0 z-[1400] w-full max-w-full p-0 sm:w-[min(24rem,calc(100vw-1rem))] sm:p-2 md:hidden"
         :class="mobileSidebarPositionClass"
       >
-        <div class="theme-sidebar-drawer-shell h-full overflow-hidden rounded-[2rem]">
+        <div class="theme-sidebar-drawer-shell h-full overflow-hidden rounded-none sm:rounded-[1.6rem]">
           <Sidebar mobile />
         </div>
       </div>
@@ -81,7 +81,7 @@ import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
 const props = defineProps({
   config: {
     type: Object,
-    default: () => ({})
+    default: null
   }
 })
 
@@ -142,16 +142,12 @@ const handleEscape = (event) => {
 }
 
 onMounted(() => {
-  if (props.config) {
+  if (props.config && Object.keys(props.config).length > 0) {
     configStore.initConfig(props.config)
   }
 
   configStore.loadThemeFromStorage()
   configStore.loadCoverStyleFromStorage()
-
-  if (configState.theme === 'dark') {
-    document.documentElement.classList.add('dark')
-  }
 
   handleViewportChange()
 
@@ -232,32 +228,28 @@ onBeforeUnmount(() => {
 .theme-sidebar-drawer-shell {
   pointer-events: auto;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.28)),
-    rgba(255, 255, 255, 0.18);
+    radial-gradient(circle at 16% 0%, rgba(219, 234, 254, 0.9), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
   border: 0 !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.54),
-    0 24px 80px rgba(15, 23, 42, 0.24);
-  backdrop-filter: blur(22px) saturate(1.2);
-  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.22);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 :global(.dark) .theme-sidebar-drawer-shell {
   background:
-    linear-gradient(145deg, rgba(15, 23, 42, 0.62), rgba(15, 23, 42, 0.36)),
-    rgba(15, 23, 42, 0.26);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 24px 80px rgba(0, 0, 0, 0.42);
+    radial-gradient(circle at 16% 0%, rgba(30, 64, 175, 0.28), transparent 32%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
 }
 
 @media (max-width: 420px) {
   .theme-sidebar-drawer {
-    width: calc(100vw - 0.75rem);
+    width: 100vw;
   }
 
   .theme-sidebar-drawer-shell {
-    border-radius: 1.75rem;
+    border-radius: 0;
   }
 }
 </style>

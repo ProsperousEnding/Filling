@@ -88,6 +88,11 @@ export function createArticleCollectionItems(articles = []) {
     const categoryName = normalizeString(article?.category?.name || article?.category)
     const dateLabel = formatDateLabel(article?.createdAt || article?.date)
     const tags = createNamedList(article?.tags)
+    const routeTarget = article?.to
+      ? article.to
+      : article?.href
+        ? ''
+        : getArticleRoute(article)
 
     return {
       key: `article-${normalizeString(article?.id || article?.slug || article?.title)}`,
@@ -100,7 +105,9 @@ export function createArticleCollectionItems(articles = []) {
       cover: normalizeString(article?.cover || article?.imageUrl),
       category: categoryName ? { label: categoryName } : null,
       tags,
-      to: getArticleRoute(article)
+      to: routeTarget,
+      href: normalizeString(article?.href),
+      external: article?.external === true
     }
   })
 }

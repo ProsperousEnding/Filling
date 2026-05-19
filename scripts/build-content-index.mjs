@@ -25,10 +25,8 @@ import { parseToml } from '../src/framework/utils/tomlParser.js'
 const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url))
 const CONTENT_DIR = path.join(ROOT_DIR, 'blog', 'content')
 const ARTICLES_DIR = path.join(CONTENT_DIR, 'articles')
-const SITE_CONFIG_FILE = path.join(ROOT_DIR, 'blog', 'config', 'site.toml')
-const LICENSE_CONFIG_FILE = path.join(ROOT_DIR, 'blog', 'config', 'license.toml')
-const COVER_CONFIG_FILE = path.join(ROOT_DIR, 'blog', 'config', 'cover.toml')
-const MARKDOWN_CONFIG_FILE = path.join(ROOT_DIR, 'blog', 'config', 'markdown.toml')
+const CONFIG_DIR = path.join(ROOT_DIR, 'blog', 'config')
+const CONTENT_INDEX_SITE_CONFIG_FILE = path.join(CONFIG_DIR, 'site.toml')
 const CONTENT_INDEX_OUTPUT_FILE = path.join(ROOT_DIR, 'src', 'framework', 'generated', 'contentIndex.generated.js')
 const SEARCH_INDEX_OUTPUT_FILE = path.join(ROOT_DIR, 'src', 'framework', 'generated', 'searchIndex.generated.js')
 const CONTENT_ROOT_PREFIX = '/blog/content/'
@@ -347,10 +345,26 @@ async function collectMarkdownFiles(directory) {
   return nestedEntries.flat().sort((left, right) => left.localeCompare(right, 'en'))
 }
 
+async function readConfigFile(name) {
+  const candidatePaths = [
+    path.join(CONFIG_DIR, `${name}.toml`),
+    path.join(CONFIG_DIR, 'optional', `${name}.toml`)
+  ]
+
+  for (const candidatePath of candidatePaths) {
+    try {
+      return parseToml(await readFile(candidatePath, 'utf8'))
+    } catch {
+      // Try the next supported config location.
+    }
+  }
+
+  return {}
+}
+
 async function loadSiteConfig() {
   try {
-    const rawConfig = await readFile(SITE_CONFIG_FILE, 'utf8')
-    return parseToml(rawConfig)
+    return await readConfigFile('site')
   } catch {
     return {}
   }
@@ -358,8 +372,7 @@ async function loadSiteConfig() {
 
 async function loadLicenseConfig() {
   try {
-    const rawConfig = await readFile(LICENSE_CONFIG_FILE, 'utf8')
-    return parseToml(rawConfig)
+    return await readConfigFile('license')
   } catch {
     return {}
   }
@@ -367,8 +380,7 @@ async function loadLicenseConfig() {
 
 async function loadCoverConfig() {
   try {
-    const rawConfig = await readFile(COVER_CONFIG_FILE, 'utf8')
-    return normalizeCoverConfig(parseToml(rawConfig))
+    return normalizeCoverConfig(await readConfigFile('cover'))
   } catch {
     return normalizeCoverConfig({})
   }
@@ -376,8 +388,7 @@ async function loadCoverConfig() {
 
 async function loadMarkdownConfig() {
   try {
-    const rawConfig = await readFile(MARKDOWN_CONFIG_FILE, 'utf8')
-    return normalizeMarkdownConfig(parseToml(rawConfig))
+    return normalizeMarkdownConfig(await readConfigFile('markdown'))
   } catch {
     return normalizeMarkdownConfig({})
   }
@@ -567,9 +578,9 @@ export async function generateContentIndex() {
 export {
   ARTICLES_DIR as CONTENT_INDEX_ARTICLES_DIR,
   CONTENT_DIR as CONTENT_INDEX_CONTENT_DIR,
+  CONTENT_INDEX_SITE_CONFIG_FILE,
   CONTENT_INDEX_OUTPUT_FILE,
-  SEARCH_INDEX_OUTPUT_FILE,
-  SITE_CONFIG_FILE as CONTENT_INDEX_SITE_CONFIG_FILE
+  SEARCH_INDEX_OUTPUT_FILE
 }
 
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)

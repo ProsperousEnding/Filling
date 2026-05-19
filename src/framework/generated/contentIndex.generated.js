@@ -5,7 +5,7 @@ const contentIndex = {
     {
       "id": "config-comments-and-analytics",
       "slug": "config-comments-and-analytics",
-      "title": "评论与统计接入指南",
+      "title": "评论、统计与增强配置指南",
       "date": "2026-05-13T00:00:00.000Z",
       "author": null,
       "category": {
@@ -26,13 +26,13 @@ const contentIndex = {
           "name": "统计"
         }
       ],
-      "cover": "https://picsum.photos/seed/config-comments-and-analytics/1200/630.webp",
+      "cover": "https://t.mwm.moe/pc?seed=132477470",
       "coverSource": "",
       "coverDisplayMode": "page-background",
-      "description": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
-      "summary": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
-      "excerpt": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
-      "readTime": 4,
+      "description": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
+      "summary": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
+      "excerpt": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
+      "readTime": 3,
       "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
       "license": {
@@ -42,12 +42,16 @@ const contentIndex = {
       "licenseDisabled": false,
       "outdatedThresholdDays": null,
       "showOutdatedNotice": null,
+      "sticky": true,
+      "featured": false,
+      "homeHidden": false,
+      "weight": 100,
       "sourcePath": "/blog/content/articles/config-comments-and-analytics.md"
     },
     {
       "id": "config-content-and-pages",
       "slug": "config-content-and-pages",
-      "title": "内容页面与互动配置指南",
+      "title": "内容页面与写作指南",
       "date": "2026-05-13T00:00:00.000Z",
       "author": null,
       "category": {
@@ -68,13 +72,13 @@ const contentIndex = {
           "name": "内容"
         }
       ],
-      "cover": "https://picsum.photos/seed/config-content-and-pages/1200/630.webp",
+      "cover": "https://t.mwm.moe/pc?seed=1411303983",
       "coverSource": "",
       "coverDisplayMode": "page-background",
-      "description": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
-      "summary": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
-      "excerpt": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
-      "readTime": 7,
+      "description": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
+      "summary": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
+      "excerpt": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
+      "readTime": 3,
       "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
       "license": {
@@ -84,6 +88,10 @@ const contentIndex = {
       "licenseDisabled": false,
       "outdatedThresholdDays": null,
       "showOutdatedNotice": null,
+      "sticky": true,
+      "featured": false,
+      "homeHidden": false,
+      "weight": 200,
       "sourcePath": "/blog/content/articles/config-content-and-pages.md"
     },
     {
@@ -110,13 +118,13 @@ const contentIndex = {
           "name": "外观"
         }
       ],
-      "cover": "https://picsum.photos/seed/config-site-and-theme/1200/630.webp",
+      "cover": "https://t.mwm.moe/pc?seed=426469064",
       "coverSource": "",
       "coverDisplayMode": "page-background",
-      "description": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
-      "summary": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
-      "excerpt": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
-      "readTime": 10,
+      "description": "说明 blog/config 根目录下的基础配置文件和常用字段。",
+      "summary": "说明 blog/config 根目录下的基础配置文件和常用字段。",
+      "excerpt": "说明 blog/config 根目录下的基础配置文件和常用字段。",
+      "readTime": 5,
       "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
       "license": {
@@ -126,6 +134,10 @@ const contentIndex = {
       "licenseDisabled": false,
       "outdatedThresholdDays": null,
       "showOutdatedNotice": null,
+      "sticky": true,
+      "featured": false,
+      "homeHidden": false,
+      "weight": 300,
       "sourcePath": "/blog/content/articles/config-site-and-theme.md"
     }
   ],
@@ -134,9 +146,9 @@ const contentIndex = {
       "id": "article:config-content-and-pages",
       "kind": "article",
       "iconKind": "article",
-      "title": "内容页面与互动配置指南",
-      "description": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
-      "excerpt": "说明文章 frontmatter、announcement.toml、links.toml、sponsor.toml、license.toml、code_block.toml、markdown.toml 和 guestbook.toml 的作用与字段。",
+      "title": "内容页面与写作指南",
+      "description": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
+      "excerpt": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
       "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
       "category": {
@@ -161,7 +173,7 @@ const contentIndex = {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
-      "cover": "https://picsum.photos/seed/config-content-and-pages/1200/630.webp",
+      "cover": "https://t.mwm.moe/pc?seed=1411303983",
       "coverSource": "",
       "to": "/article/config-content-and-pages",
       "sectionTitle": "",
@@ -172,9 +184,9 @@ const contentIndex = {
       "id": "article:config-comments-and-analytics",
       "kind": "article",
       "iconKind": "article",
-      "title": "评论与统计接入指南",
-      "description": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
-      "excerpt": "说明 comment.toml 和 analytics.toml 的字段、启用条件和配置完成条件。",
+      "title": "评论、统计与增强配置指南",
+      "description": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
+      "excerpt": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
       "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
       "category": {
@@ -199,7 +211,7 @@ const contentIndex = {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
-      "cover": "https://picsum.photos/seed/config-comments-and-analytics/1200/630.webp",
+      "cover": "https://t.mwm.moe/pc?seed=132477470",
       "coverSource": "",
       "to": "/article/config-comments-and-analytics",
       "sectionTitle": "",
@@ -211,8 +223,8 @@ const contentIndex = {
       "kind": "article",
       "iconKind": "article",
       "title": "站点基础与外观配置指南",
-      "description": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
-      "excerpt": "说明 site.toml、theme.toml、profile.toml、font.toml、background.toml 和 cover.toml 的作用与字段。",
+      "description": "说明 blog/config 根目录下的基础配置文件和常用字段。",
+      "excerpt": "说明 blog/config 根目录下的基础配置文件和常用字段。",
       "createdAt": "2026-05-13T00:00:00.000Z",
       "updatedAt": null,
       "category": {
@@ -237,7 +249,7 @@ const contentIndex = {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
-      "cover": "https://picsum.photos/seed/config-site-and-theme/1200/630.webp",
+      "cover": "https://t.mwm.moe/pc?seed=426469064",
       "coverSource": "",
       "to": "/article/config-site-and-theme",
       "sectionTitle": "",
@@ -256,7 +268,7 @@ const contentIndex = {
       "category": null,
       "tags": [],
       "license": null,
-      "cover": "https://picsum.photos/seed/%E5%85%B3%E4%BA%8E/1200/630.webp",
+      "cover": "https://t.mwm.moe/pc?seed=666491",
       "coverSource": "",
       "to": "/about",
       "sectionTitle": "",

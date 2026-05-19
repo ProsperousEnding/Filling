@@ -57,7 +57,8 @@ import { resolveBuiltInPageComponent } from './pageComponentRegistry'
 const articleStore = useArticleStore()
 const configStore = useConfigStore()
 
-const defaultPageSize = computed(() => configStore.pageSize || 8)
+const homeArticleConfig = computed(() => configStore.homeArticleConfig || {})
+const defaultPageSize = computed(() => homeArticleConfig.value.pageSize || configStore.pageSize || 8)
 const pageConfig = computed(() => (
   resolveMenuPage('home', configStore.menus, configStore.routePatterns)
 ))
@@ -95,9 +96,11 @@ const {
   handlePageChange
 } = usePaginatedCollection({
   pageSize: defaultPageSize,
-  fetchPage: ({ page, pageSize: size }) => articleStore.fetchArticles({
+  watchSources: [homeArticleConfig],
+  fetchPage: ({ page, pageSize: size }) => articleStore.fetchHomeArticles({
     page,
-    pageSize: size
+    pageSize: size,
+    config: homeArticleConfig.value
   })
 })
 

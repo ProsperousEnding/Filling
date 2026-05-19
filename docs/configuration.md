@@ -1,221 +1,89 @@
 # 配置说明
 
-本文档汇总 `blog/config/*.toml` 的用途、常见字段与启用方式，作为当前仓库的正式配置参考。
+Filling 的用户配置位于 `blog/config`。
+
+当前配置按使用频率分层：
+
+- `blog/config/`：基础配置，普通用户日常主要修改这里。
+- `blog/config/optional/`：可选细节配置，用到对应能力时再改。
+
+同一个配置只保留一份。不要同时创建 `cover.toml` 和 `optional/cover.toml` 这类同名配置。
 
 ## 通用约定
 
-- 所有站点配置都放在 `blog/config/`。
-- 所有内容文件都放在 `blog/content/`。
-- 配置文件修改后，开发环境会热更新；生产环境需要重新构建。
-- 引用本地资源时，路径相对于 `public/`，不要写 `public/` 前缀。
-  例如：`themes/default.css`、`fonts/jetbrains-mono.woff2`、`backgrounds/site.webp`
-- 需要外链时，直接填写完整 URL，例如 `https://example.com/avatar.png`。
+- 内容文件放在 `blog/content`。
+- 文章放在 `blog/content/articles`。
+- 本地静态资源放在 `public`。
+- 配置里的本地资源路径相对于 `public`，不要写 `public/` 前缀。
+- 修改配置后，开发环境会热更新；生产环境需要重新构建。
 
-常用命令：
+示例资源路径：
 
-```bash
-pnpm dev
-pnpm build
-pnpm build:lib
-pnpm build:content-index
+```text
+icons/points.png
+themes/default.css
+backgrounds/site-light.webp
+fonts/jetbrains-mono.woff2
 ```
 
-## 内容与菜单关系
+## 基础配置
 
-### 文章目录
+### `site.toml`
 
-- `blog/content/articles/` 下的 Markdown 会参与：
-  - 首页
-  - 文章列表
-  - 分类
-  - 标签
-  - 归档
-  - 搜索
+站点总配置，控制站点信息、SEO、页眉、侧边栏、分页、首页文章、页面注册和页脚。
 
-### 自定义页面来源
+常用字段：
 
-- `component = "context"`：读取单个 Markdown 文件，配 `file`
-- `component = "list"` / `"card"` / `"grid"` / `"timeline"`：读取某个目录下的 Markdown，配 `folder`
-- `component = "friends"`：渲染友链页，读取 `links.toml`
-- `component = "guestbook"`：渲染留言板页，读取 `guestbook.toml`
-- `component = "sponsor"`：渲染赞助页，读取 `sponsor.toml`
-
-## 文章 Frontmatter
-
-文章 Markdown 常用字段：
-
-```yaml
----
-title: 示例文章
-date: 2026-05-01
-updated: 2026-05-10
-description: 一段摘要
-category: CSS
-tags:
-  - Tailwind
-  - 前端
-cover: images/demo-cover.webp
-cover_display_mode: page-background
-license:
-  name: CC BY-NC-SA 4.0
-  url: https://creativecommons.org/licenses/by-nc-sa/4.0/
----
-```
-
-当前还支持这些扩展字段：
-
-- `updated` / `updated_at` / `lastmod` / `last_modified`
-- `cover` / `image` / `thumbnail`
-- `cover_display_mode` / `coverDisplayMode`：单篇文章详情页封面显示方式，可选 `image`、`header-background`、`page-background`
-- `license: false`
-- `license_url`
-- `show_outdated_notice`
-- `disable_outdated_notice`
-- `outdated_threshold`
-- `outdated_threshold_days`
-
-## `site.toml`
-
-站点总配置，控制标题、描述、导航、布局、分页、菜单、路由和页脚。
-
-常用区块：
-
-- 顶层字段
-  - `title`
-  - `subtitle`
-  - `description`
-  - `site_url`
-- `[seo]`
-  - `lang`
-  - `locale`
-  - `author`
-  - `site_start_date`
-  - `timezone`
-  - `keywords`
-  - `theme_color`
-  - `favicon`
-  - `apple_touch_icon`
-  - `mask_icon`
-  - `mask_icon_color`
-  - `og_image`
-  - `twitter_image`
-  - `[seo.share_image]`
-  - `robots`
-- `[header.navbar]`
-  - `sticky`
-  - `blur`
-  - `show_brand`
-  - `show_title`
-  - `show_description`
-  - `show_desktop_menu`
-  - `show_mobile_menu`
-  - `show_search`
-  - `show_theme_toggle`
-  - `show_sidebar_toggle`
-  - `show_mobile_menu_toggle`
-- `[footer]`
-  - `text`
-  - `note`
-  - `snippet_html`
-- `[features]`
-  - `sidebar_visible`
-  - `sidebar_position`
-  - `show_sidebar_on_articles`
-  - `show_category_count`
-  - `show_tag_count`
-  - `show_read_time`
-  - `show_profile_in_sidebar`
-  - `show_outdated_notice`
-  - `outdated_threshold_days`
-- `[sidebar]`
-  - `desktop_components`
-  - `article_desktop_components`
-  - `mobile_components`
-  - `article_mobile_components`
-- `[page_layouts]`
-  - `allow_switch`
-  - `persist`
-  - 各页的 `default` / `available` / `columns` / `wide_columns`
-- `[routing]`
-  - 可自定义内建页面路由
-- `[pagination]`
-  - `page_size`
-
-### `[seo.share_image]`
-
-控制 `og:image` 和 `twitter:image` 的分享图策略。
-
-字段：
-
-- `enabled`：是否输出分享图 meta
-- `prefer_page_image`：是否优先使用文章封面或页面 frontmatter 的 `cover`
-- `fallback`：没有页面图和默认图时的回退方式，可选 `site`、`seeded`、`none`
-- `default_image`：站点默认分享图，路径相对于 `public/`
-- `twitter_image`：Twitter 专用分享图，留空时复用默认分享图
-- `twitter_card`：Twitter 卡片类型，可选 `summary_large_image`、`summary`
-- `seeded_width`：seeded 回退图宽度
-- `seeded_height`：seeded 回退图高度
-- `seeded_format`：seeded 回退图格式
-
-优先级：
-
-- 文章或页面 `cover` / `image` / `thumbnail`
-- `[seo.share_image].default_image`
-- `[seo].og_image`
-- `fallback = "seeded"` 时生成 seeded 图
+- `title`：站点名称
+- `subtitle`：站点副标题
+- `description`：站点描述
+- `site_url`：生产环境站点根地址
+- `[seo]`：默认 SEO 信息
+- `[header.leading_visual]`：页眉品牌视觉区
+- `[header.navbar]`：顶部导航显示开关
+- `[features]`：站点级功能开关
+- `[sidebar]`：侧边栏模块顺序
+- `[pagination]`：分页数量
+- `[home_articles]`：首页文章流
+- `[[menus.pages]]`：页面注册
+- `[footer]`：页脚
 
 示例：
 
 ```toml
-[seo.share_image]
-enabled = true
-prefer_page_image = true
-fallback = "seeded"
-twitter_card = "summary_large_image"
-seeded_width = 1200
-seeded_height = 630
-seeded_format = "webp"
+title = "Filling"
+subtitle = "内容系统与博客框架"
+description = "一个基于 Vue 3 的静态博客与内容系统。"
+site_url = "https://filling.initzo.com"
+
+[features]
+sidebar_position = "right"
+show_sidebar_on_articles = false
+
+[home_articles]
+mode = "latest"
+page_size = 8
+paginate = true
 ```
 
-### `[[menus.pages]]`
+### 首页文章
 
-控制站点页面和页面组件。
+`[home_articles]` 只影响首页，不影响 `/articles` 全部文章页。
 
-内建页面 key：
+- `mode = "latest"`：最新文章
+- `mode = "featured"`：只显示 `featured = true` 的文章
+- `mode = "sticky"`：只显示 `sticky = true` 的文章
+- `mode = "mixed"`：混合置顶、精选和指定文章
+- `page_size`：首页每页数量
+- `paginate`：是否分页
+- `include_sticky`：是否允许置顶文章出现在首页
+- `sticky_first`：是否让置顶和权重优先
 
-- `home`
-- `articles`
-- `categories`
-- `tags`
-- `archive`
-- `search`
+### 页面注册
 
-字段：
-
-- `key`
-- `title`
-- `description`
-- `component`
-- `enabled`
-- `visible`
-- `path`
-- `file`
-- `folder`
-
-内建页面规则：
-
-- `enabled = false`：不注册运行时路由，也不生成静态页面
-- `visible = false`：保留路由，但默认 `blog-nav` 不显示
-
-常见示例：
+页面在 `[[menus.pages]]` 中注册。
 
 ```toml
-[[menus.pages]]
-key = "search"
-title = "搜索"
-enabled = true
-visible = false
-
 [[menus.pages]]
 key = "about"
 title = "关于"
@@ -229,195 +97,135 @@ component = "grid"
 folder = "projects"
 ```
 
-友链页示例：
+常用组件：
 
-```toml
-[[menus.pages]]
-key = "friends"
-title = "友链"
-component = "friends"
-```
+- `context`：渲染单个 Markdown 文件，配 `file`
+- `list`：目录内容列表，配 `folder`
+- `card`：目录内容卡片，配 `folder`
+- `grid`：目录内容网格，配 `folder`
+- `timeline`：目录内容时间线，配 `folder`
+- `friends`：友链页
+- `guestbook`：留言板页
+- `sponsor`：赞助页
 
-留言板页示例：
+页面开关：
 
-```toml
-[[menus.pages]]
-key = "guestbook"
-title = "留言板"
-description = "如果你路过这里，欢迎留下几句话。"
-component = "guestbook"
-content = """
-欢迎留下你的来访足迹，也可以简单介绍你自己。
-"""
-```
+- `visible = false`：页面可访问，但不显示在默认导航。
+- `enabled = false`：关闭路由和静态生成。
 
-赞助页示例：
+### `profile.toml`
 
-```toml
-[[menus.pages]]
-key = "sponsor"
-title = "赞助"
-component = "sponsor"
-```
-
-### `[[menus.header]]` / `[[menus.mobile_header]]`
-
-控制顶部菜单。
-
-可用渲染器：
-
-- `header-pill`
-- `header-stack`
-
-可用数据源：
-
-- `blog-nav`
-- `custom`
-
-字段：
-
-- `renderer`：菜单渲染器
-- `source`：菜单数据源
-- `items`：菜单项列表
-
-菜单项字段：
-
-- `page`：引用 `[[menus.pages]]` 的页面 key
-- `label`：菜单文字
-- `target`：链接地址，内链或外链均可
-- `icon`：菜单项前缀文本
-- `description`：下拉子项说明
-- `children`：子菜单列表
-
-示例：
-
-```toml
-[[menus.header]]
-renderer = "header-pill"
-source = "blog-nav"
-
-[[menus.header.items]]
-key = "content"
-label = "内容"
-children = ["articles", "categories", "tags", "archive"]
-
-[[menus.header.items]]
-page = "about"
-
-[[menus.header.items]]
-label = "GitHub"
-target = "https://github.com/your-name"
-```
-
-### `[[menus.sidebar]]`
-
-控制侧边栏菜单模块。
-
-可用渲染器：
-
-- `sidebar-link`
-- `sidebar-article`
-
-可用数据源：
-
-- `categories`
-- `tags`
-- `latest-articles`
-- `friend-links`
-- `custom`
-
-## `profile.toml`
-
-控制侧边栏个人信息卡片。
+侧边栏个人资料卡。
 
 常用字段：
 
-- `display_name`
-- `username`
-- `tagline`
-- `bio`
-- `avatar_url`
-- `location`
-- `website`
+- `display_name`：展示名
+- `username`：用户名
+- `tagline`：副标题
+- `avatar_url`：头像
+- `bio`：简介
+- `location`：地区
+- `website`：个人网站
+- `[[social_links]]`：社交链接
 
-显示开关：
+### `theme.toml`
+
+主题预设。
 
 ```toml
-[display]
-show_avatar = true
-show_name = true
-show_username = true
-show_tagline = true
-show_bio = true
-show_location = true
-show_website = true
-show_social_links = true
+current_preset = "default"
+
+[presets.default]
+css_file = "themes/default.css"
+js_file = "themes/default.js"
 ```
 
-社交链接：
+### `background.toml`
+
+站点背景。
 
 ```toml
-[[social_links]]
-name = "GitHub"
-url = "https://github.com/your-name"
-icon = "GH"
-show_name = true
 enabled = true
-weight = 100
+mode = "gradient"
 ```
 
-- `icon`：社交链接图标文本。
-- `show_name`：是否显示链接名称。
-- `enabled`：是否启用该链接。
-- `weight`：排序权重，数字越大越靠前。
+图片背景：
 
-## `theme.toml`
+```toml
+enabled = true
+mode = "image"
+image = "backgrounds/site-light.webp"
+dark_image = "backgrounds/site-dark.webp"
+```
 
-控制主题资源。
+### `cover.toml`
+
+文章封面和详情页封面。
 
 常用字段：
 
-- `current_preset`
-- `css_file`
-- `js_file`
-- `[presets.xxx]`
+- `enabled`：是否启用封面回退
+- `fallback`：回退方式，可选 `none`、`seeded`、`image`
+- `seeded_style`：默认自动封面图源
+- `[source_switch].enabled`：是否显示图源切换按钮
+- `[source_switch].sources`：允许切换的图源
+- `[detail].display_mode`：详情页封面模式
+- `[detail.page_background].content_style`：page background 正文样式
+
+详情页封面模式：
+
+- `image`
+- `header-background`
+- `page-background`
+
+`content_style` 可选值：
+
+- `transparent`：正文更透明，容器感弱
+- `glass`：正文保留毛玻璃效果
+
+### `comment.toml`
+
+文章评论配置。
+
+当前支持：
+
+- `giscus`
+- `utterances`
+
+giscus 必填字段：
+
+- `repo`
+- `repo_id`
+- `category`
+- `category_id`
 
 示例：
 
 ```toml
-current_preset = "ocean"
+enabled = true
+provider = "giscus"
 
-[presets.ocean]
-css_file = "themes/ocean.css"
-js_file = "themes/ocean.js"
+[giscus]
+repo = "owner/repo"
+repo_id = "R_xxx"
+category = "Announcements"
+category_id = "DIC_xxx"
+mapping = "pathname"
 ```
 
-## `links.toml`
+### `links.toml`
 
-控制友情链接数据。可用于：
-
-- 侧边栏 `source = "friend-links"`
-- 独立友链页 `component = "friends"`
-
-独立友链页配置：
+友情链接。
 
 ```toml
-[page]
-columns = 2
-wide_columns = 3
-footer_title = "交换友链说明"
-footer_content = """
-如果你希望交换友链，可以通过侧边栏的联系方式提交站点信息。
-"""
+[[friend_links]]
+name = "Vue.js"
+url = "https://vuejs.org/"
+description = "The Progressive JavaScript Framework"
+tags = ["Vue", "Framework"]
 ```
 
-- `columns`：常规桌面列数，范围 1-4。
-- `wide_columns`：宽屏列数，范围 1-5。
-- `footer_title`：页面底部内容标题。
-- `footer_content`：页面底部纯文本内容，空行会分段。
-- `footer_html`：页面底部可信 HTML 片段。
-
-单条友链支持：
+常用字段：
 
 - `name`
 - `url`
@@ -429,9 +237,30 @@ footer_content = """
 - `weight`
 - `enabled`
 
-## `announcement.toml`
+## 可选配置
 
-控制全站公告条。
+可选配置位于 `blog/config/optional`。
+
+### `analytics.toml`
+
+统计脚本。
+
+当前支持：
+
+- `umami`
+- `plausible`
+- `google_analytics`
+- `clarity`
+
+启用条件：
+
+- 顶层 `enabled = true`
+- 对应 provider 的 `enabled = true`
+- provider 必填字段完整
+
+### `announcement.toml`
+
+站点公告。
 
 常用字段：
 
@@ -444,565 +273,138 @@ footer_content = """
 - `dismissible`
 - `variant`
 
-`variant` 可选值：
+### `code_block.toml`
 
-- `info`
-- `success`
-- `warning`
+代码块增强。
 
-## `comment.toml`
+常用能力：
 
-控制评论系统。
+- 语言标签
+- 文件名
+- 复制按钮
+- 行号
+- 长代码折叠
+- diff 增删行标记
+- 按语言覆盖配置
 
-当前支持：
+### `font.toml`
 
-- `giscus`
-- `utterances`
+字体配置。
 
-顶层字段：
+支持：
 
-- `enabled`
-- `provider`
-- `title`
-- `description`
-- `not_ready_text`
+- 字体预设
+- 正文字体、标题字体、等宽字体
+- 暗色模式字体覆盖
+- 本地 `@font-face`
+- preload 策略
 
-### `giscus`
+### `guestbook.toml`
 
-常用字段：
+留言板说明区和独立评论映射。
 
-- `repo`
-- `repo_id`
-- `category`
-- `category_id`
-- `mapping`
-- `term`
-- `strict`
-- `reactions_enabled`
-- `emit_metadata`
-- `input_position`
-- `lang`
-- `loading`
-- `theme`
-- `dark_theme`
-
-### `utterances`
-
-常用字段：
-
-- `repo`
-- `issue_term`
-- `issue_number`
-- `label`
-- `theme`
-- `dark_theme`
-- `crossorigin`
-
-## `sponsor.toml`
-
-控制文章详情页底部赞助区和独立赞助页。
-
-常用字段：
-
-- `enabled`
-- `show_on_articles`
-- `page_enabled`
-- `title`
-- `description`
-- `button_text`
-- `button_url`
-- `button_note`
-- `page_kicker`
-- `page_title`
-- `page_description`
-- `supporters_title`
-- `supporters_description`
-
-二维码 / 多赞助方式：
+留言板页面需要在 `site.toml` 中注册：
 
 ```toml
-[[methods]]
-name = "微信赞赏"
-account_name = "微信扫码"
-image_url = "images/sponsor/wechat-pay.png"
-note = "适合国内读者"
-weight = 100
+[[menus.pages]]
+key = "guestbook"
+title = "留言板"
+component = "guestbook"
 ```
 
-赞助者列表：
+### `license.toml`
 
-```toml
-[[supporters]]
-name = "示例赞助者"
-tier = "支持者"
-amount = "¥50"
-date = "2026-05"
-description = "感谢支持内容更新。"
-avatar_url = "images/sponsor/supporter.png"
-url = "https://example.com"
-weight = 100
+默认文章协议。
+
+单篇文章可以覆盖：
+
+```yaml
+license:
+  name: CC BY-NC-SA 4.0
+  url: https://creativecommons.org/licenses/by-nc-sa/4.0/
 ```
 
-独立页需要在 `site.toml` 的 `[[menus.pages]]` 中配置：
+单篇文章可以禁用默认协议：
+
+```yaml
+license: false
+```
+
+### `markdown.toml`
+
+Markdown 增强。
+
+支持：
+
+- GitHub 风格 callout
+- Mermaid 图表
+- KaTeX 数学公式
+
+### `sponsor.toml`
+
+赞助区和赞助页。
+
+赞助页需要在 `site.toml` 中注册：
 
 ```toml
 [[menus.pages]]
 key = "sponsor"
 title = "赞助"
 component = "sponsor"
+visible = false
 ```
 
-## `license.toml`
+## 文章 Frontmatter
 
-控制文章默认许可协议。
-
-常用字段：
-
-- `enabled`
-- `name`
-- `url`
-
-单篇文章可用 frontmatter 覆盖；如果不想继承默认协议，可写：
+常用写法：
 
 ```yaml
-license: false
+---
+title: 示例文章
+date: 2026-05-01
+updated: 2026-05-10
+description: 一段摘要
+category: CSS
+tags:
+  - Tailwind
+  - 前端
+cover: images/demo-cover.webp
+cover_display_mode: page-background
+sticky: false
+featured: false
+---
 ```
-
-## `analytics.toml`
-
-控制统计脚本。
-
-全局字段：
-
-- `enabled`
-- `respect_dnt`
-- `track_localhost`
-
-当前支持：
-
-- `[umami]`
-- `[plausible]`
-- `[google_analytics]`
-- `[clarity]`
-
-### Umami
-
-- `enabled`
-- `script_url`
-- `website_id`
-- `host_url`
-- `domains`
-
-### Plausible
-
-- `enabled`
-- `script_url`
-- `domain`
-- `endpoint`
-
-### Google Analytics 4
-
-- `enabled`
-- `measurement_id`
-- `manual_pageviews`
-- `debug_mode`
-
-### Microsoft Clarity
-
-- `enabled`
-- `project_id`
-
-## `font.toml`
-
-控制字体栈、字体预设和本地 `@font-face`。
 
 常用字段：
 
-- `enabled`
-- `preset` / `current_preset`
-- `preload`
-- `base_size`
-- `[families]`
-- `[dark_families]`
-- `[presets.xxx]`
-- `[[faces]]`
-
-字段说明：
-
-- `enabled`：是否启用字体配置。关闭时不输出字体 CSS 和 preload。
-- `preset` / `current_preset`：当前字体预设名。内置值为 `system`、`sans`、`serif`、`mono`。
-- `preload`：字体预加载策略。`marked` 只预加载 `preload = true` 的字体，`all` 预加载全部字体，`none` 不预加载。
-- `base_size`：根字号。纯数字按 `px` 处理，也可以写完整 CSS 尺寸值。
-- `[families]`：亮色模式字体栈。支持 `sans`、`heading`、`serif`、`mono`。
-- `[dark_families]`：暗色模式字体栈覆盖，只填写需要和亮色不同的字段。
-- `[presets.xxx]`：自定义字体预设。可配置 `base_size`、`preload`、`[presets.xxx.families]`、`[presets.xxx.dark_families]` 和 `[[presets.xxx.faces]]`。
-- `[[faces]]`：自托管字体文件。`family` 是字体名，`src` 是 `public/` 下路径，`weight` 是字重，`style` 是样式，`display` 是显示策略，`preload` 控制当前字体是否预加载。
-
-示例：
-
-```toml
-enabled = true
-preset = "sans"
-preload = "marked"
-base_size = "16px"
-
-[families]
-sans = "\"PingFang SC\", \"Microsoft YaHei\", sans-serif"
-mono = "\"JetBrains Mono\", monospace"
-
-[dark_families]
-heading = "\"PingFang SC\", \"Microsoft YaHei\", sans-serif"
-
-[presets.reading]
-base_size = "17px"
-
-[presets.reading.families]
-heading = "\"Noto Serif CJK SC\", \"Source Han Serif SC\", Georgia, serif"
-
-[[faces]]
-family = "JetBrains Mono"
-src = "fonts/jetbrains-mono-regular.woff2"
-weight = "400"
-style = "normal"
-display = "swap"
-preload = true
-```
-
-## `code_block.toml`
-
-控制 Markdown 代码块增强行为。
-
-常用字段：
-
-- `enabled`
-- `show_language`
-- `show_filename`
-- `show_copy_button`
-- `show_line_numbers`
-- `line_number_start`
-- `theme`
-- `dark_theme`
-- `copy_label`
-- `copied_label`
-- `wrap_long_lines`
-- `max_height`
-- `collapsible`
-- `collapse_threshold_lines`
-- `preview_lines`
-- `expand_label`
-- `collapse_label`
-- `mark_diff_lines`
-- `[languages.xxx]`
-
-`theme` / `dark_theme` 可选值：
-
-- `default`
-- `github`
-- `dracula`
-
-文件名写在代码围栏信息里：
-
-````md
-```ts filename=src/app.ts
-console.log('hello')
-```
-````
-
-按语言覆盖配置写在 `[languages.语言名]` 下，未填写的字段会继承全局配置。常见别名会自动映射，例如 `js` 映射到 `javascript`，`ts` 映射到 `typescript`，`bash` 映射到 `shell`。
-
-```toml
-[languages.javascript]
-collapse_threshold_lines = 28
-preview_lines = 22
-
-[languages.bash]
-show_line_numbers = false
-wrap_long_lines = true
-
-[languages.diff]
-show_copy_button = false
-show_line_numbers = false
-mark_diff_lines = true
-```
-
-## `markdown.toml`
-
-控制 Markdown 内容增强能力。
-
-常用字段：
-
-- `enabled`：是否启用 Markdown 增强
-- `[callouts]`：提示块配置
-- `[mermaid]`：Mermaid 图表配置
-- `[math]`：公式配置
-
-`[callouts]` 字段：
-
-- `enabled`：是否启用提示块
-- `syntax`：提示块语法，目前支持 `github`
-- `default_type`：未知类型的回退类型
-- `show_icon`：是否显示类型标记
-- `[callouts.labels]`：类型标题文案
-- `[callouts.icons]`：类型标记文案
-- `[callouts.aliases]`：类型别名映射
-
-支持写法：
-
-```md
-> [!NOTE]
-> 这里是提示内容。
-
-> [!WARNING] 自定义标题
-> 这里是警告内容。
-```
-
-默认类型：
-
-- `note`
-- `tip`
-- `important`
-- `warning`
-- `caution`
-- `info`
-- `success`
-- `danger`
-
-`[mermaid]` 字段：
-
-- `enabled`：是否启用 Mermaid 语法
-- `render`：是否在浏览器端渲染为 SVG
-- `script_url`：Mermaid 浏览器脚本地址
-- `theme`：亮色主题
-- `dark_theme`：暗色主题
-- `security_level`：Mermaid 安全级别
-
-Mermaid 写法：
-
-````md
-```mermaid
-flowchart TD
-  A[开始] --> B[结束]
-```
-````
-
-`[math]` 字段：
-
-- `enabled`：是否启用公式语法
-- `render`：是否在浏览器端渲染公式
-- `engine`：公式渲染引擎，目前支持 `katex`
-- `script_url`：KaTeX 浏览器脚本地址
-- `css_url`：KaTeX 样式地址
-- `inline_dollar`：是否启用 `$x$`
-- `inline_parentheses`：是否启用 `\(x\)`
-- `block_dollar`：是否启用 `$$...$$`
-- `block_brackets`：是否启用 `\[...\]`
-- `throw_on_error`：公式错误时是否抛出异常
-- `error_color`：公式错误颜色
-- `strict`：KaTeX strict 选项
-
-公式写法：
-
-```md
-行内公式：$E = mc^2$
-
-$$
-\int_0^1 x^2 dx = \frac{1}{3}
-$$
-```
-
-## `background.toml`
-
-控制站点背景层。
-
-常用字段：
-
-- `enabled`
-- `mode`
-- `gradient_light`
-- `gradient_dark`
-- `image`
-- `dark_image`
-- `overlay_light`
-- `overlay_dark`
-- `position`
-- `size`
-- `repeat`
-- `attachment`
-- `opacity`
-
-`mode` 可选值：
-
-- `none`
-- `gradient`
-- `image`
-
-## `cover.toml`
-
-控制文章封面回退策略、列表封面和详情页封面行为。
-
-顶层字段：
-
-- `enabled`
-- `fallback`
-- `fallback_image`
-- `seeded_width`
-- `seeded_height`
-- `seeded_format`
-- `seeded_style`：自动封面默认图源，可选 `picsum`、`cataas`、`mwm-anime`、`mwm-scenery`、`xjh-acg`、`bing-rand`
-
-内置图源：
-
-- `picsum`：Picsum 随机照片
-- `cataas`：Cataas 猫图
-- `mwm-anime`：MWM 二次元随机图
-- `mwm-scenery`：MWM 风景随机图
-- `xjh-acg`：XJH ACG 随机图
-- `bing-rand`：Bing 随机图
-
-`[source_switch]` 常用字段：
-
-- `enabled`：是否在页头显示封面图源切换按钮
-- `storage_key`：浏览器本地存储 key
-- `sources`：按钮循环切换的图源列表
-
-`[source_switch.labels]` 常用字段：
-
-- 每个 key 对应按钮显示文案
-
-`fallback` 可选值：
-
-- `none`
-- `seeded`
-- `image`
-
-`[detail]` 常用字段：
-
-- `show_cover`
-- `show_related_cover`
-- `display_mode`
-- `loading`
-- `aspect_ratio`
-- `object_fit`
-- `placeholder`
-
-`[list]` 常用字段：
-
-- `show_cover`
-- `loading`
-- `aspect_ratio`
-- `object_fit`
-- `placeholder`
-
-`[detail.watermark]` 常用字段：
-
-- `enabled`
-- `text`
-- `position`
-- `opacity`
-
-示例：
-
-```toml
-enabled = true
-fallback = "seeded"
-seeded_style = "picsum"
-
-[source_switch]
-enabled = true
-storage_key = "vue-blog-cover-source"
-sources = ["picsum", "cataas", "mwm-anime", "mwm-scenery", "xjh-acg", "bing-rand"]
-
-[source_switch.labels]
-picsum = "Picsum"
-cataas = "Cataas"
-mwm-anime = "MWM 二次元"
-mwm-scenery = "MWM 风景"
-xjh-acg = "XJH ACG"
-bing-rand = "Bing 随机"
-
-[list]
-show_cover = true
-loading = "lazy"
-aspect_ratio = "16 / 9"
-object_fit = "cover"
-placeholder = "gradient"
-
-[detail]
-show_cover = true
-show_related_cover = true
-display_mode = "image"
-loading = "eager"
-object_fit = "cover"
-
-[detail.watermark]
-enabled = false
-text = "Filling"
-position = "bottom-right"
-opacity = 0.72
-```
-
-## `guestbook.toml`
-
-控制留言板页的说明区。留言内容默认复用 `comment.toml`，也可以在 `[comment]` 中单独覆盖。
-
-常用字段：
-
-- `enabled`
-- `kicker`
 - `title`
+- `date`
+- `updated`
 - `description`
-- `guidelines`
-- `template`
-- `contact_label`
-- `contact_url`
-- `comment_title`
-- `comment_description`
-- `comment_not_ready_text`
-- `[comment]`
-- `[comment.giscus]`
-- `[comment.utterances]`
+- `category`
+- `tags`
+- `cover`
+- `cover_display_mode`
+- `sticky`
+- `featured`
+- `home_hidden`
+- `weight`
 
-`[comment]` 字段：
+别名：
 
-- `enabled`：是否显示留言区
-- `provider`：留言区评论提供商；不填时继承 `comment.toml`
-- `title`：留言区标题
-- `description`：留言区说明
-- `not_ready_text`：留言区未就绪提示
+- `updated_at` / `lastmod` / `last_modified`
+- `image` / `thumbnail`
+- `coverDisplayMode`
+- `pinned` / `pin` / `top`
+- `highlight` / `recommended` / `recommend`
+- `hide_home` / `hideHome` / `exclude_home` / `excludeHome`
+- `order` / `priority`
 
-`[comment.giscus]` / `[comment.utterances]` 字段和 `comment.toml` 中对应 provider 一致。只填写需要覆盖的字段，其余会继承全站评论配置。
+## 构建命令
 
-常见做法是让留言板使用独立 Giscus 话题：
-
-```toml
-[comment]
-enabled = true
-title = "开始留言"
-description = "这里的评论会单独归到留言板。"
-provider = "giscus"
-
-[comment.giscus]
-mapping = "specific"
-term = "guestbook"
+```bash
+pnpm dev
+pnpm build
+pnpm build:content-index
+pnpm build:lib
 ```
-
-启用留言板需要两步：
-
-1. 在 `guestbook.toml` 中设置 `enabled = true`
-2. 在 `site.toml` 中新增一个 `component = "guestbook"` 的页面
-
-## 推荐启用顺序
-
-如果你是第一次搭站，建议按这个顺序开配置：
-
-1. `site.toml`
-2. `profile.toml`
-3. `theme.toml`
-4. `comment.toml`
-5. `license.toml`
-6. `cover.toml`
-7. `analytics.toml`
-8. `background.toml`
-9. `font.toml`
-10. `markdown.toml`
-11. `guestbook.toml`
