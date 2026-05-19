@@ -5,25 +5,14 @@
       <p class="theme-page-description">{{ pageDescription }}</p>
     </div>
 
-    <div v-if="loading" class="py-12 flex justify-center">
-      <div class="theme-loading-inline inline-flex items-center">
-        <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        加载分类...
-      </div>
-    </div>
-
     <TaxonomyIndexPage
-      v-else
       :page="resolvedPage"
     />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { useCategoryStore } from '../stores/category'
 import { useConfigStore } from '../stores/config'
@@ -36,7 +25,6 @@ const categoryStore = useCategoryStore()
 const configStore = useConfigStore()
 
 const categories = ref([])
-const loading = ref(false)
 
 const pageConfig = computed(() => (
   resolveMenuPage('categories', configStore.menus, configStore.routePatterns)
@@ -62,20 +50,15 @@ usePageMetadata({
   description: () => pageDescription.value
 })
 
-onMounted(async () => {
-  await fetchCategories()
-})
+fetchCategories()
 
-async function fetchCategories() {
-  loading.value = true
+function fetchCategories() {
   try {
-    const result = await categoryStore.fetchCategories()
+    const result = categoryStore.fetchCategories()
     categories.value = result || []
   } catch (error) {
     console.error('获取分类列表失败:', error)
     categories.value = []
-  } finally {
-    loading.value = false
   }
 }
 </script>

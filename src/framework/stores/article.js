@@ -12,7 +12,7 @@ export const useArticleStore = defineStore('article', {
   }),
 
   actions: {
-    async fetchArticles(params = { page: 1, pageSize: 10 }) {
+    fetchArticles(params = { page: 1, pageSize: 10 }) {
       this.loading = true
       this.error = null
 
@@ -29,7 +29,7 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    async fetchHomeArticles(params = { page: 1, pageSize: 8, config: {} }) {
+    fetchHomeArticles(params = { page: 1, pageSize: 8, config: {} }) {
       this.loading = true
       this.error = null
 
@@ -62,7 +62,7 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    async fetchLatestArticles(limit = 5) {
+    fetchLatestArticles(limit = 5) {
       this.error = null
 
       try {
@@ -75,7 +75,7 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    async fetchArchiveGroups() {
+    fetchArchiveGroups() {
       try {
         const response = contentService.getArchiveArticles()
         return Array.isArray(response) ? response : []
@@ -85,7 +85,7 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    async fetchArchiveArticles(year) {
+    fetchArchiveArticles(year) {
       try {
         const response = contentService.getArchiveArticles(year)
         return Array.isArray(response) ? response : []
@@ -95,7 +95,7 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    async fetchRelatedArticles(id, limit = 3) {
+    fetchRelatedArticles(id, limit = 3) {
       try {
         const response = contentService.getRelatedArticles(id, limit)
         return Array.isArray(response) ? response : []

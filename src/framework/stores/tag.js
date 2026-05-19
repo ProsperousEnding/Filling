@@ -26,7 +26,7 @@ export const useTagStore = defineStore('tag', {
   }),
 
   actions: {
-    async fetchTags() {
+    fetchTags() {
       this.loading = true
       this.error = null
 
@@ -43,7 +43,7 @@ export const useTagStore = defineStore('tag', {
       }
     },
 
-    async fetchTagDetail(id) {
+    fetchTagDetail(id) {
       this.loading = true
       this.error = null
 
@@ -60,7 +60,7 @@ export const useTagStore = defineStore('tag', {
       }
     },
 
-    async fetchTagArticles(id, params = { page: 1, pageSize: 10 }) {
+    fetchTagArticles(id, params = { page: 1, pageSize: 10 }) {
       this.loading = true
       this.error = null
 

@@ -26,7 +26,7 @@ export const useCategoryStore = defineStore('category', {
   }),
 
   actions: {
-    async fetchCategories() {
+    fetchCategories() {
       this.loading = true
       this.error = null
 
@@ -43,7 +43,7 @@ export const useCategoryStore = defineStore('category', {
       }
     },
 
-    async fetchCategoryDetail(id) {
+    fetchCategoryDetail(id) {
       this.loading = true
       this.error = null
 
@@ -60,7 +60,7 @@ export const useCategoryStore = defineStore('category', {
       }
     },
 
-    async fetchCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
+    fetchCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
       this.loading = true
       this.error = null
 

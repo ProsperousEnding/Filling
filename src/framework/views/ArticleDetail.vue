@@ -63,7 +63,7 @@
         </div>
 
         <!-- 文章内容 -->
-        <article v-else class="article-detail-shell">
+        <article v-else-if="article" class="article-detail-shell">
             <!-- 文章头部 -->
             <header
                 class="article-detail-header mb-8"
@@ -444,7 +444,7 @@ const tagPageEnabled = computed(() => Boolean(config.pageRegistry?.tags));
 // 状态
 const article = ref(null);
 const relatedArticles = ref([]);
-const loading = ref(true);
+const loading = ref(false);
 const hasResolved = ref(false);
 let activeRequestId = 0;
 const displayUpdatedAt = computed(() => {
@@ -718,10 +718,10 @@ watch(
 // 获取文章详情
 async function fetchArticleDetail(id) {
     const requestId = ++activeRequestId;
+    const shouldShowLoading = hasResolved.value;
     article.value = null;
     relatedArticles.value = [];
-    loading.value = true;
-    hasResolved.value = false;
+    loading.value = shouldShowLoading;
 
     try {
         const [articleData, relatedData] = await Promise.all([

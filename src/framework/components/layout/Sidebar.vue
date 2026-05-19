@@ -197,7 +197,7 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
 import { useConfigStore } from '../../stores/config'
@@ -231,7 +231,7 @@ const tags = ref([])
 const latestArticles = ref([])
 const avatarLoadFailed = ref(false)
 const searchKeyword = ref('')
-const isLoading = ref(true)
+const isLoading = ref(false)
 const SIDEBAR_MENU_COMPONENT_KEYS = Object.freeze([
   'categories',
   'tags',
@@ -527,27 +527,23 @@ function resolveAssetUrl(value) {
   return `${baseUrl}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
 }
 
-onMounted(async () => {
-  isLoading.value = true
-
+function loadSidebarData() {
   try {
-    const [categoriesData, tagsData, latestArticlesData] = await Promise.all([
-      needsCategories.value ? categoryStore.fetchCategories() : Promise.resolve([]),
-      needsTags.value ? tagStore.fetchTags() : Promise.resolve([]),
-      needsLatestArticles.value
-        ? articleStore.fetchLatestArticles(latestArticlesLimit.value)
-        : Promise.resolve([])
-    ])
+    const categoriesData = needsCategories.value ? categoryStore.fetchCategories() : []
+    const tagsData = needsTags.value ? tagStore.fetchTags() : []
+    const latestArticlesData = needsLatestArticles.value
+      ? articleStore.fetchLatestArticles(latestArticlesLimit.value)
+      : []
 
     categories.value = (categoriesData || []).filter(category => category && category.id && category.name)
     tags.value = tagsData || []
     latestArticles.value = latestArticlesData || []
   } catch (error) {
     console.error('加载侧边栏数据失败', error)
-  } finally {
-    isLoading.value = false
   }
-})
+}
+
+loadSidebarData()
 
 watch(() => config.userProfile?.avatarUrl, () => {
   avatarLoadFailed.value = false

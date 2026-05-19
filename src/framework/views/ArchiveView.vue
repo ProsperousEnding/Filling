@@ -11,18 +11,7 @@
       </div>
     </div>
 
-    <div v-if="loading" class="py-12 flex justify-center">
-      <div class="theme-loading-inline inline-flex items-center">
-        <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        加载归档...
-      </div>
-    </div>
-
     <component
-      v-else
       :is="resolvedComponent"
       :page="resolvedPage"
     />
@@ -30,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import CollectionLayoutSwitcher from '../components/core/CollectionLayoutSwitcher.vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
@@ -50,7 +39,6 @@ const articleStore = useArticleStore()
 const configStore = useConfigStore()
 
 const archiveGroups = ref([])
-const loading = ref(false)
 
 const selectedYear = computed(() => {
   const rawYear = Array.isArray(route.params.year) ? route.params.year[0] : route.params.year
@@ -104,20 +92,14 @@ usePageMetadata({
   description: () => pageDescription.value
 })
 
-onMounted(async () => {
-  await fetchArchiveGroups()
-})
+fetchArchiveGroups()
 
-async function fetchArchiveGroups() {
-  loading.value = true
-
+function fetchArchiveGroups() {
   try {
-    archiveGroups.value = await articleStore.fetchArchiveGroups()
+    archiveGroups.value = articleStore.fetchArchiveGroups()
   } catch (error) {
     console.error('获取归档列表失败:', error)
     archiveGroups.value = []
-  } finally {
-    loading.value = false
   }
 }
 </script>

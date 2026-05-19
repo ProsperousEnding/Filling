@@ -17,6 +17,10 @@ function calculateTotalPages(total, pageSize) {
   return Math.max(1, Math.ceil(totalCount / resolvedPageSize))
 }
 
+function isPromiseLike(value) {
+  return value !== null && typeof value === 'object' && typeof value.then === 'function'
+}
+
 function buildDefaultPageRoute(route, page) {
   const normalizedPage = normalizePage(page)
   const nextQuery = {
@@ -49,6 +53,7 @@ export function usePaginatedCollection(options) {
   const items = ref([])
   const total = ref(0)
   const loading = ref(false)
+  const ready = ref(false)
   const error = ref(null)
   let activeRequestId = 0
 
@@ -100,50 +105,84 @@ export function usePaginatedCollection(options) {
     }
   }
 
-  async function refresh() {
+  function applyPageResult(result) {
+    items.value = Array.isArray(result?.data) ? result.data : []
+    total.value = Number(result?.total) || 0
+    ready.value = true
+  }
+
+  async function normalizeCurrentPage() {
+    const canonicalPage = Math.min(currentPage.value, calculateTotalPages(total.value, resolvedPageSize.value))
+    const canonicalLocation = resolvePageLocation(canonicalPage)
+
+    if (!isCurrentLocation(canonicalLocation)) {
+      await navigateToPage(canonicalPage, {
+        replace: true,
+        scroll: false
+      })
+    }
+  }
+
+  function handleRefreshError(fetchError, requestId) {
+    if (requestId !== activeRequestId) {
+      return
+    }
+
+    error.value = fetchError
+    items.value = []
+    total.value = 0
+    ready.value = true
+  }
+
+  function refresh() {
     const requestId = activeRequestId + 1
     activeRequestId = requestId
-    loading.value = true
     error.value = null
 
     try {
-      const result = await fetchPage({
+      const result = fetchPage({
         page: currentPage.value,
         pageSize: resolvedPageSize.value,
         route
       })
 
-      if (requestId !== activeRequestId) {
-        return result
+      if (!isPromiseLike(result)) {
+        if (requestId !== activeRequestId) {
+          return Promise.resolve(result)
+        }
+
+        applyPageResult(result)
+        loading.value = false
+
+        return normalizeCurrentPage().then(() => result)
       }
 
-      items.value = Array.isArray(result?.data) ? result.data : []
-      total.value = Number(result?.total) || 0
-
-      const canonicalPage = Math.min(currentPage.value, calculateTotalPages(total.value, resolvedPageSize.value))
-      const canonicalLocation = resolvePageLocation(canonicalPage)
-
-      if (!isCurrentLocation(canonicalLocation)) {
-        await navigateToPage(canonicalPage, {
-          replace: true,
-          scroll: false
-        })
-      }
+      loading.value = ready.value
 
       return result
-    } catch (fetchError) {
-      if (requestId !== activeRequestId) {
-        return null
-      }
+        .then(async (resolvedResult) => {
+          if (requestId !== activeRequestId) {
+            return resolvedResult
+          }
 
-      error.value = fetchError
-      items.value = []
-      total.value = 0
-      throw fetchError
-    } finally {
-      if (requestId === activeRequestId) {
-        loading.value = false
-      }
+          applyPageResult(resolvedResult)
+          await normalizeCurrentPage()
+          return resolvedResult
+        })
+        .catch((fetchError) => {
+          handleRefreshError(fetchError, requestId)
+          throw fetchError
+        })
+        .finally(() => {
+          if (requestId === activeRequestId) {
+            loading.value = false
+          }
+        })
+    } catch (fetchError) {
+      handleRefreshError(fetchError, requestId)
+      loading.value = false
+
+      return Promise.reject(fetchError)
     }
   }
 
@@ -169,6 +208,7 @@ export function usePaginatedCollection(options) {
     items,
     total,
     loading,
+    ready,
     error,
     currentPage,
     pageSize: resolvedPageSize,

@@ -1,6 +1,6 @@
 <template>
   <div class="built-in-menu-page tag-view">
-    <div v-if="loading" class="py-12 flex justify-center">
+    <div v-if="loading && ready" class="py-12 flex justify-center">
       <div class="theme-loading-inline inline-flex items-center">
         <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -10,7 +10,7 @@
       </div>
     </div>
     
-    <div v-else>
+    <div v-else-if="ready">
       <!-- 标签标题 -->
       <div class="theme-page-header mb-8">
         <h1 class="theme-page-title tag-view-title text-3xl font-bold mb-2">
@@ -103,6 +103,7 @@ const {
   items,
   total,
   loading,
+  ready,
   currentPage,
   totalPages,
   handlePageChange

@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <div v-if="loading" class="py-12 flex justify-center">
+    <div v-if="loading && ready" class="py-12 flex justify-center">
       <div class="theme-loading-inline inline-flex items-center">
         <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -26,13 +26,13 @@
     </div>
 
     <component
-      v-else
+      v-else-if="ready"
       :is="resolvedComponent"
       :page="resolvedPage"
     />
 
     <Pagination
-      v-if="!loading"
+      v-if="ready && !loading"
       :current-page="currentPage"
       :total-pages="totalPages"
       :total-items="total"
@@ -89,6 +89,7 @@ const {
   items: articles,
   total,
   loading,
+  ready,
   currentPage,
   totalPages,
   handlePageChange
