@@ -170,3 +170,6 @@ pnpm build
 ## License
 
 MIT
+
+友链:
+LINUX DO 社区: https://linux.do/
