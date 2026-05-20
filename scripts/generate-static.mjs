@@ -142,6 +142,10 @@ const STATIC_STYLE = `
     isolation: isolate;
   }
 
+  .ssg-shell.is-route-mismatch {
+    display: none !important;
+  }
+
   .ssg-shell::before,
   .ssg-shell::after {
     content: "";
@@ -6620,6 +6624,32 @@ function replaceAppRoot(template, markup) {
   return template.replace('<div id="app"></div>', `<div id="app">${markup}</div>`)
 }
 
+function normalizeStaticPreviewPath(value) {
+  const normalized = String(value || '/').split(/[?#]/)[0].replace(/\/+$/g, '')
+  return normalized || '/'
+}
+
+function renderStaticPreviewRouteGuard(routePath) {
+  const normalizedRoutePath = normalizeStaticPreviewPath(routePath)
+
+  return `
+<script id="vue-blog-static-preview-route-guard">
+  (function(expectedPath){
+    var currentPath = (window.location && window.location.pathname || '/').replace(/\\/+$/g, '') || '/';
+    if (currentPath !== expectedPath) {
+      document.documentElement.classList.add('static-preview-route-mismatch');
+      document.write('<style id="vue-blog-static-preview-route-mismatch">.ssg-shell{display:none!important}</style>');
+      document.addEventListener('DOMContentLoaded', function() {
+        var preview = document.querySelector('.ssg-shell');
+        if (preview) {
+          preview.classList.add('is-route-mismatch');
+        }
+      });
+    }
+  })(${JSON.stringify(normalizedRoutePath)});
+</script>`
+}
+
 function renderFontHeadTags(fontConfig, basePath) {
   const cssText = buildFontConfigCss(fontConfig, basePath)
   const preloadTags = resolveFontPreloadLinks(fontConfig, basePath)
@@ -6789,7 +6819,11 @@ function renderPage(route, context) {
     includeStaticPreview
   })
 
-  return replaceAppRoot(withHead, content)
+  const guardedContent = includeStaticPreview
+    ? `${renderStaticPreviewRouteGuard(route.path)}${content}`
+    : content
+
+  return replaceAppRoot(withHead, guardedContent)
 }
 
 function getRelatedArticles(currentArticle, articles) {
