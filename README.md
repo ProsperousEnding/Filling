@@ -2,6 +2,12 @@
 
 Filling 是一个基于 Vue 3、Pinia 和 Vite 的静态博客与内容站框架。它把内容、配置和界面实现分开：文章写在 `blog/content`，站点行为写在 `blog/config`，框架代码放在 `src/framework`。
 
+## 预览
+
+![首页文章列表与侧边栏](./docs/screenshots/home-overview.png)
+
+![文章详情 Page Background 效果](./docs/screenshots/article-page-background.png)
+
 ## 特性
 
 - Markdown 驱动内容，支持文章、单页和自定义内容目录。
