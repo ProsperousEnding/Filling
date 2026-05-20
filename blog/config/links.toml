@@ -17,3 +17,9 @@ name = "Pinia"
 url = "https://pinia.vuejs.org/"
 description = "The intuitive store for Vue"
 tags = ["Vue", "State"]
+
+[[friend_links]]
+name = "LINUX DO"
+url = "https://linux.do/"
+description = "新的理想型社区"
+tags = ["Community", "Linux"]
