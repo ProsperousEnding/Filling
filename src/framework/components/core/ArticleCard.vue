@@ -13,6 +13,7 @@
           class="article-card-cover-image w-full h-full transition-transform duration-500 hover:scale-105"
           :loading="coverListConfig.loading"
           :style="coverImageStyle"
+          @error="coverLoadFailed = true"
         />
       </router-link>
     </div>
@@ -20,6 +21,7 @@
       v-else-if="showCoverPlaceholder"
       class="article-card-cover-placeholder h-48"
       :data-placeholder="coverListConfig.placeholder"
+      :style="coverShellStyle"
     >
       <svg v-if="coverListConfig.placeholder === 'icon'" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -97,7 +99,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useElementWidth } from '../../composables/useElementWidth'
 import MeasuredText from './MeasuredText.vue'
 import { useConfigStore } from '../../stores/config'
@@ -112,6 +114,7 @@ const props = defineProps({
 })
 
 const configStore = useConfigStore()
+const coverLoadFailed = ref(false)
 const articleRoute = computed(() => getArticleRoute(props.article))
 const { elementRef: textBlockRef, width: textBlockWidth } = useElementWidth()
 const articleCover = computed(() => resolveDisplayArticleCover(props.article, {
@@ -131,7 +134,11 @@ const coverListConfig = computed(() => {
       : 'gradient'
   }
 })
-const hasArticleCover = computed(() => Boolean(articleCover.value))
+watch(articleCover, () => {
+  coverLoadFailed.value = false
+})
+
+const hasArticleCover = computed(() => Boolean(articleCover.value) && !coverLoadFailed.value)
 const showArticleCover = computed(() => coverListConfig.value.showCover && hasArticleCover.value)
 const showCoverPlaceholder = computed(() => (
   coverListConfig.value.showCover

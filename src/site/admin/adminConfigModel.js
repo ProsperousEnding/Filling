@@ -636,8 +636,58 @@ function mergeConfigValue(defaultValue, configuredValue) {
   return cloneValue(configuredValue)
 }
 
+function configValuesEqual(left, right) {
+  if (Object.is(left, right)) return true
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return left.length === right.length
+      && left.every((item, index) => configValuesEqual(item, right[index]))
+  }
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const leftKeys = Object.keys(left)
+    const rightKeys = Object.keys(right)
+    return leftKeys.length === rightKeys.length
+      && leftKeys.every(key => (
+        Object.prototype.hasOwnProperty.call(right, key)
+        && configValuesEqual(left[key], right[key])
+      ))
+  }
+  return false
+}
+
+function compactConfigValue(configuredValue, defaultValue, hasDefault) {
+  if (hasDefault && configValuesEqual(configuredValue, defaultValue)) {
+    return undefined
+  }
+  if (Array.isArray(configuredValue)) {
+    return cloneValue(configuredValue)
+  }
+  if (!isPlainObject(configuredValue)) {
+    return cloneValue(configuredValue)
+  }
+
+  const compactedEntries = Object.entries(configuredValue)
+    .map(([key, value]) => {
+      const childHasDefault = isPlainObject(defaultValue)
+        && Object.prototype.hasOwnProperty.call(defaultValue, key)
+      return [
+        key,
+        compactConfigValue(value, childHasDefault ? defaultValue[key] : undefined, childHasDefault)
+      ]
+    })
+    .filter(([, value]) => value !== undefined)
+
+  if (compactedEntries.length === 0 && hasDefault) {
+    return undefined
+  }
+  return Object.fromEntries(compactedEntries)
+}
+
 export function createAdminConfigModel(key, configuredValue = {}) {
   return mergeConfigValue(CONFIG_DEFAULTS[key] || {}, configuredValue)
+}
+
+export function createAdminConfigOverrides(key, model = {}) {
+  return compactConfigValue(model, CONFIG_DEFAULTS[key] || {}, true) || {}
 }
 
 export function getArrayItemTemplate(path) {

@@ -2,13 +2,22 @@
   <div class="article-feed-item article-item">
     <div
       class="article-feed-card relative h-52 sm:h-56 md:h-64 rounded-lg md:rounded-xl overflow-hidden transition-all duration-300 bg-cover bg-center"
-      :class="showArticleCover(article) ? 'article-feed-card-with-cover' : 'article-feed-card-without-cover'"
-      :style="getArticleCardStyle(article)"
+      :class="showArticleCover ? 'article-feed-card-with-cover' : 'article-feed-card-without-cover'"
+      :style="articleCardStyle"
     >
+      <img
+        v-if="showArticleCover"
+        :src="articleCover"
+        alt=""
+        class="article-feed-cover-image absolute inset-0 h-full w-full"
+        :loading="coverListConfig.loading"
+        :style="articleCoverImageStyle"
+        @error="coverLoadFailed = true"
+      />
       <div class="article-feed-card-overlay absolute inset-0"></div>
 
       <div
-        v-if="!showArticleCover(article) && showCoverPlaceholder"
+        v-if="!showArticleCover && showCoverPlaceholder"
         class="article-feed-card-fallback absolute inset-0 flex items-center justify-center"
         :data-placeholder="coverListConfig.placeholder"
       >
@@ -96,14 +105,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useElementWidth } from '../../composables/useElementWidth'
 import { useConfigStore } from '../../stores/config'
 import { resolveDisplayArticleCover } from '../../utils/articleCover'
 import { getArticleRoute, getCategoryRoute, getTagRoute } from '../../utils/routeLinks'
 import MeasuredText from './MeasuredText.vue'
 
-defineProps({
+const props = defineProps({
   article: {
     type: Object,
     required: true
@@ -115,6 +124,7 @@ defineProps({
 })
 
 const configStore = useConfigStore()
+const coverLoadFailed = ref(false)
 const categoryPageEnabled = computed(() => Boolean(configStore.pageRegistry?.categories))
 const tagPageEnabled = computed(() => Boolean(configStore.pageRegistry?.tags))
 const { elementRef: textBlockRef, width: textBlockWidth } = useElementWidth()
@@ -123,6 +133,7 @@ const coverListConfig = computed(() => {
 
   return {
     showCover: list.showCover !== false,
+    loading: list.loading === 'eager' ? 'eager' : 'lazy',
     aspectRatio: String(list.aspectRatio || '').trim(),
     objectFit: String(list.objectFit || 'cover').trim() || 'cover',
     placeholder: ['none', 'gradient', 'icon'].includes(String(list.placeholder || '').trim())
@@ -134,31 +145,32 @@ const showCoverPlaceholder = computed(() => (
   coverListConfig.value.showCover && coverListConfig.value.placeholder !== 'none'
 ))
 
-const getArticleCover = (article) => resolveDisplayArticleCover(article, {
+const articleCover = computed(() => resolveDisplayArticleCover(props.article, {
   coverConfig: configStore.coverConfig,
   style: configStore.coverStyle
+}))
+
+watch(articleCover, () => {
+  coverLoadFailed.value = false
 })
-const hasArticleCover = (article) => Boolean(getArticleCover(article))
-const showArticleCover = (article) => coverListConfig.value.showCover && hasArticleCover(article)
 
-const getArticleBackgroundStyle = (article) => (
-  showArticleCover(article)
-    ? {
-      backgroundImage: `url('${getArticleCover(article)}')`,
-      backgroundSize: coverListConfig.value.objectFit === 'contain' ? 'contain' : 'cover'
-    }
-    : {}
-)
+const showArticleCover = computed(() => (
+  coverListConfig.value.showCover
+  && Boolean(articleCover.value)
+  && !coverLoadFailed.value
+))
+const articleCoverImageStyle = computed(() => ({
+  objectFit: coverListConfig.value.objectFit
+}))
 
-const getArticleCardStyle = (article) => ({
-  ...getArticleBackgroundStyle(article),
+const articleCardStyle = computed(() => ({
   ...(coverListConfig.value.aspectRatio
     ? {
       aspectRatio: coverListConfig.value.aspectRatio,
       height: 'auto'
     }
     : {})
-})
+}))
 
 const formatDate = (dateString) => {
   if (!dateString) return ''

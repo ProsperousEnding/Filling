@@ -1,5 +1,13 @@
 <template>
     <div class="article-detail-view" :class="articleViewClass">
+        <img
+            v-if="isArticleCoverHeaderBackground || isArticleCoverPageBackground"
+            :src="articleCover"
+            alt=""
+            class="article-detail-cover-probe"
+            aria-hidden="true"
+            @error="articleCoverLoadFailed = true"
+        />
         <div
             v-if="isArticleCoverPageBackground"
             class="article-detail-page-background"
@@ -196,6 +204,7 @@
                             : 'h-auto'
                     "
                     :style="articleCoverImageStyle"
+                    @error="articleCoverLoadFailed = true"
                 />
                 <span
                     v-if="coverWatermarkText"
@@ -316,13 +325,14 @@
                             <img
                                 v-if="
                                     showRelatedCover &&
-                                    getRelatedArticleCover(related)
+                                    hasRelatedArticleCover(related)
                                 "
                                 :src="getRelatedArticleCover(related)"
                                 :alt="related.title"
                                 :loading="relatedCoverLoading"
                                 class="article-detail-related-image"
                                 :style="relatedCoverImageStyle"
+                                @error="markRelatedCoverFailed(related)"
                             />
                             <div
                                 v-else-if="showRelatedCoverPlaceholder"
@@ -444,6 +454,8 @@ const tagPageEnabled = computed(() => Boolean(config.pageRegistry?.tags));
 // 状态
 const article = ref(null);
 const relatedArticles = ref([]);
+const articleCoverLoadFailed = ref(false);
+const relatedCoverFailures = ref(new Set());
 const loading = ref(false);
 const hasResolved = ref(false);
 let activeRequestId = 0;
@@ -530,8 +542,20 @@ const articleCover = computed(() =>
         style: configStore.coverStyle,
     }),
 );
+
+watch(articleCover, () => {
+    articleCoverLoadFailed.value = false;
+});
+
+watch(relatedArticles, () => {
+    relatedCoverFailures.value = new Set();
+});
+
 const showArticleCover = computed(
-    () => Boolean(articleCover.value) && coverDetailConfig.value.showCover,
+    () =>
+        Boolean(articleCover.value) &&
+        !articleCoverLoadFailed.value &&
+        coverDetailConfig.value.showCover,
 );
 const articleCoverDisplayMode = computed(() => {
     const articleMode = String(article.value?.coverDisplayMode || "").trim();
@@ -561,7 +585,7 @@ const showArticleCoverImage = computed(
 const showArticleCoverPlaceholder = computed(
     () =>
         coverDetailConfig.value.showCover &&
-        !articleCover.value &&
+        (!articleCover.value || articleCoverLoadFailed.value) &&
         coverDetailConfig.value.placeholder !== "none",
 );
 const showRelatedCover = computed(
@@ -622,6 +646,17 @@ const getRelatedArticleCover = (target) =>
         coverConfig: configStore.coverConfig,
         style: configStore.coverStyle,
     });
+const getRelatedCoverKey = (target) =>
+    String(target?.id || getRelatedArticleCover(target));
+const hasRelatedArticleCover = (target) =>
+    Boolean(getRelatedArticleCover(target)) &&
+    !relatedCoverFailures.value.has(getRelatedCoverKey(target));
+const markRelatedCoverFailed = (target) => {
+    relatedCoverFailures.value = new Set([
+        ...relatedCoverFailures.value,
+        getRelatedCoverKey(target),
+    ]);
+};
 const getRelatedCategoryLabel = (target) =>
     typeof target?.category === "string"
         ? target.category
@@ -795,6 +830,15 @@ function normalizeCoverWatermark(watermark = {}) {
 </script>
 
 <style scoped>
+.article-detail-cover-probe {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
 .article-detail-view-with-page-background {
     position: relative;
     isolation: isolate;

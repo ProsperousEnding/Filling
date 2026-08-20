@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   createAdminConfigModel,
+  createAdminConfigOverrides,
   getArrayItemTemplate,
   getFieldOptions,
   normalizeFieldPath
@@ -23,6 +24,48 @@ test('admin config models preserve current values while filling guided form defa
   assert.equal(model.features.sidebar_visible, false)
   assert.equal(model.features.show_read_time, true)
   assert.equal(model.custom_section.value, 'preserved')
+})
+
+test('admin config overrides omit defaults without losing custom values', () => {
+  const model = createAdminConfigModel('cover', {
+    seeded_style: 'mwm-anime',
+    custom_source: {
+      endpoint: 'https://example.com/image'
+    }
+  })
+
+  assert.deepEqual(createAdminConfigOverrides('cover', model), {
+    seeded_style: 'mwm-anime',
+    custom_source: {
+      endpoint: 'https://example.com/image'
+    }
+  })
+})
+
+test('admin config overrides preserve custom menu pages while pruning site defaults', () => {
+  const model = createAdminConfigModel('site', {
+    title: 'Filling',
+    menus: {
+      pages: [{
+        key: 'about',
+        title: '关于',
+        component: 'context',
+        file: 'about.md'
+      }]
+    }
+  })
+
+  assert.deepEqual(createAdminConfigOverrides('site', model), {
+    title: 'Filling',
+    menus: {
+      pages: [{
+        key: 'about',
+        title: '关于',
+        component: 'context',
+        file: 'about.md'
+      }]
+    }
+  })
 })
 
 test('repeatable admin fields return independent item templates', () => {

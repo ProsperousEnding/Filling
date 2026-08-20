@@ -152,11 +152,18 @@
             </div>
           </section>
 
+          <AdminMenuEditor
+            v-if="selectedFile.key === 'site' && editorMode === 'form'"
+            :pages="selectedFile.model.menus?.pages || []"
+            @update:pages="updateSiteMenuPages"
+          />
+
           <AdminConfigFields
             v-if="editorMode === 'form'"
             :model-value="selectedFile.model"
             :root-model="selectedFile.model"
             :path="selectedFile.key"
+            :excluded-keys="selectedFile.key === 'site' ? ['menus'] : []"
             @update:model-value="updateSelectedModel"
           />
 
@@ -258,11 +265,24 @@
         </header>
 
         <ul class="admin-review-files">
-          <li v-for="file in dirtyFiles" :key="file.key">
+          <li v-for="review in publishReviews" :key="review.file.key">
             <FileText aria-hidden="true" />
-            <div>
-              <strong>{{ file.title }}</strong>
-              <code>{{ file.path }}</code>
+            <div class="admin-review-file-content">
+              <strong>{{ review.file.title }}</strong>
+              <code>{{ review.file.path }}</code>
+              <ul class="admin-review-diff">
+                <li v-for="change in review.changes.slice(0, 8)" :key="change.path">
+                  <code>{{ change.path }}</code>
+                  <span>
+                    <del>{{ formatAdminDiffValue(change.before) }}</del>
+                    <span aria-hidden="true">→</span>
+                    <ins>{{ formatAdminDiffValue(change.after) }}</ins>
+                  </span>
+                </li>
+              </ul>
+              <p v-if="review.changes.length > 8" class="admin-review-more">
+                另有 {{ review.changes.length - 8 }} 项修改
+              </p>
             </div>
           </li>
         </ul>
@@ -311,13 +331,15 @@ import {
   X
 } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { parse, stringify } from 'smol-toml'
 
 import { createSeededArticleCover } from '../../framework/utils/articleCover.js'
 import AdminConfigFields from './components/AdminConfigFields.vue'
+import AdminMenuEditor from './components/AdminMenuEditor.vue'
 import GitHubMark from './components/GitHubMark.vue'
-import { createAdminConfigModel } from './adminConfigModel.js'
+import { createAdminConfigDiff, formatAdminDiffValue } from './adminConfigDiff.js'
+import { createAdminConfigModel, createAdminConfigOverrides } from './adminConfigModel.js'
 import {
   getAdminConfigs,
   getAdminDeployments,
@@ -375,6 +397,17 @@ const selectedFile = computed(() => (
 ))
 
 const dirtyFiles = computed(() => files.value.filter(isFileDirty))
+
+const publishReviews = computed(() => dirtyFiles.value.map((file) => {
+  try {
+    return {
+      file,
+      changes: createAdminConfigDiff(parse(file.originalContent), parse(file.content))
+    }
+  } catch {
+    return { file, changes: [] }
+  }
+}))
 
 const validationMessage = computed(() => {
   if (validationState.value === 'checking') return '正在检查配置'
@@ -481,6 +514,7 @@ async function bootstrap() {
 }
 
 async function handleLogout() {
+  if (!confirmDiscardChanges()) return
   try {
     await logoutAdmin()
   } finally {
@@ -490,12 +524,26 @@ async function handleLogout() {
   }
 }
 
+function confirmDiscardChanges() {
+  return dirtyFiles.value.length === 0
+    || publishing.value
+    || window.confirm('有未发布的配置修改，确定离开吗？')
+}
+
+function handleBeforeUnload(event) {
+  if (dirtyFiles.value.length === 0 || publishing.value) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
 function updateSelectedModel(model) {
   if (!selectedFile.value) return
 
   try {
     selectedFile.value.model = model
-    selectedFile.value.content = normalizeToml(stringify(model))
+    selectedFile.value.content = normalizeToml(stringify(
+      createAdminConfigOverrides(selectedFile.value.key, model)
+    ))
     scheduleValidation()
   } catch (error) {
     validationState.value = 'invalid'
@@ -547,6 +595,17 @@ function setCoverStyle(style) {
   updateSelectedModel({
     ...selectedFile.value.model,
     seeded_style: style
+  })
+}
+
+function updateSiteMenuPages(pages) {
+  if (!selectedFile.value || selectedFile.value.key !== 'site') return
+  updateSelectedModel({
+    ...selectedFile.value.model,
+    menus: {
+      ...selectedFile.value.model.menus,
+      pages
+    }
   })
 }
 
@@ -658,9 +717,15 @@ function formatDate(value) {
   }).format(new Date(value))
 }
 
-onMounted(bootstrap)
+onBeforeRouteLeave(() => confirmDiscardChanges())
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+  bootstrap()
+})
 
 onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
   clearTimeout(validationTimer)
   clearTimeout(toastTimer)
   clearInterval(deploymentTimer)

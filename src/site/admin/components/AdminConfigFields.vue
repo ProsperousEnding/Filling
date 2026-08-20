@@ -1,6 +1,7 @@
 <template>
   <div class="admin-field-list">
     <template v-for="(value, key) in modelValue" :key="key">
+      <template v-if="!excludedKeys.includes(key)">
       <section v-if="isObject(value)" class="admin-field-group">
         <header class="admin-field-group-header">
           <h3>{{ getFieldLabel(key) }}</h3>
@@ -147,6 +148,7 @@
           @input="updateScalar(key, value, $event.target.value)"
         />
       </div>
+      </template>
     </template>
 
     <p v-if="Object.keys(modelValue).length === 0" class="admin-field-empty">
@@ -179,6 +181,10 @@ const props = defineProps({
   path: {
     type: String,
     required: true
+  },
+  excludedKeys: {
+    type: Array,
+    default: () => []
   }
 })
 

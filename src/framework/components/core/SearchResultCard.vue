@@ -1,5 +1,8 @@
 <template>
-  <article class="theme-list-card search-result-card rounded-2xl transition-shadow">
+  <article
+    class="theme-list-card search-result-card rounded-2xl transition-shadow"
+    :class="{ 'search-result-card-without-cover': !hasCover && !showCoverPlaceholder }"
+  >
     <component
       v-if="hasCover"
       :is="resultTag"
@@ -13,7 +16,19 @@
         class="search-result-cover-image"
         :loading="coverListConfig.loading"
         :style="coverImageStyle"
+        @error="coverLoadFailed = true"
       />
+    </component>
+
+    <component
+      v-else-if="showCoverPlaceholder"
+      :is="resultTag"
+      v-bind="resultLinkAttrs"
+      class="search-result-cover search-result-cover-placeholder"
+      :data-placeholder="coverListConfig.placeholder"
+      :aria-label="article.title"
+    >
+      <ImageIcon v-if="coverListConfig.placeholder === 'icon'" aria-hidden="true" />
     </component>
 
     <div ref="contentRef" class="search-result-body">
@@ -84,7 +99,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { Image as ImageIcon } from '@lucide/vue'
+import { computed, ref, watch } from 'vue'
 import { useElementWidth } from '../../composables/useElementWidth'
 import { useConfigStore } from '../../stores/config'
 import { resolveDisplayArticleCover } from '../../utils/articleCover'
@@ -104,6 +120,7 @@ const props = defineProps({
 })
 
 const configStore = useConfigStore()
+const coverLoadFailed = ref(false)
 const { elementRef: contentRef, width: contentWidth } = useElementWidth()
 const coverListConfig = computed(() => {
   const list = configStore.coverConfig?.list || {}
@@ -111,7 +128,10 @@ const coverListConfig = computed(() => {
   return {
     showCover: list.showCover !== false,
     loading: list.loading === 'eager' ? 'eager' : 'lazy',
-    objectFit: String(list.objectFit || 'cover').trim() || 'cover'
+    objectFit: String(list.objectFit || 'cover').trim() || 'cover',
+    placeholder: ['none', 'gradient', 'icon'].includes(String(list.placeholder || '').trim())
+      ? String(list.placeholder || '').trim()
+      : 'gradient'
   }
 })
 const resultRoute = computed(() => {
@@ -174,7 +194,16 @@ const displayCover = computed(() => {
     style: configStore.coverStyle
   })
 })
-const hasCover = computed(() => Boolean(displayCover.value))
+watch(displayCover, () => {
+  coverLoadFailed.value = false
+})
+
+const hasCover = computed(() => Boolean(displayCover.value) && !coverLoadFailed.value)
+const showCoverPlaceholder = computed(() => (
+  coverListConfig.value.showCover
+  && !hasCover.value
+  && coverListConfig.value.placeholder !== 'none'
+))
 const coverImageStyle = computed(() => ({
   objectFit: coverListConfig.value.objectFit
 }))
@@ -248,6 +277,26 @@ function getTagKey(tag) {
   width: 100%;
   height: 100%;
   min-height: inherit;
+}
+
+.search-result-cover-placeholder {
+  display: grid;
+  place-items: center;
+  color: rgb(37 99 235);
+}
+
+.search-result-cover-placeholder[data-placeholder='icon'] {
+  color: rgb(148 163 184);
+  background: rgba(248, 250, 252, 0.96);
+}
+
+.search-result-cover-placeholder svg {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.search-result-card-without-cover {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .search-result-body {
