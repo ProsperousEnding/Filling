@@ -4,7 +4,7 @@ fallback_image = ""
 seeded_width = 1200
 seeded_height = 630
 seeded_format = "webp"
-seeded_style = "paugram-anime"
+seeded_style = "mwm-anime"
 
 [source_switch]
 enabled = false
