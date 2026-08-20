@@ -6,6 +6,7 @@ import {
 import {
   isExternalMenuTarget,
   isValidMenuPageKey,
+  normalizeMenuLinkTarget,
   normalizeMenuContentPath,
   normalizeMenuPageKey,
   normalizeMenuPagePath
@@ -307,6 +308,31 @@ function normalizeMenuPages(pages = []) {
     .filter(entry => isValidMenuPageKey(entry.key))
 }
 
+function normalizeMenuLinks(links = []) {
+  if (!Array.isArray(links)) return []
+
+  return links
+    .filter(entry => isPlainObject(entry))
+    .map((entry, index) => {
+      const normalizedEntry = toCamelCase(entry)
+      const target = normalizeString(
+        normalizedEntry.target || normalizedEntry.to || normalizedEntry.href || normalizedEntry.path
+      )
+
+      return {
+        key: normalizeMenuPageKey(normalizedEntry.key || normalizedEntry.id || `link-${index + 1}`),
+        label: normalizeString(normalizedEntry.label || normalizedEntry.name || normalizedEntry.title),
+        target: normalizeMenuLinkTarget(target),
+        description: normalizeString(normalizedEntry.description || normalizedEntry.summary),
+        menuGroup: normalizeMenuGroup(normalizedEntry.menuGroup, 'more'),
+        menuOrder: normalizePositiveInteger(normalizedEntry.menuOrder, 2000 + index),
+        enabled: typeof normalizedEntry.enabled === 'boolean' ? normalizedEntry.enabled : true,
+        visible: typeof normalizedEntry.visible === 'boolean' ? normalizedEntry.visible : true
+      }
+    })
+    .filter(entry => isValidMenuPageKey(entry.key) && entry.label && entry.target)
+}
+
 export function normalizeMenuConfig(menus = {}) {
   const normalizedMenus = isPlainObject(menus) ? toCamelCase(menus) : {}
 
@@ -318,6 +344,7 @@ export function normalizeMenuConfig(menus = {}) {
       'mobile-header'
     ),
     sidebar: normalizeMenuEntries(normalizedMenus.sidebar, DEFAULT_MENU_CONFIG.sidebar, 'sidebar'),
+    links: normalizeMenuLinks(normalizedMenus.links),
     pages: normalizeMenuPages(normalizedMenus.pages)
   }
 }

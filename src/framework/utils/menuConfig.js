@@ -11,6 +11,7 @@ import {
   isExternalMenuTarget as isExternalTarget,
   isValidMenuPageKey,
   MENU_COLLECTION_PAGE_COMPONENTS,
+  normalizeMenuLinkTarget,
   normalizeMenuPageKey as normalizePageKey,
   normalizeMenuPagePath
 } from './menuRouteConfig.js'
@@ -265,7 +266,19 @@ function sortBlogNavPages(pages = []) {
 function resolveBlogNavMenuSource(definition, context = {}) {
   const routePatterns = context.routePatterns || {}
   const sourceItems = Array.isArray(definition.items) ? definition.items : []
-  const navItems = resolveMenuPages(context.menuConfig || {}, routePatterns)
+  const menuConfig = normalizeMenuConfig(context.menuConfig || {})
+  const navItems = [
+    ...resolveMenuPages(menuConfig, routePatterns),
+    ...menuConfig.links
+      .filter(link => link.enabled !== false)
+      .map(link => ({
+        ...link,
+        path: link.target,
+        title: link.label,
+        builtIn: false,
+        link: true
+      }))
+  ]
 
   if (sourceItems.length > 0) {
     return sourceItems
@@ -676,6 +689,7 @@ export function getMenuConfigDiagnostics(menuConfig = {}, routePatterns = {}, op
   const normalizedRoutePatterns = normalizeBlogRoutePatterns(routePatterns)
   const rawMenuConfig = isPlainObject(menuConfig) ? toCamelCase(menuConfig) : {}
   const rawPages = Array.isArray(rawMenuConfig.pages) ? rawMenuConfig.pages : []
+  const rawLinks = Array.isArray(rawMenuConfig.links) ? rawMenuConfig.links : []
   const diagnostics = []
   const seenPageKeys = new Set()
   const duplicatePageKeys = new Set()
@@ -757,6 +771,56 @@ export function getMenuConfigDiagnostics(menuConfig = {}, routePatterns = {}, op
         'invalid-menu-order',
         'Menu order must be a positive integer.',
         `menus.pages[${index}].menuOrder`
+      ))
+    }
+  })
+
+  const menuItemKeys = new Set([
+    ...getDefaultMenuPages(normalizedRoutePatterns).map(page => page.key),
+    ...normalizedMenuConfig.pages.map(page => page.key)
+  ])
+  rawLinks.forEach((rawLink, index) => {
+    if (!isPlainObject(rawLink)) return
+
+    const link = toCamelCase(rawLink)
+    const key = normalizePageKey(link.key || link.id)
+    const label = normalizeString(link.label || link.name || link.title)
+    const target = normalizeString(link.target || link.to || link.href || link.path)
+    const normalizedTarget = normalizeMenuLinkTarget(target)
+
+    if (!key || !isValidMenuPageKey(key)) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'invalid-menu-link-key',
+        'Menu link key may contain only letters, numbers, underscores, and hyphens.',
+        `menus.links[${index}].key`
+      ))
+    } else if (menuItemKeys.has(key)) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'duplicate-menu-link-key',
+        `Menu link key "${key}" is already used.`,
+        `menus.links[${index}].key`
+      ))
+    } else {
+      menuItemKeys.add(key)
+    }
+
+    if (!label) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'missing-menu-link-label',
+        'Menu link label is required.',
+        `menus.links[${index}].label`
+      ))
+    }
+
+    if (!target || !normalizedTarget) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'invalid-menu-link-target',
+        'Menu link target must be a safe site path or an HTTP, email, or phone link.',
+        `menus.links[${index}].target`
       ))
     }
   })

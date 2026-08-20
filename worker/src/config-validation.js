@@ -2,7 +2,8 @@ import { parseToml } from '../../src/framework/utils/tomlParser.js'
 import { getConfigDiagnostics } from '../../src/framework/utils/configDiagnostics.js'
 import {
   getMenuConfigDiagnostics,
-  normalizeMenuConfig
+  normalizeMenuConfig,
+  resolveMenuPages
 } from '../../src/framework/utils/menuConfig.js'
 import { resolveFeatureMenuConfig } from '../../src/framework/utils/featurePageConfig.js'
 import {
@@ -60,7 +61,51 @@ export function parseManagedConfigFiles(files = []) {
   return { configs, diagnostics }
 }
 
-export function validateManagedConfigFiles(files = []) {
+function getMenuPageSourceDiagnostics(menus, routePatterns, contentSources) {
+  if (!contentSources) return []
+
+  const availableFiles = new Set(contentSources.files || [])
+  const availableFolders = new Set(contentSources.folders || [])
+  const diagnostics = []
+
+  resolveMenuPages(menus, routePatterns)
+    .filter(page => !page.builtIn && page.enabled !== false)
+    .forEach((page) => {
+      if (page.component === 'context') {
+        if (!page.file) return
+
+        if (!page.file.endsWith('.md')) {
+          diagnostics.push(createDiagnostic(
+            'error',
+            'unsupported-menu-page-source',
+            `menus.pages.${page.key}.file`,
+            `内容文件 blog/content/${page.file} 必须是 Markdown 文件。`
+          ))
+        } else if (!availableFiles.has(page.file)) {
+          diagnostics.push(createDiagnostic(
+            'error',
+            'missing-menu-page-source',
+            `menus.pages.${page.key}.file`,
+            `内容文件 blog/content/${page.file} 不存在。`
+          ))
+        }
+        return
+      }
+
+      if (page.folder && !availableFolders.has(page.folder)) {
+        diagnostics.push(createDiagnostic(
+          'error',
+          'missing-menu-page-source',
+          `menus.pages.${page.key}.folder`,
+          `内容目录 blog/content/${page.folder} 不存在或不包含 Markdown 文件。`
+        ))
+      }
+    })
+
+  return diagnostics
+}
+
+export function validateManagedConfigFiles(files = [], { contentSources = null } = {}) {
   const parsed = parseManagedConfigFiles(files)
   if (parsed.diagnostics.some(diagnostic => diagnostic.level === 'error')) {
     return parsed
@@ -74,6 +119,7 @@ export function validateManagedConfigFiles(files = []) {
     ...parsed.diagnostics,
     ...getConfigDiagnostics(parsed.configs),
     ...getMenuConfigDiagnostics(effectiveMenus, routePatterns),
+    ...getMenuPageSourceDiagnostics(effectiveMenus, routePatterns, contentSources),
     ...getSidebarLayoutDiagnostics(site.sidebar),
     ...getSidebarMenuLayoutDiagnostics(site.sidebar, normalizedMenus)
   ]
@@ -84,4 +130,4 @@ export function validateManagedConfigFiles(files = []) {
   }
 }
 
-export { MAX_CONFIG_FILE_BYTES }
+export { getMenuPageSourceDiagnostics, MAX_CONFIG_FILE_BYTES }

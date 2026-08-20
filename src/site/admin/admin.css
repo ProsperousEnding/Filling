@@ -700,7 +700,7 @@ textarea.admin-control {
 
 .admin-page-kind-control {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--admin-border);
@@ -739,6 +739,35 @@ textarea.admin-control {
   height: 16px;
 }
 
+.admin-page-source-control {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 7px;
+  background: var(--admin-surface-muted);
+}
+
+.admin-page-source-control button {
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--admin-text-muted);
+  cursor: pointer;
+}
+
+.admin-page-source-control button.active {
+  border-color: var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+}
+
+.admin-page-source-control button:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
 .admin-page-dialog-field {
   display: grid;
   min-width: 0;
@@ -748,6 +777,23 @@ textarea.admin-control {
 .admin-page-dialog-field > span {
   font-size: 13px;
   font-weight: 600;
+}
+
+.admin-page-dialog-field > small {
+  color: var(--admin-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-page-dialog-field > .admin-page-field-warning {
+  color: var(--admin-warning);
+}
+
+.admin-page-content-field textarea {
+  min-height: 164px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1.6;
 }
 
 .admin-page-dialog-advanced {
@@ -1418,6 +1464,10 @@ textarea.admin-control {
 
   .admin-page-dialog-advanced-fields {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-page-kind-control {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-page-description-field {

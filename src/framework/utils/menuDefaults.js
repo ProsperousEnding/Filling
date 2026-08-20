@@ -51,6 +51,7 @@ export const DEFAULT_MENU_CONFIG = Object.freeze({
       items: []
     })
   ]),
+  links: Object.freeze([]),
   pages: Object.freeze([])
 })
 

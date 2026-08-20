@@ -15,9 +15,11 @@ const EDITABLE_PAGE_KEYS = new Set([
   'title',
   'description',
   'component',
+  'content',
   'file',
   'folder',
   'path',
+  'target',
   'visible',
   'enabled',
   'menu_group',
@@ -65,14 +67,17 @@ function createBuiltInRow(definition, configured = {}) {
     title: getConfiguredValue(configured, 'title', '', definition.title),
     description: getConfiguredValue(configured, 'description', '', definition.description),
     component: getConfiguredValue(configured, 'component', '', definition.component),
+    content: '',
     file: '',
     folder: '',
     path: BUILT_IN_PATHS[definition.key] || '',
+    target: '',
     visible: getConfiguredValue(configured, 'visible', '', definition.visible !== false),
     enabled: getConfiguredValue(configured, 'enabled', '', true),
     menu_group: getConfiguredValue(configured, 'menu_group', 'menuGroup', definition.menuGroup),
     menu_order: getConfiguredValue(configured, 'menu_order', 'menuOrder', definition.menuOrder),
     builtIn: true,
+    link: false,
     _configured: cloneValue(configured),
     _default: definition,
     _defaultMenuOrder: definition.menuOrder
@@ -87,14 +92,41 @@ function createCustomRow(configured = {}, index = 0) {
     title: normalizeString(configured.title),
     description: normalizeString(configured.description),
     component: normalizeString(configured.component) || 'context',
+    content: normalizeString(configured.content),
     file: normalizeString(configured.file),
     folder: normalizeString(configured.folder),
     path: normalizeString(configured.path),
+    target: '',
     visible: typeof configured.visible === 'boolean' ? configured.visible : true,
     enabled: typeof configured.enabled === 'boolean' ? configured.enabled : true,
     menu_group: normalizeString(configured.menu_group || configured.menuGroup) || 'more',
     menu_order: Number(configured.menu_order || configured.menuOrder) || defaultMenuOrder,
     builtIn: false,
+    link: false,
+    _configured: cloneValue(configured),
+    _defaultMenuOrder: defaultMenuOrder
+  }
+}
+
+function createLinkRow(configured = {}, index = 0) {
+  const defaultMenuOrder = 2000 + index
+  return {
+    key: normalizeString(configured.key),
+    label: normalizeString(configured.label),
+    title: normalizeString(configured.label),
+    description: normalizeString(configured.description),
+    component: 'link',
+    content: '',
+    file: '',
+    folder: '',
+    path: '',
+    target: normalizeString(configured.target || configured.href || configured.to),
+    visible: typeof configured.visible === 'boolean' ? configured.visible : true,
+    enabled: typeof configured.enabled === 'boolean' ? configured.enabled : true,
+    menu_group: normalizeString(configured.menu_group || configured.menuGroup) || 'more',
+    menu_order: Number(configured.menu_order || configured.menuOrder) || defaultMenuOrder,
+    builtIn: false,
+    link: true,
     _configured: cloneValue(configured),
     _defaultMenuOrder: defaultMenuOrder
   }
@@ -104,7 +136,7 @@ function compareRows(left, right) {
   return Number(left.menu_order) - Number(right.menu_order)
 }
 
-export function createAdminMenuRows(configuredPages = []) {
+export function createAdminMenuRows(configuredPages = [], configuredLinks = []) {
   const pages = Array.isArray(configuredPages) ? configuredPages : []
   const builtInKeys = new Set(DEFAULT_MENU_PAGES.map(page => page.key))
   const configuredByKey = new Map(pages.map(page => [page?.key, page]))
@@ -114,8 +146,9 @@ export function createAdminMenuRows(configuredPages = []) {
   const customRows = pages
     .filter(page => page && !builtInKeys.has(page.key))
     .map(createCustomRow)
+  const linkRows = (Array.isArray(configuredLinks) ? configuredLinks : []).map(createLinkRow)
 
-  return [...builtInRows, ...customRows].sort(compareRows)
+  return [...builtInRows, ...customRows, ...linkRows].sort(compareRows)
 }
 
 function preserveUnmanagedValues(configured = {}) {
@@ -158,6 +191,7 @@ function serializeCustomRow(row) {
 
   if (normalizeString(row.label)) result.label = normalizeString(row.label)
   if (normalizeString(row.description)) result.description = normalizeString(row.description)
+  if (normalizeString(row.content)) result.content = normalizeString(row.content)
   if (normalizeString(row.file)) result.file = normalizeString(row.file)
   if (normalizeString(row.folder)) result.folder = normalizeString(row.folder)
   if (normalizeString(row.path)) result.path = normalizeString(row.path)
@@ -175,12 +209,36 @@ function serializeCustomRow(row) {
 
 export function serializeAdminMenuRows(rows = []) {
   return rows
+    .filter(row => !row.link)
     .map(row => row.builtIn ? serializeBuiltInRow(row) : serializeCustomRow(row))
     .filter(Boolean)
 }
 
+export function serializeAdminMenuLinks(rows = []) {
+  return rows
+    .filter(row => row.link)
+    .map(row => {
+      const result = {
+        ...preserveUnmanagedValues(row._configured),
+        key: normalizeString(row.key),
+        label: normalizeString(row.label),
+        target: normalizeString(row.target)
+      }
+      if (normalizeString(row.description)) result.description = normalizeString(row.description)
+      if (row.visible === false) result.visible = false
+      if (row.enabled === false) result.enabled = false
+      if (normalizeString(row.menu_group) !== 'more') {
+        result.menu_group = normalizeString(row.menu_group)
+      }
+      if (Number(row.menu_order) !== row._defaultMenuOrder) {
+        result.menu_order = Number(row.menu_order)
+      }
+      return result
+    })
+}
+
 export function createAdminMenuPage(rows = []) {
-  const customRows = rows.filter(row => !row.builtIn)
+  const customRows = rows.filter(row => !row.builtIn && !row.link)
   const defaultMenuOrder = 1000 + customRows.length
   const highestOrder = customRows.reduce((highest, row) => (
     Math.max(highest, Number(row.menu_order) || 0)
@@ -193,16 +251,32 @@ export function createAdminMenuPage(rows = []) {
   }, customRows.length)
 }
 
+export function createAdminMenuLink(rows = []) {
+  const linkRows = rows.filter(row => row.link)
+  const defaultMenuOrder = 2000 + linkRows.length
+  const highestOrder = rows.reduce((highest, row) => (
+    Math.max(highest, Number(row.menu_order) || 0)
+  ), defaultMenuOrder - 1)
+
+  return createLinkRow({
+    menu_group: 'more',
+    menu_order: Math.max(defaultMenuOrder, highestOrder + 1)
+  }, linkRows.length)
+}
+
 export function deriveAdminMenuPageKey(page = {}, rows = [], excludedKey = '') {
   const component = normalizeString(page.component)
-  const candidates = [
-    component === 'context' ? page.file : '',
-    ['list', 'card', 'grid', 'timeline'].includes(component) ? page.folder : '',
-    component === 'friends' ? 'friends' : '',
-    page.title,
-    page.label,
-    'page'
-  ]
+  const candidates = component === 'link'
+    ? [page.title, page.label, page.target, 'link']
+    : [
+      page.path,
+      component === 'context' ? page.file : '',
+      ['list', 'card', 'grid', 'timeline'].includes(component) ? page.folder : '',
+      component === 'friends' ? 'friends' : '',
+      page.title,
+      page.label,
+      'page'
+    ]
   const baseKey = candidates
     .map(normalizeKeyCandidate)
     .find(Boolean) || 'page'

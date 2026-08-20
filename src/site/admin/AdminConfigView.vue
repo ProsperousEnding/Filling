@@ -155,7 +155,12 @@
           <AdminMenuEditor
             v-if="selectedFile.key === 'site' && editorMode === 'form'"
             :pages="selectedFile.model.menus?.pages || []"
+            :links="selectedFile.model.menus?.links || []"
+            :content-sources="contentSources"
+            :route-patterns="selectedFile.model.routing || {}"
+            :primary-limit="getHeaderPrimaryLimit(selectedFile.model.menus)"
             @update:pages="updateSiteMenuPages"
+            @update:links="updateSiteMenuLinks"
           />
 
           <AdminConfigFields
@@ -358,6 +363,7 @@ const initialState = ref('loading')
 const pageError = ref('')
 const session = ref({ authenticated: false, user: null })
 const files = ref([])
+const contentSources = ref({ files: [], folders: [] })
 const headOid = ref('')
 const baselineDiagnostics = ref([])
 const selectedKey = ref('')
@@ -496,6 +502,7 @@ async function bootstrap() {
 
     const configuration = await getAdminConfigs()
     files.value = configuration.files.map(buildEditableFile)
+    contentSources.value = configuration.contentSources || { files: [], folders: [] }
     headOid.value = configuration.headOid
     baselineDiagnostics.value = configuration.diagnostics || []
     diagnostics.value = baselineDiagnostics.value
@@ -607,6 +614,26 @@ function updateSiteMenuPages(pages) {
       pages
     }
   })
+}
+
+function updateSiteMenuLinks(links) {
+  if (!selectedFile.value || selectedFile.value.key !== 'site') return
+  updateSelectedModel({
+    ...selectedFile.value.model,
+    menus: {
+      ...selectedFile.value.model.menus,
+      links
+    }
+  })
+}
+
+function getHeaderPrimaryLimit(menus = {}) {
+  const entries = Array.isArray(menus?.header) ? menus.header : []
+  const blogNavigation = entries.find(entry => (
+    String(entry?.source || '').trim().replaceAll('_', '-') === 'blog-nav'
+  ))
+  const value = Number(blogNavigation?.primary_limit || blogNavigation?.primaryLimit)
+  return Number.isInteger(value) && value > 0 ? value : 5
 }
 
 function scheduleValidation() {

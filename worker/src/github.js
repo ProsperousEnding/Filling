@@ -182,6 +182,32 @@ export async function getRepositoryFile(
   }
 }
 
+export async function getRepositoryTree(
+  settings,
+  accessToken,
+  ref,
+  fetchImpl = fetch
+) {
+  const result = await githubRequest(
+    `/repos/${encodeURIComponent(settings.owner)}/${encodeURIComponent(settings.repo)}`
+      + `/git/trees/${encodeURIComponent(ref)}?recursive=1`,
+    accessToken,
+    {},
+    fetchImpl
+  )
+
+  if (!Array.isArray(result?.tree) || result.truncated) {
+    throw new HttpError(502, 'github-invalid-tree', 'GitHub 未返回完整的仓库内容清单。')
+  }
+
+  return result.tree.map(entry => ({
+    path: String(entry?.path || ''),
+    type: String(entry?.type || ''),
+    sha: String(entry?.sha || ''),
+    size: Number(entry?.size) || 0
+  }))
+}
+
 export async function createFilesCommit(
   settings,
   accessToken,

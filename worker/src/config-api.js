@@ -4,6 +4,7 @@ import {
   createFilesCommit,
   getRepositoryFile,
   getRepositoryHead,
+  getRepositoryTree,
   getWorkflowRuns
 } from './github.js'
 import { HttpError, jsonResponse, readJsonBody, requireRequestOrigin } from './http.js'
@@ -31,23 +32,45 @@ async function loadManagedConfiguration(authentication, fetchImpl = fetch) {
   const { settings } = authentication
   const accessToken = getAccessToken(authentication)
   const headOid = await getRepositoryHead(settings, accessToken, fetchImpl)
-  const files = await Promise.all(CONFIG_FILE_DEFINITIONS.map(async (definition) => {
-    const file = await getRepositoryFile(
-      settings,
-      accessToken,
-      definition.path,
-      headOid,
-      fetchImpl
-    )
+  const [files, repositoryTree] = await Promise.all([
+    Promise.all(CONFIG_FILE_DEFINITIONS.map(async (definition) => {
+      const file = await getRepositoryFile(
+        settings,
+        accessToken,
+        definition.path,
+        headOid,
+        fetchImpl
+      )
 
-    return {
-      ...definition,
-      content: normalizeTomlContent(file.content),
-      sha: file.sha
-    }
-  }))
+      return {
+        ...definition,
+        content: normalizeTomlContent(file.content),
+        sha: file.sha
+      }
+    })),
+    getRepositoryTree(settings, accessToken, headOid, fetchImpl)
+  ])
 
-  return { headOid, files }
+  return { headOid, files, contentSources: createContentSourceManifest(repositoryTree) }
+}
+
+function createContentSourceManifest(repositoryTree = []) {
+  const prefix = 'blog/content/'
+  const files = repositoryTree
+    .filter(entry => (
+      entry.type === 'blob'
+      && entry.path.startsWith(prefix)
+      && entry.path.toLowerCase().endsWith('.md')
+    ))
+    .map(entry => entry.path.slice(prefix.length))
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right, 'zh-CN'))
+  const folders = Array.from(new Set(files
+    .map(path => path.split('/').slice(0, -1).join('/'))
+    .filter(Boolean)))
+    .sort((left, right) => left.localeCompare(right, 'zh-CN'))
+
+  return { files, folders }
 }
 
 function normalizeRequestedFiles(value) {
@@ -81,8 +104,8 @@ function mergeConfigFiles(remoteFiles, changedFiles) {
   return remoteFiles.map(file => changeByKey.get(file.key) || file)
 }
 
-function getValidationResult(files) {
-  const result = validateManagedConfigFiles(files)
+function getValidationResult(files, contentSources = null) {
+  const result = validateManagedConfigFiles(files, { contentSources })
   return {
     valid: !result.diagnostics.some(diagnostic => diagnostic.level === 'error'),
     diagnostics: result.diagnostics,
@@ -93,10 +116,11 @@ function getValidationResult(files) {
 export async function getConfigs(request, env, fetchImpl = fetch) {
   const authentication = await requireAdminSession(request, env, fetchImpl)
   const configuration = await loadManagedConfiguration(authentication, fetchImpl)
-  const validation = getValidationResult(configuration.files)
+  const validation = getValidationResult(configuration.files, configuration.contentSources)
   const response = jsonResponse({
     headOid: configuration.headOid,
     files: configuration.files,
+    contentSources: configuration.contentSources,
     diagnostics: validation.diagnostics
   })
 
@@ -109,7 +133,10 @@ export async function validateConfigs(request, env, fetchImpl = fetch) {
   const body = await readJsonBody(request)
   const requestedFiles = normalizeRequestedFiles(body.files)
   const remote = await loadManagedConfiguration(authentication, fetchImpl)
-  const validation = getValidationResult(mergeConfigFiles(remote.files, requestedFiles))
+  const validation = getValidationResult(
+    mergeConfigFiles(remote.files, requestedFiles),
+    remote.contentSources
+  )
   const response = jsonResponse({
     valid: validation.valid,
     diagnostics: validation.diagnostics
@@ -135,7 +162,7 @@ export async function updateConfigs(request, env, fetchImpl = fetch) {
   }
 
   const mergedFiles = mergeConfigFiles(remote.files, requestedFiles)
-  const validation = getValidationResult(mergedFiles)
+  const validation = getValidationResult(mergedFiles, remote.contentSources)
   if (!validation.valid) {
     return withAuthenticationCookie(jsonResponse({
       error: 'invalid-configuration',
@@ -205,6 +232,7 @@ export async function getDeployments(request, env, fetchImpl = fetch) {
 
 export {
   getValidationResult,
+  createContentSourceManifest,
   loadManagedConfiguration,
   mergeConfigFiles,
   normalizeRequestedFiles

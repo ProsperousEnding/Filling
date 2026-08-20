@@ -29,6 +29,26 @@ export function isExternalMenuTarget(target) {
   return /^(https?:)?\/\//i.test(target) || target.startsWith('mailto:') || target.startsWith('tel:')
 }
 
+export function normalizeMenuLinkTarget(value) {
+  const target = normalizeString(value)
+  if (!target || hasControlCharacters(target) || /\s/u.test(target)) return ''
+  if (!isExternalMenuTarget(target)) return normalizeMenuPagePath(target, '')
+
+  if (/^mailto:/iu.test(target)) {
+    return /^mailto:[^@\s]+@[^@\s]+$/iu.test(target) ? target : ''
+  }
+  if (/^tel:/iu.test(target)) {
+    return /^tel:\+?[\d().-]+$/u.test(target) ? target : ''
+  }
+
+  try {
+    const url = new URL(target.startsWith('//') ? `https:${target}` : target)
+    return ['http:', 'https:'].includes(url.protocol) && url.hostname ? target : ''
+  } catch {
+    return ''
+  }
+}
+
 export function normalizeMenuPagePath(value, fallback = '') {
   const normalizedValue = normalizeString(value)
   const target = normalizedValue || normalizeString(fallback)

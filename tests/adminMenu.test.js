@@ -2,11 +2,13 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  createAdminMenuLink,
   createAdminMenuPage,
   createAdminMenuRows,
   deriveAdminMenuPageKey,
   getAdminMenuPreview,
   moveAdminMenuRow,
+  serializeAdminMenuLinks,
   serializeAdminMenuRows
 } from '../src/site/admin/adminMenuModel.js'
 
@@ -117,4 +119,22 @@ test('new admin menu pages use the implicit custom page order until manually mov
   assert.equal(firstPage._defaultMenuOrder, 1000)
   assert.equal(secondPage.menu_order, 1001)
   assert.equal(secondPage._defaultMenuOrder, 1001)
+})
+
+test('admin menu links stay separate from routable pages', () => {
+  const rows = createAdminMenuRows(configuredPages, [{
+    key: 'github',
+    label: 'GitHub',
+    target: 'https://github.com/example'
+  }])
+  const newLink = createAdminMenuLink(rows)
+
+  assert.deepEqual(serializeAdminMenuRows(rows), configuredPages)
+  assert.deepEqual(serializeAdminMenuLinks(rows), [{
+    key: 'github',
+    label: 'GitHub',
+    target: 'https://github.com/example'
+  }])
+  assert.equal(newLink.link, true)
+  assert.ok(newLink.menu_order > Math.max(...rows.map(row => row.menu_order)))
 })

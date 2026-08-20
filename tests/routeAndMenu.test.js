@@ -145,6 +145,37 @@ test('registered pages automatically reach desktop overflow and the flat mobile 
   assert.deepEqual(getMenuConfigDiagnostics(menuConfig), [])
 })
 
+test('guided navigation links join automatic desktop and mobile menus', () => {
+  const menuConfig = {
+    links: [{
+      key: 'github',
+      label: 'GitHub',
+      target: 'https://github.com/example',
+      menu_group: 'more'
+    }]
+  }
+  const desktopItems = resolveHeaderMenuGroups(menuConfig)[0].rendererProps.items
+  const mobileItems = resolveMobileHeaderMenuGroups(menuConfig)[0].rendererProps.items
+  const desktopLink = desktopItems.at(-1).children.find(item => item.key === 'github')
+  const mobileLink = mobileItems.find(item => item.key === 'github')
+
+  assert.equal(desktopLink.href, 'https://github.com/example')
+  assert.equal(desktopLink.external, true)
+  assert.equal(mobileLink.href, 'https://github.com/example')
+  assert.deepEqual(getMenuConfigDiagnostics(menuConfig), [])
+})
+
+test('guided navigation links cannot reuse built-in page keys', () => {
+  const diagnostics = getMenuConfigDiagnostics({
+    links: [{ key: 'home', label: 'Homepage', target: 'https://example.com' }]
+  })
+
+  assert.equal(diagnostics.some(diagnostic => (
+    diagnostic.code === 'duplicate-menu-link-key'
+    && diagnostic.path === 'menus.links[0].key'
+  )), true)
+})
+
 test('primary menu metadata can promote and order a custom page', () => {
   const menuConfig = {
     pages: [

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import { CONFIG_FILE_DEFINITIONS } from '../src/framework/config/configManifest.js'
-import { updateConfigs } from '../worker/src/config-api.js'
+import { createContentSourceManifest, updateConfigs } from '../worker/src/config-api.js'
 import {
   getValidationResult,
   normalizeRequestedFiles
@@ -63,6 +63,35 @@ test('the Worker validates the repository current TOML configuration', async () 
   )
 })
 
+test('repository content manifests expose only Markdown files and usable folders', () => {
+  assert.deepEqual(createContentSourceManifest([
+    { type: 'blob', path: 'blog/content/about.md' },
+    { type: 'blob', path: 'blog/content/articles/first.md' },
+    { type: 'blob', path: 'blog/content/articles/notes.txt' },
+    { type: 'tree', path: 'blog/content/empty' },
+    { type: 'blob', path: 'README.md' }
+  ]), {
+    files: ['about.md', 'articles/first.md'],
+    folders: ['articles']
+  })
+})
+
+test('the Worker rejects menu pages that reference missing repository content', async () => {
+  const files = await loadLocalConfigFiles()
+  const site = files.find(file => file.key === 'site')
+  site.content = `${site.content.trim()}\n\n[[menus.pages]]\nkey = "missing"\ntitle = "Missing"\ncomponent = "context"\nfile = "missing.md"\n`
+  const validation = getValidationResult(files, {
+    files: ['about.md', 'articles/example.md'],
+    folders: ['articles']
+  })
+
+  assert.equal(validation.valid, false)
+  assert.ok(validation.diagnostics.some(diagnostic => (
+    diagnostic.code === 'missing-menu-page-source'
+    && diagnostic.path === 'menus.pages.missing.file'
+  )))
+})
+
 test('the Worker rejects unknown, duplicate and malformed configuration input', () => {
   assert.throws(
     () => normalizeRequestedFiles([{ key: '../site', content: 'title = "bad"' }]),
@@ -97,6 +126,16 @@ test('publishing creates one atomic commit containing only changed allowlisted f
 
     if (normalizedUrl.endsWith('/commits/main')) {
       return Response.json({ sha: HEAD_OID })
+    }
+
+    if (normalizedUrl.includes('/git/trees/')) {
+      return Response.json({
+        truncated: false,
+        tree: [
+          { type: 'blob', path: 'blog/content/about.md', sha: 'content-sha' },
+          { type: 'blob', path: 'blog/content/articles/example.md', sha: 'article-sha' }
+        ]
+      })
     }
 
     if (normalizedUrl.includes('/contents/')) {

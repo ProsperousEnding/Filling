@@ -67,7 +67,7 @@
 
           <div class="admin-menu-page-identity">
             <strong>{{ getRowLabel(row) }}</strong>
-            <code>{{ row.path || `/${row.key}` }}</code>
+            <code>{{ row.link ? row.target : (row.path || `/${row.key}`) }}</code>
           </div>
 
           <select
@@ -102,7 +102,7 @@
             class="admin-icon-command"
             :aria-label="`编辑${getRowLabel(row)}`"
             title="编辑名称"
-            @click="openPageDialog(index)"
+            @click="openPageDialog(index, $event)"
           >
             <Pencil aria-hidden="true" />
           </button>
@@ -112,7 +112,7 @@
             class="admin-icon-command admin-menu-enable-command"
             :class="{ active: row.enabled }"
             :aria-label="`${row.enabled ? '停用' : '启用'}${getRowLabel(row)}`"
-            :title="row.enabled ? '停用页面' : '启用页面'"
+            :title="row.enabled ? '停用菜单项' : '启用菜单项'"
             @click="updateRow(index, 'enabled', !row.enabled)"
           >
             <Power aria-hidden="true" />
@@ -124,23 +124,24 @@
     <section class="admin-menu-section admin-custom-pages-section">
       <header class="admin-menu-section-header">
         <div>
-          <h2>自定义页面</h2>
-          <span>{{ customPages.length }} 个页面</span>
+          <h2>自定义页面与链接</h2>
+          <span>{{ customItems.length }} 项</span>
         </div>
-        <button type="button" class="admin-command" @click="openPageDialog()">
+        <button type="button" class="admin-command" @click="openPageDialog(-1, $event)">
           <Plus aria-hidden="true" />
-          新增页面
+          新增
         </button>
       </header>
 
-      <div v-if="customPages.length > 0" class="admin-custom-page-list">
+      <div v-if="customItems.length > 0" class="admin-custom-page-list">
         <article
-          v-for="entry in customPages"
+          v-for="entry in customItems"
           :key="`custom-page-${entry.index}`"
           class="admin-custom-page-item"
         >
           <div class="admin-custom-page-icon" aria-hidden="true">
-            <Users v-if="entry.row.component === 'friends'" />
+            <Link v-if="entry.row.link" />
+            <Users v-else-if="entry.row.component === 'friends'" />
             <FolderOpen v-else-if="collectionComponents.has(entry.row.component)" />
             <FileText v-else />
           </div>
@@ -152,8 +153,8 @@
             type="button"
             class="admin-icon-command"
             :aria-label="`编辑${getRowLabel(entry.row)}`"
-            title="编辑页面"
-            @click="openPageDialog(entry.index)"
+            title="编辑"
+            @click="openPageDialog(entry.index, $event)"
           >
             <Pencil aria-hidden="true" />
           </button>
@@ -161,14 +162,14 @@
             type="button"
             class="admin-icon-command admin-icon-command-danger"
             :aria-label="`删除${getRowLabel(entry.row)}`"
-            title="删除页面"
+            title="删除"
             @click="removePage(entry.index)"
           >
             <Trash2 aria-hidden="true" />
           </button>
         </article>
       </div>
-      <p v-else class="admin-field-empty">暂无自定义页面</p>
+      <p v-else class="admin-field-empty">暂无自定义页面或链接</p>
     </section>
 
     <div
@@ -176,6 +177,7 @@
       class="admin-modal-backdrop"
       @click.self="closePageDialog"
       @keydown.esc="closePageDialog"
+      @keydown.tab="trapDialogFocus"
     >
       <section
         ref="pageDialogRef"
@@ -187,7 +189,7 @@
         <header>
           <div>
             <h2 id="admin-page-dialog-title">
-              {{ pageDraft.builtIn ? '编辑内置页面' : editingIndex >= 0 ? '编辑页面' : '新增页面' }}
+              {{ dialogTitle }}
             </h2>
             <p v-if="pageDraft.builtIn">{{ pageDraft.path }}</p>
           </div>
@@ -204,7 +206,7 @@
 
         <div class="admin-page-dialog-body">
           <template v-if="!pageDraft.builtIn">
-            <div class="admin-page-kind-control" role="group" aria-label="页面类型">
+            <div class="admin-page-kind-control" role="group" aria-label="新增类型">
               <button
                 v-for="kind in pageKinds"
                 :key="kind.key"
@@ -219,35 +221,82 @@
             </div>
 
             <label class="admin-page-dialog-field">
-              <span>页面名称</span>
+              <span>{{ pageDraft.kind === 'link' ? '菜单名称' : '页面名称' }}</span>
               <input
                 v-model="pageDraft.title"
                 data-page-name
                 class="admin-control"
                 type="text"
-                placeholder="关于"
+                :placeholder="pageDraft.kind === 'link' ? 'GitHub' : '关于'"
               />
             </label>
 
-            <label v-if="pageDraft.kind === 'context'" class="admin-page-dialog-field">
-              <span>内容文件</span>
-              <input
-                v-model="pageDraft.file"
-                class="admin-control"
-                type="text"
-                placeholder="about.md"
-              />
-            </label>
+            <template v-if="pageDraft.kind === 'context'">
+              <div class="admin-page-source-control" role="group" aria-label="内容来源">
+                <button
+                  type="button"
+                  :class="{ active: pageDraft.sourceMode === 'file' }"
+                  :aria-pressed="pageDraft.sourceMode === 'file'"
+                  @click="pageDraft.sourceMode = 'file'"
+                >
+                  已有 Markdown
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: pageDraft.sourceMode === 'inline' }"
+                  :aria-pressed="pageDraft.sourceMode === 'inline'"
+                  @click="pageDraft.sourceMode = 'inline'"
+                >
+                  直接填写
+                </button>
+              </div>
+
+              <label v-if="pageDraft.sourceMode === 'file'" class="admin-page-dialog-field">
+                <span>内容文件</span>
+                <select v-model="pageDraft.file" class="admin-control">
+                  <option value="">请选择仓库中的 Markdown 文件</option>
+                  <option
+                    v-if="pageDraft.file && !availableContentFiles.includes(pageDraft.file)"
+                    :value="pageDraft.file"
+                    disabled
+                  >
+                    当前文件不存在：{{ pageDraft.file }}
+                  </option>
+                  <option v-for="file in availableContentFiles" :key="file" :value="file">
+                    {{ file }}
+                  </option>
+                </select>
+                <small v-if="availableContentFiles.length === 0">仓库中暂无可用 Markdown 文件</small>
+              </label>
+
+              <label v-else class="admin-page-dialog-field admin-page-content-field">
+                <span>页面正文</span>
+                <textarea
+                  v-model="pageDraft.content"
+                  class="admin-control"
+                  rows="8"
+                  placeholder="支持 Markdown，可直接填写页面内容。"
+                />
+              </label>
+            </template>
 
             <template v-else-if="pageDraft.kind === 'collection'">
               <label class="admin-page-dialog-field">
                 <span>内容目录</span>
-                <input
-                  v-model="pageDraft.folder"
-                  class="admin-control"
-                  type="text"
-                  placeholder="projects"
-                />
+                <select v-model="pageDraft.folder" class="admin-control">
+                  <option value="">请选择包含 Markdown 的目录</option>
+                  <option
+                    v-if="pageDraft.folder && !availableContentFolders.includes(pageDraft.folder)"
+                    :value="pageDraft.folder"
+                    disabled
+                  >
+                    当前目录不存在：{{ pageDraft.folder }}
+                  </option>
+                  <option v-for="folder in availableContentFolders" :key="folder" :value="folder">
+                    {{ folder }}
+                  </option>
+                </select>
+                <small v-if="availableContentFolders.length === 0">仓库中暂无可用内容目录</small>
               </label>
               <label class="admin-page-dialog-field">
                 <span>展示方式</span>
@@ -259,6 +308,30 @@
                 </select>
               </label>
             </template>
+
+            <label v-else-if="pageDraft.kind === 'link'" class="admin-page-dialog-field">
+              <span>链接地址</span>
+              <input
+                v-model="pageDraft.target"
+                class="admin-control"
+                type="url"
+                placeholder="https://github.com/username"
+              />
+              <small>支持站内路径、HTTP(S)、邮箱和电话链接</small>
+            </label>
+
+            <label v-if="pageDraft.kind !== 'link'" class="admin-page-dialog-field">
+              <span>访问地址</span>
+              <input
+                v-model="pageDraft.path"
+                class="admin-control"
+                type="text"
+                :placeholder="`/${resolvedDraftKey}`"
+              />
+              <small :class="{ 'admin-page-field-warning': draftNeedsCustomPath }">
+                {{ draftPathHint }}
+              </small>
+            </label>
           </template>
 
           <label v-else class="admin-page-dialog-field">
@@ -275,7 +348,7 @@
             <summary>高级设置</summary>
             <div class="admin-page-dialog-advanced-fields">
               <label v-if="!pageDraft.builtIn" class="admin-page-dialog-field">
-                <span>页面标识</span>
+                <span>项目标识</span>
                 <div class="admin-page-key-control">
                   <input
                     class="admin-control"
@@ -294,7 +367,7 @@
                   </button>
                 </div>
               </label>
-              <label v-if="!pageDraft.builtIn" class="admin-page-dialog-field">
+              <label v-if="!pageDraft.builtIn && pageDraft.kind !== 'link'" class="admin-page-dialog-field">
                 <span>独立菜单名称</span>
                 <input
                   v-model="pageDraft.label"
@@ -307,23 +380,14 @@
                 <span>页面标题</span>
                 <input v-model="pageDraft.title" class="admin-control" type="text" />
               </label>
-              <label v-if="!pageDraft.builtIn" class="admin-page-dialog-field">
-                <span>自定义路径</span>
-                <input
-                  v-model="pageDraft.path"
-                  class="admin-control"
-                  type="text"
-                  :placeholder="`/${resolvedDraftKey}`"
-                />
-              </label>
               <label class="admin-page-dialog-field admin-page-description-field">
-                <span>页面说明</span>
+                <span>{{ pageDraft.kind === 'link' ? '链接说明' : '页面说明' }}</span>
                 <textarea v-model="pageDraft.description" class="admin-control" rows="3" />
               </label>
             </div>
           </details>
 
-          <p v-if="showDraftError && draftError" class="admin-page-dialog-error">
+          <p v-if="showDraftError && draftError" class="admin-page-dialog-error" role="alert">
             {{ draftError }}
           </p>
         </div>
@@ -332,7 +396,7 @@
           <button type="button" class="admin-command" @click="closePageDialog">取消</button>
           <button type="button" class="admin-command admin-command-primary" @click="savePage">
             <Save aria-hidden="true" />
-            保存页面
+            保存
           </button>
         </footer>
       </section>
@@ -346,6 +410,7 @@ import {
   ArrowUp,
   FileText,
   FolderOpen,
+  Link,
   Pencil,
   Plus,
   Power,
@@ -359,15 +424,19 @@ import { computed, nextTick, ref } from 'vue'
 
 import {
   isValidMenuPageKey,
+  normalizeMenuLinkTarget,
   normalizeMenuContentPath,
   normalizeMenuPagePath
 } from '../../../framework/utils/menuRouteConfig.js'
+import { getMenuConfigDiagnostics } from '../../../framework/utils/menuConfig.js'
 import {
+  createAdminMenuLink,
   createAdminMenuPage,
   createAdminMenuRows,
   deriveAdminMenuPageKey,
   getAdminMenuPreview,
   moveAdminMenuRow,
+  serializeAdminMenuLinks,
   serializeAdminMenuRows
 } from '../adminMenuModel.js'
 
@@ -375,26 +444,50 @@ const props = defineProps({
   pages: {
     type: Array,
     default: () => []
+  },
+  links: {
+    type: Array,
+    default: () => []
+  },
+  contentSources: {
+    type: Object,
+    default: () => ({ files: [], folders: [] })
+  },
+  routePatterns: {
+    type: Object,
+    default: () => ({})
+  },
+  primaryLimit: {
+    type: Number,
+    default: 5
   }
 })
 
-const emit = defineEmits(['update:pages'])
+const emit = defineEmits(['update:links', 'update:pages'])
 const collectionComponents = new Set(['list', 'card', 'grid', 'timeline'])
 const pageKinds = Object.freeze([
   { key: 'context', label: '单篇内容', icon: FileText },
   { key: 'collection', label: '内容目录', icon: FolderOpen },
-  { key: 'friends', label: '友情链接', icon: Users }
+  { key: 'friends', label: '友情链接', icon: Users },
+  { key: 'link', label: '导航链接', icon: Link }
 ])
-const rows = computed(() => createAdminMenuRows(props.pages))
-const preview = computed(() => getAdminMenuPreview(rows.value))
+const rows = computed(() => createAdminMenuRows(props.pages, props.links))
+const preview = computed(() => getAdminMenuPreview(rows.value, props.primaryLimit))
 const visibleMenuCount = computed(() => (
   rows.value.filter(row => row.enabled !== false && row.visible !== false).length
 ))
-const customPages = computed(() => rows.value
+const customItems = computed(() => rows.value
   .map((row, index) => ({ row, index }))
   .filter(entry => !entry.row.builtIn))
+const availableContentFiles = computed(() => (
+  Array.isArray(props.contentSources?.files) ? props.contentSources.files : []
+))
+const availableContentFolders = computed(() => (
+  Array.isArray(props.contentSources?.folders) ? props.contentSources.folders : []
+))
 const pageDialogOpen = ref(false)
 const pageDialogRef = ref(null)
+const dialogTrigger = ref(null)
 const editingIndex = ref(-1)
 const editingOriginalKey = ref('')
 const draftKeyAutomatic = ref(true)
@@ -413,21 +506,54 @@ const resolvedDraftKey = computed(() => (
     )
     : String(pageDraft.value.key || '').trim().toLowerCase()
 ))
+const resolvedDraftPath = computed(() => (
+  normalizeMenuPagePath(pageDraft.value.path, `/${resolvedDraftKey.value}`)
+))
+const draftNeedsCustomPath = computed(() => (
+  !pageDraft.value.builtIn
+  && pageDraft.value.kind !== 'link'
+  && draftKeyAutomatic.value
+  && /^page(?:-\d+)?$/u.test(resolvedDraftKey.value)
+  && !String(pageDraft.value.path || '').trim()
+))
+const draftPathHint = computed(() => (
+  draftNeedsCustomPath.value
+    ? '中文名称无法自动生成清晰地址，请填写简短英文地址，例如 /about。'
+    : `保存后的访问地址：${resolvedDraftPath.value || '尚未生成'}`
+))
+const dialogTitle = computed(() => {
+  if (pageDraft.value.builtIn) return '编辑内置页面'
+  const type = pageDraft.value.kind === 'link' ? '链接' : '页面'
+  return editingIndex.value >= 0 ? `编辑${type}` : `新增${type}`
+})
 
 const draftError = computed(() => {
   const draft = pageDraft.value
   if (draft.builtIn) {
     return String(draft.label || '').trim() ? '' : '请填写菜单名称。'
   }
-  if (!String(draft.title || '').trim()) return '请填写页面名称。'
+  if (!String(draft.title || '').trim()) {
+    return draft.kind === 'link' ? '请填写菜单名称。' : '请填写页面名称。'
+  }
 
   const component = getDraftComponent(draft)
-  if (component === 'context' && !normalizeMenuContentPath(draft.file, 'file')) {
-    return '请填写有效的内容文件。'
+  if (component === 'link') {
+    if (!normalizeMenuLinkTarget(draft.target)) return '请填写有效的链接地址。'
+  } else if (component === 'context' && draft.sourceMode === 'inline') {
+    if (!String(draft.content || '').trim()) return '请填写页面正文。'
+  } else if (component === 'context') {
+    const file = normalizeMenuContentPath(draft.file, 'file')
+    if (!file || !availableContentFiles.value.includes(file)) {
+      return '请选择仓库中真实存在的内容文件。'
+    }
   }
-  if (collectionComponents.has(component) && !normalizeMenuContentPath(draft.folder, 'folder')) {
-    return '请填写有效的内容目录。'
+  if (collectionComponents.has(component)) {
+    const folder = normalizeMenuContentPath(draft.folder, 'folder')
+    if (!folder || !availableContentFolders.value.includes(folder)) {
+      return '请选择包含 Markdown 文件的内容目录。'
+    }
   }
+  if (draftNeedsCustomPath.value) return '请填写清晰的英文访问地址。'
   if (!isValidMenuPageKey(resolvedDraftKey.value)) return '页面标识格式不正确。'
   if (rows.value.some((row, index) => (
     index !== editingIndex.value && row.key === resolvedDraftKey.value
@@ -437,7 +563,7 @@ const draftError = computed(() => {
   if (draft.path && !normalizeMenuPagePath(draft.path, '')) {
     return '自定义路径格式不正确。'
   }
-  return ''
+  return getDraftRouteError()
 })
 
 function createEmptyDraft() {
@@ -449,19 +575,24 @@ function createEmptyDraft() {
     title: '',
     description: '',
     component: 'context',
+    sourceMode: 'file',
+    content: '',
     file: '',
     folder: '',
-    path: ''
+    path: '',
+    target: ''
   }
 }
 
 function getPageKind(row) {
+  if (row.link) return 'link'
   if (row.component === 'friends') return 'friends'
   if (collectionComponents.has(row.component)) return 'collection'
   return 'context'
 }
 
 function getDraftComponent(draft) {
+  if (draft.kind === 'link') return 'link'
   if (draft.kind === 'friends') return 'friends'
   if (draft.kind === 'collection') {
     return collectionComponents.has(draft.component) ? draft.component : 'grid'
@@ -480,16 +611,18 @@ function getRowRenderKey(row, index, scope) {
 }
 
 function getCustomPageMeta(row) {
+  if (row.link) return `导航链接 · ${row.target}`
   const pagePath = row.path || `/${row.key}`
   if (row.component === 'friends') return `友情链接 · ${pagePath}`
   if (collectionComponents.has(row.component)) {
     return `${row.folder || '未设置目录'} · ${pagePath}`
   }
-  return `${row.file || '未设置文件'} · ${pagePath}`
+  return `${row.content && !row.file ? '内嵌内容' : (row.file || '未设置文件')} · ${pagePath}`
 }
 
 function emitRows(nextRows) {
   emit('update:pages', serializeAdminMenuRows(nextRows))
+  emit('update:links', serializeAdminMenuLinks(nextRows))
 }
 
 function updateRow(index, key, value) {
@@ -509,9 +642,10 @@ function setPageKind(kind) {
   }
 }
 
-function openPageDialog(index = -1) {
+function openPageDialog(index = -1, event = null) {
   editingIndex.value = index
   showDraftError.value = false
+  dialogTrigger.value = event?.currentTarget || document.activeElement
 
   if (index >= 0) {
     const row = rows.value[index]
@@ -525,9 +659,12 @@ function openPageDialog(index = -1) {
       title: row.title,
       description: row.description,
       component: row.component,
+      sourceMode: row.content && !row.file ? 'inline' : 'file',
+      content: row.content,
       file: row.file,
       folder: row.folder,
-      path: row.path
+      path: row.path,
+      target: row.target
     }
   } else {
     editingOriginalKey.value = ''
@@ -541,6 +678,34 @@ function openPageDialog(index = -1) {
 
 function closePageDialog() {
   pageDialogOpen.value = false
+  const trigger = dialogTrigger.value
+  dialogTrigger.value = null
+  nextTick(() => trigger?.isConnected && trigger.focus())
+}
+
+function getFocusableElements() {
+  if (!pageDialogRef.value) return []
+  return Array.from(pageDialogRef.value.querySelectorAll(
+    'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]:not([tabindex="-1"])'
+  )).filter(element => (
+    !element.hidden
+    && (element.tagName === 'SUMMARY' || !element.closest('details:not([open])'))
+  ))
+}
+
+function trapDialogFocus(event) {
+  const focusable = getFocusableElements()
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable.at(-1)
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 function setDraftKey(value) {
@@ -553,10 +718,7 @@ function resetDraftKey() {
   pageDraft.value.key = ''
 }
 
-function savePage() {
-  showDraftError.value = true
-  if (draftError.value) return
-
+function createDraftRows() {
   const nextRows = rows.value.map(row => ({ ...row }))
   const draft = pageDraft.value
   if (draft.builtIn) {
@@ -564,6 +726,20 @@ function savePage() {
     row.label = String(draft.label || '').trim()
     row.title = String(draft.title || '').trim()
     row.description = String(draft.description || '').trim()
+  } else if (draft.kind === 'link') {
+    const row = editingIndex.value >= 0
+      ? nextRows[editingIndex.value]
+      : createAdminMenuLink(nextRows)
+    Object.assign(row, {
+      key: resolvedDraftKey.value,
+      label: String(draft.title || '').trim(),
+      title: String(draft.title || '').trim(),
+      description: String(draft.description || '').trim(),
+      target: normalizeMenuLinkTarget(draft.target),
+      component: 'link',
+      link: true
+    })
+    if (editingIndex.value < 0) nextRows.push(row)
   } else {
     const row = editingIndex.value >= 0
       ? nextRows[editingIndex.value]
@@ -575,7 +751,12 @@ function savePage() {
       title: String(draft.title || '').trim(),
       description: String(draft.description || '').trim(),
       component,
-      file: component === 'context' ? normalizeMenuContentPath(draft.file, 'file') : '',
+      content: component === 'context' && draft.sourceMode === 'inline'
+        ? String(draft.content || '').trim()
+        : '',
+      file: component === 'context' && draft.sourceMode === 'file'
+        ? normalizeMenuContentPath(draft.file, 'file')
+        : '',
       folder: collectionComponents.has(component)
         ? normalizeMenuContentPath(draft.folder, 'folder')
         : '',
@@ -584,13 +765,35 @@ function savePage() {
     if (editingIndex.value < 0) nextRows.push(row)
   }
 
-  emitRows(nextRows)
+  return nextRows
+}
+
+function getDraftRouteError() {
+  if (pageDraft.value.builtIn || pageDraft.value.kind === 'link') return ''
+  const diagnostics = getMenuConfigDiagnostics({
+    pages: serializeAdminMenuRows(createDraftRows())
+  }, props.routePatterns)
+  const conflict = diagnostics.find(diagnostic => (
+    diagnostic.level === 'error'
+    && ['duplicate-menu-page-path', 'conflicting-menu-page-route'].includes(diagnostic.code)
+  ))
+
+  if (conflict?.code === 'duplicate-menu-page-path') return '访问地址已被其他页面使用。'
+  if (conflict) return '访问地址与站点现有路由冲突，请更换。'
+  return ''
+}
+
+function savePage() {
+  showDraftError.value = true
+  if (draftError.value) return
+
+  emitRows(createDraftRows())
   closePageDialog()
 }
 
 function removePage(index) {
   const row = rows.value[index]
-  if (!window.confirm(`确定删除“${getRowLabel(row)}”页面吗？`)) return
+  if (!window.confirm(`确定删除“${getRowLabel(row)}”吗？`)) return
   emitRows(rows.value.filter((_, rowIndex) => rowIndex !== index))
 }
 </script>

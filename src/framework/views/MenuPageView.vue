@@ -40,6 +40,7 @@ import {
 } from '../utils/menuPageSource'
 import { useConfigStore } from '../stores/config'
 import { resolveMenuPage } from '../utils/menuConfig'
+import { renderMarkdown } from '../utils/markdownRenderer'
 import { usePageMetadata } from '../composables/usePageMetadata'
 import { resolveMenuPageComponent, resolveMenuPageComponentKey } from './pageComponentRegistry'
 
@@ -126,6 +127,13 @@ const resolvedPage = computed(() => {
     ...page.value,
     contentHtml: '',
     items: Array.isArray(page.value.items) ? page.value.items : []
+  }
+
+  if (!menuPageUsesFileSource(page.value, resolvedComponentKey.value) && nextPage.content) {
+    nextPage.contentHtml = renderMarkdown(nextPage.content, {
+      codeBlockConfig: configStore.codeBlockConfig,
+      markdownConfig: configStore.markdownConfig
+    })
   }
 
   if (menuPageUsesFileSource(page.value, resolvedComponentKey.value)) {
