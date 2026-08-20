@@ -117,8 +117,10 @@ test('new admin menu pages use the implicit custom page order until manually mov
 
   assert.equal(firstPage.menu_order, 1000)
   assert.equal(firstPage._defaultMenuOrder, 1000)
+  assert.equal(firstPage.menu_group, 'primary')
   assert.equal(secondPage.menu_order, 1001)
   assert.equal(secondPage._defaultMenuOrder, 1001)
+  assert.equal(secondPage.menu_group, 'primary')
 })
 
 test('admin menu links stay separate from routable pages', () => {
@@ -136,5 +138,6 @@ test('admin menu links stay separate from routable pages', () => {
     target: 'https://github.com/example'
   }])
   assert.equal(newLink.link, true)
+  assert.equal(newLink.menu_group, 'primary')
   assert.ok(newLink.menu_order > Math.max(...rows.map(row => row.menu_order)))
 })

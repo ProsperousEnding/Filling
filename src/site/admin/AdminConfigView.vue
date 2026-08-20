@@ -547,10 +547,12 @@ function updateSelectedModel(model) {
   if (!selectedFile.value) return
 
   try {
-    selectedFile.value.model = model
-    selectedFile.value.content = normalizeToml(stringify(
-      createAdminConfigOverrides(selectedFile.value.key, model)
+    const configured = parse(selectedFile.value.content)
+    const content = normalizeToml(stringify(
+      createAdminConfigOverrides(selectedFile.value.key, model, configured)
     ))
+    selectedFile.value.model = model
+    selectedFile.value.content = content
     scheduleValidation()
   } catch (error) {
     validationState.value = 'invalid'

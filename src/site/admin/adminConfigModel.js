@@ -682,12 +682,34 @@ function compactConfigValue(configuredValue, defaultValue, hasDefault) {
   return Object.fromEntries(compactedEntries)
 }
 
+function preserveConfiguredShape(modelValue, configuredValue) {
+  if (modelValue === undefined || configuredValue === undefined) {
+    return undefined
+  }
+  if (Array.isArray(configuredValue) || !isPlainObject(configuredValue)) {
+    return cloneValue(modelValue)
+  }
+  if (!isPlainObject(modelValue)) {
+    return cloneValue(modelValue)
+  }
+
+  return Object.fromEntries(
+    Object.keys(configuredValue)
+      .map(key => [key, preserveConfiguredShape(modelValue[key], configuredValue[key])])
+      .filter(([, value]) => value !== undefined)
+  )
+}
+
 export function createAdminConfigModel(key, configuredValue = {}) {
   return mergeConfigValue(CONFIG_DEFAULTS[key] || {}, configuredValue)
 }
 
-export function createAdminConfigOverrides(key, model = {}) {
-  return compactConfigValue(model, CONFIG_DEFAULTS[key] || {}, true) || {}
+export function createAdminConfigOverrides(key, model = {}, configuredValue = undefined) {
+  const compacted = compactConfigValue(model, CONFIG_DEFAULTS[key] || {}, true) || {}
+  if (configuredValue === undefined) return compacted
+
+  const explicitValues = preserveConfiguredShape(model, configuredValue) || {}
+  return mergeConfigValue(compacted, explicitValues)
 }
 
 export function getArrayItemTemplate(path) {

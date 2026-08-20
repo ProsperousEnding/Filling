@@ -8,6 +8,7 @@ import {
   getFieldOptions,
   normalizeFieldPath
 } from '../src/site/admin/adminConfigModel.js'
+import { createAdminConfigDiff } from '../src/site/admin/adminConfigDiff.js'
 
 test('admin config models preserve current values while filling guided form defaults', () => {
   const model = createAdminConfigModel('site', {
@@ -65,6 +66,61 @@ test('admin config overrides preserve custom menu pages while pruning site defau
         file: 'about.md'
       }]
     }
+  })
+})
+
+test('admin form serialization preserves explicitly configured defaults', () => {
+  const configured = {
+    seo: {
+      lang: 'zh-CN',
+      keywords: [],
+      theme_color: '#f8fafc',
+      favicon: '',
+      robots: 'index,follow'
+    },
+    header: {
+      leading_visual: {
+        visible: true,
+        type: 'dots',
+        title_size: '18'
+      }
+    },
+    menus: {
+      pages: [{
+        key: 'about',
+        title: '关于',
+        component: 'context',
+        file: 'about.md'
+      }]
+    }
+  }
+  const model = createAdminConfigModel('site', configured)
+  model.menus.pages.push({
+    key: 'friends',
+    title: '友链',
+    component: 'friends'
+  })
+
+  const serialized = createAdminConfigOverrides('site', model, configured)
+
+  assert.deepEqual(serialized.seo, configured.seo)
+  assert.deepEqual(serialized.header, configured.header)
+  assert.equal(serialized.menus.pages.length, 2)
+  assert.equal(Object.prototype.hasOwnProperty.call(serialized, 'pagination'), false)
+  assert.equal(
+    createAdminConfigDiff(configured, serialized)
+      .every(change => change.path.startsWith('menus.pages[1]')),
+    true
+  )
+})
+
+test('admin form serialization keeps an explicit field when it is reset to its default', () => {
+  const configured = { seeded_style: 'mwm-anime' }
+  const model = createAdminConfigModel('cover', configured)
+  model.seeded_style = 'picsum'
+
+  assert.deepEqual(createAdminConfigOverrides('cover', model, configured), {
+    seeded_style: 'picsum'
   })
 })
 

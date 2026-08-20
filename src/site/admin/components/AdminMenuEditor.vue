@@ -129,7 +129,7 @@
         </div>
         <button type="button" class="admin-command" @click="openPageDialog(-1, $event)">
           <Plus aria-hidden="true" />
-          新增
+          新增菜单项
         </button>
       </header>
 
@@ -231,6 +231,20 @@
               />
             </label>
 
+            <label class="admin-page-dialog-field">
+              <span>导航位置</span>
+              <select
+                v-model="pageDraft.menu_group"
+                data-menu-position
+                class="admin-control"
+              >
+                <option value="primary">一级菜单</option>
+                <option value="auto">自动安排</option>
+                <option value="more">更多菜单</option>
+              </select>
+              <small>{{ draftMenuPositionHint }}</small>
+            </label>
+
             <template v-if="pageDraft.kind === 'context'">
               <div class="admin-page-source-control" role="group" aria-label="内容来源">
                 <button
@@ -253,7 +267,7 @@
 
               <label v-if="pageDraft.sourceMode === 'file'" class="admin-page-dialog-field">
                 <span>内容文件</span>
-                <select v-model="pageDraft.file" class="admin-control">
+                <select v-model="pageDraft.file" data-content-file class="admin-control">
                   <option value="">请选择仓库中的 Markdown 文件</option>
                   <option
                     v-if="pageDraft.file && !availableContentFiles.includes(pageDraft.file)"
@@ -521,6 +535,15 @@ const draftPathHint = computed(() => (
     ? '中文名称无法自动生成清晰地址，请填写简短英文地址，例如 /about。'
     : `保存后的访问地址：${resolvedDraftPath.value || '尚未生成'}`
 ))
+const draftMenuPositionHint = computed(() => {
+  if (pageDraft.value.menu_group === 'more') {
+    return '收进“更多”，避免顶部导航过长。'
+  }
+  if (pageDraft.value.menu_group === 'auto') {
+    return `根据一级菜单上限自动安排，当前上限为 ${props.primaryLimit} 项。`
+  }
+  return '固定为一级菜单；空间不足时，靠后的“自动”菜单会移入“更多”。'
+})
 const dialogTitle = computed(() => {
   if (pageDraft.value.builtIn) return '编辑内置页面'
   const type = pageDraft.value.kind === 'link' ? '链接' : '页面'
@@ -580,7 +603,8 @@ function createEmptyDraft() {
     file: '',
     folder: '',
     path: '',
-    target: ''
+    target: '',
+    menu_group: 'primary'
   }
 }
 
@@ -664,7 +688,8 @@ function openPageDialog(index = -1, event = null) {
       file: row.file,
       folder: row.folder,
       path: row.path,
-      target: row.target
+      target: row.target,
+      menu_group: row.menu_group
     }
   } else {
     editingOriginalKey.value = ''
@@ -737,7 +762,8 @@ function createDraftRows() {
       description: String(draft.description || '').trim(),
       target: normalizeMenuLinkTarget(draft.target),
       component: 'link',
-      link: true
+      link: true,
+      menu_group: draft.menu_group
     })
     if (editingIndex.value < 0) nextRows.push(row)
   } else {
@@ -760,7 +786,8 @@ function createDraftRows() {
       folder: collectionComponents.has(component)
         ? normalizeMenuContentPath(draft.folder, 'folder')
         : '',
-      path: draft.path ? normalizeMenuPagePath(draft.path, '') : ''
+      path: draft.path ? normalizeMenuPagePath(draft.path, '') : '',
+      menu_group: draft.menu_group
     })
     if (editingIndex.value < 0) nextRows.push(row)
   }

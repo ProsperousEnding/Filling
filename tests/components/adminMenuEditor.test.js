@@ -57,7 +57,7 @@ describe('AdminMenuEditor', () => {
     expect(document.activeElement).toBe(wrapper.get('[data-page-name]').element)
 
     await wrapper.get('[data-page-name]').setValue('项目')
-    await wrapper.get('.admin-page-dialog-body select.admin-control').setValue('projects.md')
+    await wrapper.get('[data-content-file]').setValue('projects.md')
 
     expect(wrapper.emitted('update:pages')).toBeUndefined()
     await wrapper.findAll('.admin-page-dialog footer .admin-command').at(-1).trigger('click')
@@ -69,7 +69,8 @@ describe('AdminMenuEditor', () => {
         key: 'projects',
         title: '项目',
         component: 'context',
-        file: 'projects.md'
+        file: 'projects.md',
+        menu_group: 'primary'
       })
     ]))
     expect(wrapper.find('.admin-page-dialog').exists()).toBe(false)
@@ -147,7 +148,29 @@ describe('AdminMenuEditor', () => {
     expect(wrapper.emitted('update:links')[0][0]).toEqual([{
       key: 'github',
       label: 'GitHub',
-      target: 'https://github.com/example'
+      target: 'https://github.com/example',
+      menu_group: 'primary'
+    }])
+  })
+
+  it('lets the user choose whether a new item belongs to the primary or more menu', async () => {
+    wrapper = mountEditor({ props: { pages: [], links: [] } })
+
+    await wrapper.get('.admin-custom-pages-section .admin-command').trigger('click')
+
+    expect(wrapper.get('[data-menu-position]').element.value).toBe('primary')
+    expect(wrapper.text()).toContain('固定为一级菜单')
+
+    await wrapper.get('[data-page-name]').setValue('项目')
+    await wrapper.get('[data-menu-position]').setValue('more')
+    await wrapper.get('[data-content-file]').setValue('projects.md')
+    await wrapper.findAll('.admin-page-dialog footer .admin-command').at(-1).trigger('click')
+
+    expect(wrapper.emitted('update:pages')[0][0]).toEqual([{
+      key: 'projects',
+      title: '项目',
+      component: 'context',
+      file: 'projects.md'
     }])
   })
 
@@ -162,7 +185,7 @@ describe('AdminMenuEditor', () => {
     await wrapper.findAll('.admin-page-dialog footer .admin-command').at(-1).trigger('click')
     expect(wrapper.get('.admin-page-dialog-error').text()).toContain('真实存在')
 
-    await wrapper.get('.admin-page-dialog-body select.admin-control').setValue('projects.md')
+    await wrapper.get('[data-content-file]').setValue('projects.md')
     await wrapper.get('input[placeholder="/about"]').setValue('/article/demo')
     await wrapper.findAll('.admin-page-dialog footer .admin-command').at(-1).trigger('click')
     expect(wrapper.get('.admin-page-dialog-error').text()).toContain('现有路由冲突')

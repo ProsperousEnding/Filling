@@ -246,7 +246,7 @@ export function createAdminMenuPage(rows = []) {
 
   return createCustomRow({
     component: 'context',
-    menu_group: 'more',
+    menu_group: 'primary',
     menu_order: Math.max(defaultMenuOrder, highestOrder + 1)
   }, customRows.length)
 }
@@ -259,7 +259,7 @@ export function createAdminMenuLink(rows = []) {
   ), defaultMenuOrder - 1)
 
   return createLinkRow({
-    menu_group: 'more',
+    menu_group: 'primary',
     menu_order: Math.max(defaultMenuOrder, highestOrder + 1)
   }, linkRows.length)
 }
