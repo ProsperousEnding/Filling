@@ -74,10 +74,10 @@ component = "friends"
 description = "一些会定期访问，也愿意推荐给别人的站点。"
 
 [[menus.pages]]
-key = "this"
-title = "this"
+key = "about-2"
+title = "关于"
 component = "context"
-content = "this"
+file = "about.md"
 menu_group = "primary"
 
 [footer]
