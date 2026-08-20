@@ -73,13 +73,6 @@ title = "友链"
 component = "friends"
 description = "一些会定期访问，也愿意推荐给别人的站点。"
 
-[[menus.pages]]
-key = "about-2"
-title = "关于"
-component = "context"
-file = "about.md"
-menu_group = "primary"
-
 [footer]
 text = "版权所有 © Filling"
 note = "基于 Vue3 + Pinia + Tailwind CSS 构建"
