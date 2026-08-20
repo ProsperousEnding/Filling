@@ -71,7 +71,7 @@ const normalizedItems = computed(() => (
 }
 
 .sidebar-nav-item {
-  color: rgb(71 85 105);
+  color: var(--theme-text-soft);
   cursor: pointer;
   transition: color 0.18s ease, background-color 0.18s ease;
 }
@@ -84,7 +84,7 @@ const normalizedItems = computed(() => (
 }
 
 .sidebar-nav-item:hover {
-  color: rgb(37 99 235);
+  color: var(--theme-link);
 }
 
 .sidebar-nav-meta {
@@ -105,7 +105,7 @@ const normalizedItems = computed(() => (
   flex-wrap: wrap;
   gap: 0.18rem;
   margin-top: 0.18rem;
-  color: rgb(100 116 139);
+  color: var(--theme-text-soft);
   font-size: 0.74rem;
 }
 
@@ -127,16 +127,4 @@ const normalizedItems = computed(() => (
   font-size: 0.75rem;
 }
 
-:global(.dark) .sidebar-nav-item {
-  color: rgb(209 213 219);
-}
-
-:global(.dark) .sidebar-nav-item:hover {
-  color: rgb(191 219 254);
-}
-
-:global(.dark) .sidebar-nav-submeta,
-:global(.dark) .sidebar-nav-date {
-  color: rgb(156 163 175);
-}
 </style>

@@ -1,0 +1,13 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "filling-config-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-20",
+  "keep_vars": true,
+  "routes": [
+    {
+      "pattern": "filling-config-api.initzo.com",
+      "custom_domain": true
+    }
+  ]
+}

@@ -5,7 +5,7 @@ const contentIndex = {
     {
       "id": "config-comments-and-analytics",
       "slug": "config-comments-and-analytics",
-      "title": "评论、统计与增强配置指南",
+      "title": "评论、统计与内容增强",
       "date": "2026-05-13T00:00:00.000Z",
       "author": null,
       "category": {
@@ -29,12 +29,12 @@ const contentIndex = {
       "cover": "https://t.mwm.moe/pc?seed=132477470",
       "coverSource": "",
       "coverDisplayMode": "page-background",
-      "description": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
-      "summary": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
-      "excerpt": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
-      "readTime": 3,
+      "description": "配置评论和访问统计，并按需开启 Mermaid、KaTeX 与代码块增强。",
+      "summary": "配置评论和访问统计，并按需开启 Mermaid、KaTeX 与代码块增强。",
+      "excerpt": "配置评论和访问统计，并按需开启 Mermaid、KaTeX 与代码块增强。",
+      "readTime": 2,
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": null,
+      "updatedAt": "2026-08-20T00:00:00.000Z",
       "license": {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
@@ -42,7 +42,7 @@ const contentIndex = {
       "licenseDisabled": false,
       "outdatedThresholdDays": null,
       "showOutdatedNotice": null,
-      "sticky": true,
+      "sticky": false,
       "featured": false,
       "homeHidden": false,
       "weight": 100,
@@ -51,7 +51,7 @@ const contentIndex = {
     {
       "id": "config-content-and-pages",
       "slug": "config-content-and-pages",
-      "title": "内容页面与写作指南",
+      "title": "内容页面与写作",
       "date": "2026-05-13T00:00:00.000Z",
       "author": null,
       "category": {
@@ -75,12 +75,12 @@ const contentIndex = {
       "cover": "https://t.mwm.moe/pc?seed=1411303983",
       "coverSource": "",
       "coverDisplayMode": "page-background",
-      "description": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
-      "summary": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
-      "excerpt": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
-      "readTime": 3,
+      "description": "从文章 frontmatter 到自定义页面，快速了解 Filling 的内容组织方式。",
+      "summary": "从文章 frontmatter 到自定义页面，快速了解 Filling 的内容组织方式。",
+      "excerpt": "从文章 frontmatter 到自定义页面，快速了解 Filling 的内容组织方式。",
+      "readTime": 2,
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": null,
+      "updatedAt": "2026-08-20T00:00:00.000Z",
       "license": {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
@@ -88,8 +88,8 @@ const contentIndex = {
       "licenseDisabled": false,
       "outdatedThresholdDays": null,
       "showOutdatedNotice": null,
-      "sticky": true,
-      "featured": false,
+      "sticky": false,
+      "featured": true,
       "homeHidden": false,
       "weight": 200,
       "sourcePath": "/blog/content/articles/config-content-and-pages.md"
@@ -97,7 +97,7 @@ const contentIndex = {
     {
       "id": "config-site-and-theme",
       "slug": "config-site-and-theme",
-      "title": "站点基础与外观配置指南",
+      "title": "站点基础与外观配置",
       "date": "2026-05-13T00:00:00.000Z",
       "author": null,
       "category": {
@@ -121,12 +121,12 @@ const contentIndex = {
       "cover": "https://t.mwm.moe/pc?seed=426469064",
       "coverSource": "",
       "coverDisplayMode": "page-background",
-      "description": "说明 blog/config 根目录下的基础配置文件和常用字段。",
-      "summary": "说明 blog/config 根目录下的基础配置文件和常用字段。",
-      "excerpt": "说明 blog/config 根目录下的基础配置文件和常用字段。",
-      "readTime": 5,
+      "description": "用最少的 TOML 完成站点信息、个人资料、主题和文章封面配置。",
+      "summary": "用最少的 TOML 完成站点信息、个人资料、主题和文章封面配置。",
+      "excerpt": "用最少的 TOML 完成站点信息、个人资料、主题和文章封面配置。",
+      "readTime": 3,
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": null,
+      "updatedAt": "2026-08-20T00:00:00.000Z",
       "license": {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
@@ -146,11 +146,11 @@ const contentIndex = {
       "id": "article:config-content-and-pages",
       "kind": "article",
       "iconKind": "article",
-      "title": "内容页面与写作指南",
-      "description": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
-      "excerpt": "说明文章 frontmatter、内容目录、页面组件和友情链接配置。",
+      "title": "内容页面与写作",
+      "description": "从文章 frontmatter 到自定义页面，快速了解 Filling 的内容组织方式。",
+      "excerpt": "从文章 frontmatter 到自定义页面，快速了解 Filling 的内容组织方式。",
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": null,
+      "updatedAt": "2026-08-20T00:00:00.000Z",
       "category": {
         "id": "配置",
         "name": "配置"
@@ -184,11 +184,11 @@ const contentIndex = {
       "id": "article:config-comments-and-analytics",
       "kind": "article",
       "iconKind": "article",
-      "title": "评论、统计与增强配置指南",
-      "description": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
-      "excerpt": "说明 comment.toml 以及 optional 目录下的统计、Markdown 和代码块增强配置。",
+      "title": "评论、统计与内容增强",
+      "description": "配置评论和访问统计，并按需开启 Mermaid、KaTeX 与代码块增强。",
+      "excerpt": "配置评论和访问统计，并按需开启 Mermaid、KaTeX 与代码块增强。",
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": null,
+      "updatedAt": "2026-08-20T00:00:00.000Z",
       "category": {
         "id": "配置",
         "name": "配置"
@@ -222,11 +222,11 @@ const contentIndex = {
       "id": "article:config-site-and-theme",
       "kind": "article",
       "iconKind": "article",
-      "title": "站点基础与外观配置指南",
-      "description": "说明 blog/config 根目录下的基础配置文件和常用字段。",
-      "excerpt": "说明 blog/config 根目录下的基础配置文件和常用字段。",
+      "title": "站点基础与外观配置",
+      "description": "用最少的 TOML 完成站点信息、个人资料、主题和文章封面配置。",
+      "excerpt": "用最少的 TOML 完成站点信息、个人资料、主题和文章封面配置。",
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": null,
+      "updatedAt": "2026-08-20T00:00:00.000Z",
       "category": {
         "id": "配置",
         "name": "配置"

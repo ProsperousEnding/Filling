@@ -5,9 +5,11 @@
 <script setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useConfigStore } from '../../stores/config'
+import { useBlogBaseUrl } from '../../runtime/runtimeContext'
 import { buildFontConfigCss, resolveFontPreloadLinks } from '../../utils/fontConfig'
 
 const configStore = useConfigStore()
+const baseUrl = useBlogBaseUrl()
 const fontConfig = computed(() => configStore.fontConfig)
 
 let styleElement = null
@@ -47,7 +49,7 @@ function ensureFontAssets() {
     return
   }
 
-  const cssText = buildFontConfigCss(fontConfig.value, import.meta.env.BASE_URL || '/')
+  const cssText = buildFontConfigCss(fontConfig.value, baseUrl)
 
   if (!cssText) {
     clearStyleElement()
@@ -62,7 +64,7 @@ function ensureFontAssets() {
 
   clearPreloadElements()
 
-  preloadElements = resolveFontPreloadLinks(fontConfig.value, import.meta.env.BASE_URL || '/').map((descriptor, index) => {
+  preloadElements = resolveFontPreloadLinks(fontConfig.value, baseUrl).map((descriptor, index) => {
     const element = document.createElement('link')
     element.rel = 'preload'
     element.as = 'font'

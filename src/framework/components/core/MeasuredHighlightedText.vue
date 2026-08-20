@@ -1,4 +1,5 @@
 <template>
+  <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component -->
   <component :is="tag" ref="elementRef" v-bind="attrs" v-html="displayHtml"></component>
 </template>
 

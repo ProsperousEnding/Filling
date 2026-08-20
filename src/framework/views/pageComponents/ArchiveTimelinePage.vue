@@ -361,11 +361,11 @@ const groupedDays = computed(() => {
   transform: translateX(2px);
 }
 
-:global(.dark) .archive-timeline {
+:global(.dark .archive-timeline) {
   color: rgb(226 232 240);
 }
 
-:global(.dark) .archive-timeline::before {
+:global(.dark .archive-timeline::before) {
   background: linear-gradient(
     180deg,
     transparent,
@@ -375,28 +375,28 @@ const groupedDays = computed(() => {
   );
 }
 
-:global(.dark) .archive-day:nth-child(odd) .archive-day-panel::after,
-:global(.dark) .archive-day:nth-child(even) .archive-day-panel::after {
+:global(.dark .archive-day:nth-child(odd) .archive-day-panel::after),
+:global(.dark .archive-day:nth-child(even) .archive-day-panel::after) {
   background: linear-gradient(90deg, rgba(71, 85, 105, 0.08), rgba(71, 85, 105, 0.7));
 }
 
-:global(.dark) .archive-day:nth-child(even) .archive-day-panel::after {
+:global(.dark .archive-day:nth-child(even) .archive-day-panel::after) {
   background: linear-gradient(90deg, rgba(71, 85, 105, 0.7), rgba(71, 85, 105, 0.08));
 }
 
-:global(.dark) .archive-day-date,
-:global(.dark) .archive-article-category,
-:global(.dark) .archive-article-read-time {
+:global(.dark .archive-day-date),
+:global(.dark .archive-article-category),
+:global(.dark .archive-article-read-time) {
   border-color: rgba(51, 65, 85, 0.75);
   background: rgba(30, 41, 59, 0.88);
   color: rgb(203 213 225);
 }
 
-:global(.dark) .archive-day-dot {
+:global(.dark .archive-day-dot) {
   border-color: rgba(30, 41, 59, 0.96);
 }
 
-:global(.dark) .archive-day-panel {
+:global(.dark .archive-day-panel) {
   border-color: rgba(51, 65, 85, 0.72);
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.62)),
@@ -404,25 +404,25 @@ const groupedDays = computed(() => {
   box-shadow: 0 22px 54px rgba(0, 0, 0, 0.22);
 }
 
-:global(.dark) .archive-day-panel::before {
+:global(.dark .archive-day-panel::before) {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-:global(.dark) .archive-article-description,
-:global(.dark) .archive-article-meta,
-:global(.dark) .archive-article-arrow {
+:global(.dark .archive-article-description),
+:global(.dark .archive-article-meta),
+:global(.dark .archive-article-arrow) {
   color: rgb(148 163 184);
 }
 
-:global(.dark) .archive-article-row + .archive-article-row {
+:global(.dark .archive-article-row + .archive-article-row) {
   border-top-color: rgba(51, 65, 85, 0.62);
 }
 
-:global(.dark) .archive-article-row:hover {
+:global(.dark .archive-article-row:hover) {
   background: rgba(30, 41, 59, 0.72);
 }
 
-:global(.dark) .archive-article-title {
+:global(.dark .archive-article-title) {
   color: rgb(248 250 252);
 }
 

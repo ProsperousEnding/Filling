@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import Markdown from 'unplugin-vue-markdown/vite'
 import { resolve } from 'path'
 import { contentIndexPlugin } from './scripts/vite-plugin-content-index.mjs'
 
@@ -18,14 +17,7 @@ export default defineConfig({
   base: resolveBase(),
   plugins: [
     contentIndexPlugin(),
-    vue(),
-    Markdown({
-      markdownItOptions: {
-        html: true,
-        linkify: true,
-        typographer: true
-      }
-    })
+    vue()
   ],
   server: {
     host: '0.0.0.0'

@@ -2,7 +2,7 @@ function normalizeString(value) {
   return String(value || '').trim()
 }
 
-export function resolveSiteAssetUrl(value, baseUrl = import.meta.env.BASE_URL || '/') {
+export function resolveSiteAssetUrl(value, baseUrl = '/') {
   const normalizedValue = normalizeString(value)
 
   if (!normalizedValue) {

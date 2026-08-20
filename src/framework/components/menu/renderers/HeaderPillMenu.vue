@@ -1,10 +1,14 @@
 <template>
-  <nav class="site-header-nav hidden md:flex items-center">
+  <nav ref="navElement" class="site-header-nav hidden min-w-0 items-center lg:flex" @keydown.esc="handleEscape">
     <div class="site-header-nav-shell rounded-full px-1 py-1 flex items-center">
       <div
-        v-for="item in normalizedItems"
+        v-for="(item, index) in normalizedItems"
         :key="item.key"
         class="site-header-nav-item relative"
+        :class="{ 'site-header-nav-item-open': openItemKey === item.key }"
+        @pointerenter="handleItemPointerEnter($event, item)"
+        @pointerleave="handleItemPointerLeave"
+        @focusout="handleItemFocusOut($event, item)"
       >
         <component
           :is="getItemComponent(item)"
@@ -15,17 +19,25 @@
           :target="item.external ? '_blank' : undefined"
           :rel="item.external ? 'noreferrer' : undefined"
           :type="hasTarget(item) ? undefined : 'button'"
-          :aria-haspopup="item.children.length ? 'menu' : undefined"
+          :aria-expanded="item.children.length ? openItemKey === item.key : undefined"
+          :aria-controls="item.children.length ? getDropdownId(item, index) : undefined"
+          :title="item.label"
+          tabindex="0"
+          @focus="handleTriggerFocus($event, item)"
+          @click="handleTriggerClick($event, item)"
+          @keydown="handleTriggerKeydown($event, item)"
         >
           <span v-if="item.icon" class="site-header-nav-icon">{{ item.icon }}</span>
-          <span>{{ item.label }}</span>
+          <span class="site-header-nav-label">{{ item.label }}</span>
           <span v-if="item.children.length" class="site-header-nav-caret" aria-hidden="true">v</span>
         </component>
 
         <div
           v-if="item.children.length"
+          :id="getDropdownId(item, index)"
           class="site-header-nav-dropdown"
-          role="menu"
+          :aria-label="item.label"
+          :aria-hidden="openItemKey !== item.key"
         >
           <component
             :is="getItemComponent(child)"
@@ -38,7 +50,8 @@
             :target="child.external ? '_blank' : undefined"
             :rel="child.external ? 'noreferrer' : undefined"
             :type="hasTarget(child) ? undefined : 'button'"
-            role="menuitem"
+            tabindex="0"
+            @click="closeMenu"
           >
             <span v-if="child.icon" class="site-header-nav-dropdown-icon">{{ child.icon }}</span>
             <span class="site-header-nav-dropdown-text">
@@ -55,8 +68,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+
+import {
+  getMenuItemComponent,
+  getMenuItemHref,
+  getMenuItemTo,
+  hasMenuItemTarget,
+  isMenuItemActive,
+  normalizeMenuItems
+} from '../../../utils/menuItemPresentation.js'
 
 const props = defineProps({
   items: {
@@ -69,73 +90,140 @@ const props = defineProps({
   }
 })
 
-const normalizedItems = computed(() => (
-  (Array.isArray(props.items) ? props.items : [])
-    .map(normalizeItem)
-    .filter(item => item.label)
-))
+const navElement = ref(null)
+const openItemKey = ref('')
 
-function normalizeItem(item, index = 0) {
-  const children = (Array.isArray(item?.children) ? item.children : [])
-    .map(normalizeItem)
-    .filter(child => child.label)
+const normalizedItems = computed(() => normalizeMenuItems(props.items))
 
-  return {
-    key: item?.key || item?.path || item?.name || `menu-item-${index}`,
-    label: item?.name || item?.label || '',
-    to: item?.to || item?.path || '',
-    href: item?.href || '',
-    external: item?.external === true,
-    matchPath: item?.matchPath || item?.path || item?.to || '',
-    icon: item?.icon || '',
-    description: item?.description || '',
-    meta: item?.meta || '',
-    children
-  }
-}
-
-function hasTarget(item) {
-  return Boolean(item?.to || item?.href)
-}
+const hasTarget = hasMenuItemTarget
+const getItemTo = getMenuItemTo
+const getItemHref = getMenuItemHref
 
 function getItemComponent(item) {
-  if (!hasTarget(item)) {
-    return 'button'
-  }
-
-  return item.external ? 'a' : RouterLink
-}
-
-function getItemTo(item) {
-  return item.external || !item.to ? undefined : item.to
-}
-
-function getItemHref(item) {
-  return item.external ? item.href : undefined
+  return getMenuItemComponent(item)
 }
 
 function isActive(item) {
-  const currentPath = String(props.activePath || '')
-  const targetPath = String(item.matchPath || item.to || '')
-
-  if (Array.isArray(item.children) && item.children.some(child => isActive(child))) {
-    return true
-  }
-
-  if (!currentPath || !targetPath) {
-    return false
-  }
-
-  if (targetPath === '/') {
-    return currentPath === '/'
-  }
-
-  return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`)
+  return isMenuItemActive(item, props.activePath)
 }
+
+function getDropdownId(item, index) {
+  return `site-header-menu-${String(item.key || index).replace(/[^a-z0-9_-]/gi, '-')}`
+}
+
+function openMenu(item) {
+  if (item.children.length > 0) {
+    openItemKey.value = item.key
+  }
+}
+
+function closeMenu() {
+  openItemKey.value = ''
+}
+
+function handleTriggerClick(event, item) {
+  if (item.children.length > 0 && !hasTarget(item)) {
+    event.preventDefault()
+
+    if (event.detail === 0 && openItemKey.value === item.key) {
+      focusFirstChild(event, item)
+      return
+    }
+
+    openItemKey.value = openItemKey.value === item.key ? '' : item.key
+    return
+  }
+
+  closeMenu()
+}
+
+function handleTriggerFocus(event, item) {
+  if (event.currentTarget.matches(':focus-visible')) {
+    openMenu(item)
+  }
+}
+
+function handleTriggerKeydown(event, item) {
+  if (event.key !== 'ArrowDown') {
+    return
+  }
+
+  event.preventDefault()
+  focusFirstChild(event, item)
+}
+
+function focusFirstChild(event, item) {
+  if (item.children.length === 0) {
+    return
+  }
+
+  const trigger = event.currentTarget
+  openMenu(item)
+  nextTick(() => {
+    trigger
+      ?.closest('.site-header-nav-item')
+      ?.querySelector('.site-header-nav-dropdown-link')
+      ?.focus()
+  })
+}
+
+function handleEscape(event) {
+  if (!openItemKey.value) {
+    return
+  }
+
+  const trigger = event.target
+    ?.closest('.site-header-nav-item')
+    ?.querySelector('.site-header-nav-link')
+
+  trigger?.focus()
+  closeMenu()
+}
+
+function handleItemPointerEnter(event, item) {
+  if (event.pointerType !== 'touch') {
+    openMenu(item)
+  }
+}
+
+function handleItemPointerLeave(event) {
+  if (event.pointerType === 'touch') {
+    return
+  }
+
+  if (!event.currentTarget.contains(document.activeElement)) {
+    closeMenu()
+  }
+}
+
+function handleItemFocusOut(event, item) {
+  if (
+    openItemKey.value === item.key
+    && !event.currentTarget.contains(event.relatedTarget)
+  ) {
+    closeMenu()
+  }
+}
+
+function handleDocumentPointerDown(event) {
+  if (!navElement.value?.contains(event.target)) {
+    closeMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('pointerdown', handleDocumentPointerDown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+})
 </script>
 
 <style scoped>
 .site-header-nav-shell {
+  min-width: 0;
+  max-width: 100%;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(226, 232, 240, 0.85);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
@@ -152,6 +240,13 @@ function isActive(item) {
   border: 0;
   background: transparent;
   font: inherit;
+}
+
+.site-header-nav-label {
+  display: block;
+  max-width: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .site-header-nav-link:hover {
@@ -183,6 +278,9 @@ function isActive(item) {
   z-index: 40;
   min-width: 14rem;
   max-width: min(18rem, calc(100vw - 2rem));
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.35rem;
   border-radius: 0.875rem;
   border: 1px solid rgba(226, 232, 240, 0.9);
@@ -190,15 +288,27 @@ function isActive(item) {
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
   transform: translate(-50%, 0.35rem);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
 }
 
-.site-header-nav-item:hover .site-header-nav-dropdown,
-.site-header-nav-item:focus-within .site-header-nav-dropdown {
+.site-header-nav-item-open .site-header-nav-dropdown {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translate(-50%, 0);
+  transition-delay: 0s;
+}
+
+.site-header-nav-item:last-child .site-header-nav-dropdown {
+  right: 0;
+  left: auto;
+  transform: translate(0, 0.35rem);
+}
+
+.site-header-nav-item:last-child.site-header-nav-item-open .site-header-nav-dropdown {
+  transform: translate(0, 0);
 }
 
 .site-header-nav-dropdown-link {
@@ -244,44 +354,54 @@ function isActive(item) {
   white-space: normal;
 }
 
-:global(.dark) .site-header-nav-shell {
+@media (max-width: 1199px) {
+  .site-header-nav-link {
+    padding-inline: 0.65rem;
+  }
+
+  .site-header-nav-label {
+    max-width: 4.5rem;
+  }
+}
+
+:global(.dark .site-header-nav-shell) {
   background: rgba(15, 23, 42, 0.68);
   border-color: rgba(71, 85, 105, 0.85);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-:global(.dark) .site-header-nav-link {
+:global(.dark .site-header-nav-link) {
   color: rgb(203 213 225);
 }
 
-:global(.dark) .site-header-nav-link:hover {
+:global(.dark .site-header-nav-link:hover) {
   color: rgb(191 219 254);
   background: rgba(30, 41, 59, 0.92);
 }
 
-:global(.dark) .site-header-nav-link-active {
+:global(.dark .site-header-nav-link-active) {
   color: rgb(255 255 255);
   background: rgba(59, 130, 246, 0.22);
   box-shadow: none;
 }
 
-:global(.dark) .site-header-nav-dropdown {
+:global(.dark .site-header-nav-dropdown) {
   background: rgba(15, 23, 42, 0.96);
   border-color: rgba(71, 85, 105, 0.9);
   box-shadow: 0 18px 45px rgba(2, 6, 23, 0.42);
 }
 
-:global(.dark) .site-header-nav-dropdown-link {
+:global(.dark .site-header-nav-dropdown-link) {
   color: rgb(203 213 225);
 }
 
-:global(.dark) .site-header-nav-dropdown-link:hover,
-:global(.dark) .site-header-nav-dropdown-link-active {
+:global(.dark .site-header-nav-dropdown-link:hover),
+:global(.dark .site-header-nav-dropdown-link-active) {
   color: rgb(191 219 254);
   background: rgba(30, 41, 59, 0.92);
 }
 
-:global(.dark) .site-header-nav-dropdown-description {
+:global(.dark .site-header-nav-dropdown-description) {
   color: rgb(148 163 184);
 }
 </style>

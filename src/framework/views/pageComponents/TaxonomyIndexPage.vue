@@ -278,64 +278,64 @@ const normalizedItems = computed(() => (
   }
 }
 
-:global(.dark) .taxonomy-panel {
+:global(.dark .taxonomy-panel) {
   border-color: rgba(51, 65, 85, 0.82);
   background: rgba(15, 23, 42, 0.72);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
 }
 
-:global(.dark) .taxonomy-tag-cloud {
+:global(.dark .taxonomy-tag-cloud) {
   border-color: rgba(51, 65, 85, 0.82);
   background: rgba(15, 23, 42, 0.72);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
 }
 
-:global(.dark) .taxonomy-tag-pill {
+:global(.dark .taxonomy-tag-pill) {
   border-color: rgba(51, 65, 85, 0.9);
   background: rgba(30, 41, 59, 0.82);
   color: rgb(191 219 254);
 }
 
-:global(.dark) .taxonomy-tag-pill:hover {
+:global(.dark .taxonomy-tag-pill:hover) {
   border-color: rgba(96, 165, 250, 0.62);
   background: rgba(30, 64, 175, 0.24);
   color: rgb(219 234 254);
 }
 
-:global(.dark) .taxonomy-tag-count {
+:global(.dark .taxonomy-tag-count) {
   background: rgba(15, 23, 42, 0.8);
   color: rgb(203 213 225);
 }
 
-:global(.dark) .taxonomy-row + .taxonomy-row {
+:global(.dark .taxonomy-row + .taxonomy-row) {
   border-top-color: rgba(51, 65, 85, 0.72);
 }
 
-:global(.dark) .taxonomy-row:hover {
+:global(.dark .taxonomy-row:hover) {
   background: rgba(30, 41, 59, 0.72);
 }
 
-:global(.dark) .taxonomy-row-icon {
+:global(.dark .taxonomy-row-icon) {
   background: rgba(30, 41, 59, 0.76);
   border-color: rgba(71, 85, 105, 0.76);
   color: rgb(203 213 225);
 }
 
-:global(.dark) .taxonomy-row-description,
-:global(.dark) .taxonomy-row-meta,
-:global(.dark) .taxonomy-row-arrow {
+:global(.dark .taxonomy-row-description),
+:global(.dark .taxonomy-row-meta),
+:global(.dark .taxonomy-row-arrow) {
   color: rgb(148 163 184);
 }
 
-:global(.dark) .taxonomy-row-title {
+:global(.dark .taxonomy-row-title) {
   color: rgb(248 250 252);
 }
 
-:global(.dark) .taxonomy-index-tags .taxonomy-row-title {
+:global(.dark .taxonomy-index-tags .taxonomy-row-title) {
   color: rgb(191 219 254);
 }
 
-:global(.dark) .taxonomy-row-count {
+:global(.dark .taxonomy-row-count) {
   background: rgba(30, 41, 59, 0.95);
   color: rgb(203 213 225);
 }

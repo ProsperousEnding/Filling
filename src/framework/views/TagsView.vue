@@ -50,11 +50,11 @@ usePageMetadata({
   description: () => pageDescription.value
 })
 
-fetchTags()
+fetchTags().catch(() => {})
 
-function fetchTags() {
+async function fetchTags() {
   try {
-    const result = tagStore.fetchTags()
+    const result = await tagStore.fetchTags()
     tags.value = result || []
   } catch (error) {
     console.error('获取标签列表失败:', error)

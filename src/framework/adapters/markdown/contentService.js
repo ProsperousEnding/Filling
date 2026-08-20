@@ -1,6 +1,7 @@
 import contentIndexData from '../../generated/contentIndex.generated.js'
 import { resolveArticleCover } from '../../utils/articleCover.js'
 import { resolveSiteAssetUrl } from '../../utils/siteAsset.js'
+import { selectHomeArticles } from '../../utils/homeArticleSelection.js'
 import { useConfigStore } from '../../stores/config'
 
 const articleFileLoaders = import.meta.glob([
@@ -38,10 +39,6 @@ function toSlugId(input) {
     .replace(/^-|-$/g, '')
 }
 
-function toLookupId(input) {
-  return toSlugId(normalizeArticleLookupId(input))
-}
-
 function normalizeTextValue(input) {
   return String(input || '')
     .replace(/\r\n/g, '\n')
@@ -77,15 +74,7 @@ const articleIndex = new Map()
 const articleAliasIndex = new Map()
 const articleDetailCache = new Map()
 
-function serializeCodeBlockCacheKey(config = {}) {
-  return JSON.stringify(config || {})
-}
-
-function serializeMarkdownCacheKey(config = {}) {
-  return JSON.stringify(config || {})
-}
-
-function serializeCoverCacheKey(config = {}) {
+function serializeConfigCacheKey(config = {}) {
   return JSON.stringify(config || {})
 }
 
@@ -100,153 +89,42 @@ function serializeRawContentCacheKey(rawContent = '') {
   return `${value.length}:${hash}`
 }
 
-function getCoverConfig() {
-  return useConfigStore().coverConfig
+function getRuntimeConfig(context) {
+  return typeof context?.getConfig === 'function'
+    ? (context.getConfig() || {})
+    : useConfigStore()
 }
 
-function resolveRuntimeCover(sourceValue, seedInput) {
+function getRuntimeBaseUrl(context) {
+  return String(context?.baseUrl || '/').trim() || '/'
+}
+
+function resolveRuntimeCover(sourceValue, seedInput, context) {
   const cover = resolveArticleCover(sourceValue, seedInput, {
-    coverConfig: getCoverConfig()
+    coverConfig: getRuntimeConfig(context).coverConfig
   })
 
-  return resolveSiteAssetUrl(cover)
+  return resolveSiteAssetUrl(cover, getRuntimeBaseUrl(context))
 }
 
-function hydrateArticleCover(article = {}) {
+function hydrateArticleCover(article = {}, context) {
   return {
     ...article,
     cover: resolveRuntimeCover(
       article?.coverSource || article?.cover,
-      article?.slug || article?.id || article?.title
+      article?.slug || article?.id || article?.title,
+      context
     )
   }
 }
 
-function getArticleIdentityValues(article = {}) {
-  return [
-    article.id,
-    article.slug,
-    article.title,
-    article.sourcePath
-  ]
-    .map(toLookupId)
-    .filter(Boolean)
-}
-
-function articleMatchesAnyIdentity(article, lookupSet) {
-  if (!(lookupSet instanceof Set) || lookupSet.size === 0) {
-    return false
-  }
-
-  return getArticleIdentityValues(article).some(value => lookupSet.has(value))
-}
-
-function createLookupSet(values = []) {
-  return new Set((Array.isArray(values) ? values : [])
-    .map(toLookupId)
-    .filter(Boolean))
-}
-
-function createNameSet(values = []) {
-  return new Set((Array.isArray(values) ? values : [])
-    .map(toSlugId)
-    .filter(Boolean))
-}
-
-function articleMatchesCategory(article, categorySet) {
-  if (!(categorySet instanceof Set) || categorySet.size === 0) {
-    return true
-  }
-
-  return categorySet.has(toSlugId(article?.category?.id || article?.category?.name || article?.category))
-}
-
-function articleMatchesTags(article, tagSet) {
-  if (!(tagSet instanceof Set) || tagSet.size === 0) {
-    return true
-  }
-
-  return Array.isArray(article?.tags) && article.tags.some(tag => (
-    tagSet.has(toSlugId(tag?.id || tag?.name || tag))
-  ))
-}
-
-function sortHomeArticles(left, right, stickyFirst = true) {
-  if (stickyFirst && Boolean(left?.sticky) !== Boolean(right?.sticky)) {
-    return left?.sticky ? -1 : 1
-  }
-
-  const weightDiff = (Number(right?.weight) || 0) - (Number(left?.weight) || 0)
-
-  if (weightDiff !== 0) {
-    return weightDiff
-  }
-
-  return new Date(right?.date || 0) - new Date(left?.date || 0)
-}
-
-function resolveHomeArticleList(config = {}) {
-  const mode = String(config.mode || 'latest').trim().toLowerCase()
-  const includeIds = createLookupSet(config.includeIds)
-  const excludeIds = createLookupSet(config.excludeIds)
-  const categories = createNameSet(config.categories)
-  const tags = createNameSet(config.tags)
-  const excludeCategories = createNameSet(config.excludeCategories)
-  const excludeTags = createNameSet(config.excludeTags)
-  const includeSticky = config.includeSticky !== false
-  const stickyFirst = config.stickyFirst !== false
-  const fallbackToLatest = config.fallbackToLatest !== false
-
-  const baseArticles = allArticles.filter((article) => {
-    if (article.homeHidden || articleMatchesAnyIdentity(article, excludeIds)) {
-      return false
-    }
-
-    if (excludeCategories.size > 0 && articleMatchesCategory(article, excludeCategories)) {
-      return false
-    }
-
-    if (excludeTags.size > 0 && articleMatchesTags(article, excludeTags)) {
-      return false
-    }
-
-    const explicitlyIncluded = articleMatchesAnyIdentity(article, includeIds)
-
-    return explicitlyIncluded
-      || (articleMatchesCategory(article, categories) && articleMatchesTags(article, tags))
-  })
-
-  let selectedArticles = baseArticles
-
-  if (mode === 'featured') {
-    selectedArticles = baseArticles.filter(article => article.featured || articleMatchesAnyIdentity(article, includeIds))
-  } else if (mode === 'sticky') {
-    selectedArticles = baseArticles.filter(article => article.sticky || articleMatchesAnyIdentity(article, includeIds))
-  } else if (mode === 'mixed') {
-    selectedArticles = baseArticles.filter(article => (
-      article.featured
-      || article.sticky
-      || articleMatchesAnyIdentity(article, includeIds)
-    ))
-  }
-
-  if (selectedArticles.length === 0 && fallbackToLatest) {
-    selectedArticles = baseArticles
-  }
-
-  return selectedArticles
-    .filter(article => includeSticky || !article.sticky || articleMatchesAnyIdentity(article, includeIds))
-    .slice()
-    .sort((left, right) => sortHomeArticles(left, right, stickyFirst))
-    .map(hydrateArticleCover)
-}
-
-function hydrateEntryCover(entry = {}) {
+function hydrateEntryCover(entry = {}, context) {
   return {
     ...entry,
     cover: resolveRuntimeCover(
       entry?.coverSource || entry?.cover,
-      entry?.itemId || entry?.id || entry?.sourcePath || entry?.title
+      entry?.itemId || entry?.id || entry?.sourcePath || entry?.title,
+      context
     )
   }
 }
@@ -361,33 +239,27 @@ const archiveList = Array.from(archiveIndex.entries())
   .map(([year, entries]) => ({ year, count: entries.length, articles: entries }))
   .sort((a, b) => b.year - a.year)
 
-function getScopedArticles(categoryId, tagId) {
+function getScopedArticles(categoryId, tagId, context) {
   return allArticles
     .filter((article) => {
-    const categoryMatched = !categoryId || article.category?.id === categoryId
-    const tagMatched = !tagId || (Array.isArray(article.tags) && article.tags.some(tag => tag.id === tagId))
-    return categoryMatched && tagMatched
-  })
-    .map(hydrateArticleCover)
+      const categoryMatched = !categoryId || article.category?.id === categoryId
+      const tagMatched = !tagId || (Array.isArray(article.tags) && article.tags.some(tag => tag.id === tagId))
+      return categoryMatched && tagMatched
+    })
+    .map(article => hydrateArticleCover(article, context))
 }
 
-function aggregateCategories() {
-  return categoryList
-}
-
-function aggregateTags() {
-  return tagList
-}
-
-function getArchiveGroups() {
+function getArchiveGroups(context) {
   return archiveList.map(group => ({
     ...group,
-    articles: Array.isArray(group.articles) ? group.articles.map(hydrateEntryCover) : []
+    articles: Array.isArray(group.articles)
+      ? group.articles.map(article => hydrateEntryCover(article, context))
+      : []
   }))
 }
 
-function getArchiveArticlesByYear(year) {
-  return (archiveIndex.get(year) || []).map(hydrateEntryCover)
+function getArchiveArticlesByYear(year, context) {
+  return (archiveIndex.get(year) || []).map(article => hydrateEntryCover(article, context))
 }
 
 async function loadSearchIndex() {
@@ -401,8 +273,7 @@ async function loadSearchIndex() {
         return entries.map(entry => ({
           record: entry,
           titleHaystack: String(entry?.titleHaystack || ''),
-          metaHaystack: String(entry?.metaHaystack || ''),
-          contentHaystack: String(entry?.contentHaystack || '')
+          metaHaystack: String(entry?.metaHaystack || '')
         }))
       })
       .catch((error) => {
@@ -422,6 +293,7 @@ async function getSearchResults(query) {
 
   return searchIndex
     .map((entry) => {
+      const contentHaystack = String(entry.record?.plainText || '').toLowerCase()
       const score = terms.reduce((sum, term) => {
         let next = sum
 
@@ -431,7 +303,7 @@ async function getSearchResults(query) {
         if (entry.metaHaystack.includes(term)) {
           next += 3
         }
-        if (entry.contentHaystack.includes(term)) {
+        if (contentHaystack.includes(term)) {
           next += 1
         }
 
@@ -464,7 +336,7 @@ function paginate(list, page = 1, pageSize = 10) {
   }
 }
 
-async function hydrateArticleDetail(article) {
+async function hydrateArticleDetail(article, context) {
   if (!article?.sourcePath) {
     return null
   }
@@ -479,16 +351,16 @@ async function hydrateArticleDetail(article) {
     import('./articleSourceParser.js'),
     sourceLoader()
   ])
-  const configStore = useConfigStore()
+  const configStore = getRuntimeConfig(context)
   const codeBlockConfig = configStore.codeBlockConfig
   const markdownConfig = configStore.markdownConfig
   const coverConfig = configStore.coverConfig
   const cacheKey = [
     article.sourcePath,
     serializeRawContentCacheKey(rawContent),
-    serializeCodeBlockCacheKey(codeBlockConfig),
-    serializeMarkdownCacheKey(markdownConfig),
-    serializeCoverCacheKey(coverConfig)
+    serializeConfigCacheKey(codeBlockConfig),
+    serializeConfigCacheKey(markdownConfig),
+    serializeConfigCacheKey(coverConfig)
   ].join('::')
 
   if (articleDetailCache.has(cacheKey)) {
@@ -501,9 +373,9 @@ async function hydrateArticleDetail(article) {
     coverConfig
   })
   const detail = {
-    ...hydrateArticleCover(article),
+    ...hydrateArticleCover(article, context),
     ...parsedDetail,
-    cover: resolveSiteAssetUrl(parsedDetail.cover),
+    cover: resolveSiteAssetUrl(parsedDetail.cover, getRuntimeBaseUrl(context)),
     license: (!parsedDetail.license && !parsedDetail.licenseDisabled && article.license)
       ? article.license
       : parsedDetail.license
@@ -520,7 +392,7 @@ const contentService = {
     const categoryId = params.category ? toSlugId(String(params.category)) : null
     const tagId = params.tag ? toSlugId(String(params.tag)) : null
 
-    const filtered = [...getScopedArticles(categoryId, tagId)]
+    const filtered = getScopedArticles(categoryId, tagId, this)
 
     return paginate(filtered, page, pageSize)
   },
@@ -529,7 +401,8 @@ const contentService = {
     const config = params.config || {}
     const page = params.page ?? 1
     const pageSize = params.pageSize ?? config.pageSize ?? 8
-    const filtered = resolveHomeArticleList(config)
+    const filtered = selectHomeArticles(allArticles, config)
+      .map(article => hydrateArticleCover(article, this))
 
     if (config.paginate === false) {
       return {
@@ -550,11 +423,11 @@ const contentService = {
       return null
     }
 
-    return hydrateArticleDetail(article)
+    return hydrateArticleDetail(article, this)
   },
 
   getLatestArticles(limit = 5) {
-    return allArticles.slice(0, limit).map(hydrateArticleCover)
+    return allArticles.slice(0, limit).map(article => hydrateArticleCover(article, this))
   },
 
   getRelatedArticles(id, limit = 3) {
@@ -568,24 +441,24 @@ const contentService = {
       return sameCategory || sharedTag
     })
 
-    return related.slice(0, limit).map(hydrateArticleCover)
+    return related.slice(0, limit).map(article => hydrateArticleCover(article, this))
   },
 
   getArchiveArticles(year) {
     if (year) {
       const targetYear = parseInt(year, 10)
-      return getArchiveArticlesByYear(targetYear)
+      return getArchiveArticlesByYear(targetYear, this)
     }
 
-    return getArchiveGroups()
+    return getArchiveGroups(this)
   },
 
   getCategories() {
-    return aggregateCategories()
+    return categoryList
   },
 
   getTags() {
-    return aggregateTags()
+    return tagList
   },
 
   getCategoryDetail(id) {
@@ -595,7 +468,8 @@ const contentService = {
 
   getCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
     const categoryId = toSlugId(String(id))
-    const filtered = (categoryEntriesIndex.get(categoryId) || []).map(hydrateEntryCover)
+    const filtered = (categoryEntriesIndex.get(categoryId) || [])
+      .map(article => hydrateEntryCover(article, this))
     return paginate(filtered, params.page, params.pageSize)
   },
 
@@ -606,7 +480,8 @@ const contentService = {
 
   getTagArticles(id, params = { page: 1, pageSize: 10 }) {
     const tagId = toSlugId(String(id))
-    const filtered = (tagEntriesIndex.get(tagId) || []).map(hydrateEntryCover)
+    const filtered = (tagEntriesIndex.get(tagId) || [])
+      .map(article => hydrateEntryCover(article, this))
     return paginate(filtered, params.page, params.pageSize)
   },
 

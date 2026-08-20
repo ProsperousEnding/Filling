@@ -13,6 +13,7 @@
   --theme-chip-hover: rgba(226, 232, 240, 0.9);
   --theme-panel-background: rgba(255, 255, 255, 0.78);
   --theme-panel-strong: rgba(255, 255, 255, 0.94);
+  --theme-popover-background: #ffffff;
   --theme-panel-muted: rgba(248, 250, 252, 0.88);
   --theme-border: rgba(148, 163, 184, 0.18);
   --theme-border-strong: rgba(100, 116, 139, 0.24);
@@ -21,6 +22,8 @@
   --theme-shadow-md: 0 24px 54px rgba(15, 23, 42, 0.12);
   --theme-shadow-lg: 0 32px 68px rgba(15, 23, 42, 0.18);
   --theme-shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  --theme-control-highlight: rgba(255, 255, 255, 0.18);
+  --theme-control-focus-ring: 0 0 0 2px rgba(var(--color-primary), 0.14);
   --theme-sidebar-overlay: rgba(15, 23, 42, 0.36);
   --theme-accent-soft: rgba(37, 99, 235, 0.11);
   --theme-accent-softer: rgba(37, 99, 235, 0.08);
@@ -45,6 +48,11 @@
   --theme-tag-tone-warm-color: #b45309;
   --theme-tag-tone-strong-bg: rgba(239, 68, 68, 0.16);
   --theme-tag-tone-strong-color: #b91c1c;
+}
+
+:root.dark {
+  --theme-control-highlight: rgba(255, 255, 255, 0.05);
+  --theme-control-focus-ring: 0 0 0 2px rgba(var(--color-primary), 0.16);
 }
 
 body {
@@ -339,117 +347,6 @@ a {
 
 :root .site-footer-friend-link:hover {
   color: var(--theme-link-hover) !important;
-}
-
-:root .sidebar-container {
-  background: var(--theme-panel-background) !important;
-  border-color: var(--theme-border) !important;
-  box-shadow: var(--theme-shadow-sm) !important;
-}
-
-:root .theme-sidebar-drawer-shell,
-:root .theme-sidebar-drawer-shell .sidebar-container-mobile {
-  border: 0 !important;
-}
-
-:root .theme-sidebar-drawer-shell .sidebar-container-mobile {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-:root .sidebar-close-button,
-:root .sidebar-search-clear {
-  color: var(--theme-text-soft) !important;
-}
-
-:root .sidebar-close-button:hover,
-:root .sidebar-search-clear:hover {
-  background: var(--theme-chip-hover) !important;
-  color: var(--theme-heading-color) !important;
-}
-
-:root .sidebar-profile-avatar {
-  background: var(--theme-panel-strong) !important;
-  border-color: var(--theme-avatar-ring) !important;
-}
-
-:root .sidebar-profile-avatar-fallback {
-  color: var(--theme-link) !important;
-}
-
-:root .sidebar-profile-name,
-:root .sidebar-section-title,
-:root .sidebar-nav-title,
-:root .sidebar-empty-title {
-  color: var(--theme-heading-color) !important;
-}
-
-:root .sidebar-profile-handle,
-:root .sidebar-profile-tagline,
-:root .sidebar-profile-bio,
-:root .sidebar-nav-submeta,
-:root .sidebar-nav-date,
-:root .sidebar-tag-count,
-:root .sidebar-empty-copy,
-:root .sidebar-search-leading,
-:root .sidebar-search-input::placeholder,
-:root .sidebar-section-count {
-  color: var(--theme-text-soft) !important;
-}
-
-:root .sidebar-profile-meta-item,
-:root .sidebar-nav-item-tag,
-:root .sidebar-nav-badge,
-:root .sidebar-section-count {
-  background: var(--theme-panel-muted) !important;
-  border-color: var(--theme-border) !important;
-}
-
-:root a.sidebar-profile-meta-item:hover {
-  color: var(--theme-link) !important;
-  border-color: rgba(var(--color-primary), 0.26) !important;
-}
-
-:root .sidebar-search {
-  background: var(--theme-panel-strong) !important;
-  border-color: var(--theme-border-strong) !important;
-}
-
-:root .sidebar-search:focus-within {
-  border-color: rgba(var(--color-primary), 0.38) !important;
-  box-shadow: var(--theme-shadow-focus) !important;
-}
-
-:root .sidebar-search-input {
-  color: var(--theme-body-color) !important;
-}
-
-:root .sidebar-search-submit {
-  background: var(--theme-link) !important;
-  color: #fff !important;
-}
-
-:root .sidebar-search-submit:hover {
-  background: var(--theme-link-hover) !important;
-}
-
-:root .sidebar-empty-state,
-:root .sidebar-loading-state {
-  background: var(--theme-panel-muted) !important;
-}
-
-:root .sidebar-nav-list-latest > li + li {
-  margin-top: 0.42rem !important;
-}
-
-:root .sidebar-nav-item {
-  color: var(--theme-text-soft) !important;
-}
-
-:root .sidebar-nav-item:hover,
-:root .sidebar-nav-item-active {
-  color: var(--theme-link) !important;
-  background: transparent !important;
 }
 
 :root .search-bar {

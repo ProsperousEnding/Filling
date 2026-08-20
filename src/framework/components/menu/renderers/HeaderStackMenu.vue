@@ -10,10 +10,16 @@
         :to="getItemTo(item)"
         :href="getItemHref(item)"
         class="site-mobile-nav-link px-3 py-2 rounded-lg transition-all"
-        :class="{ 'site-mobile-nav-link-group': item.children.length && !hasTarget(item) }"
+        :class="{
+          'site-mobile-nav-link-group': item.children.length && !hasTarget(item),
+          'site-mobile-nav-link-active': isActive(item)
+        }"
         :target="item.external ? '_blank' : undefined"
         :rel="item.external ? 'noreferrer' : undefined"
-        :type="hasTarget(item) ? undefined : 'button'"
+        :type="!hasTarget(item) && item.children.length === 0 ? 'button' : undefined"
+        :role="!hasTarget(item) && item.children.length > 0 ? 'group' : undefined"
+        :aria-label="!hasTarget(item) && item.children.length > 0 ? item.label : undefined"
+        :tabindex="hasTarget(item) || item.children.length === 0 ? 0 : undefined"
         @click="handleSelect(item)"
       >
         <span v-if="item.icon" class="site-mobile-nav-icon">{{ item.icon }}</span>
@@ -28,9 +34,11 @@
           :to="getItemTo(child)"
           :href="getItemHref(child)"
           class="site-mobile-nav-child-link px-3 py-2 rounded-lg transition-all"
+          :class="{ 'site-mobile-nav-child-link-active': isActive(child) }"
           :target="child.external ? '_blank' : undefined"
           :rel="child.external ? 'noreferrer' : undefined"
-          :type="hasTarget(child) ? undefined : 'button'"
+          :type="!hasTarget(child) && child.children.length === 0 ? 'button' : undefined"
+          tabindex="0"
           @click="handleSelect(child)"
         >
           <span v-if="child.icon" class="site-mobile-nav-icon">{{ child.icon }}</span>
@@ -48,59 +56,41 @@
 
 <script setup>
 import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
+
+import {
+  getMenuItemComponent,
+  getMenuItemHref,
+  getMenuItemTo,
+  hasMenuItemTarget,
+  isMenuItemActive,
+  normalizeMenuItems
+} from '../../../utils/menuItemPresentation.js'
 
 const props = defineProps({
   items: {
     type: Array,
     default: () => []
+  },
+  activePath: {
+    type: String,
+    default: ''
   }
 })
 
 const emit = defineEmits(['select'])
 
-const normalizedItems = computed(() => (
-  (Array.isArray(props.items) ? props.items : [])
-    .map(normalizeItem)
-    .filter(item => item.label)
-))
+const normalizedItems = computed(() => normalizeMenuItems(props.items))
 
-function normalizeItem(item, index = 0) {
-  const children = (Array.isArray(item?.children) ? item.children : [])
-    .map(normalizeItem)
-    .filter(child => child.label)
-
-  return {
-    key: item?.key || item?.path || item?.name || `menu-item-${index}`,
-    label: item?.name || item?.label || '',
-    to: item?.to || item?.path || '',
-    href: item?.href || '',
-    external: item?.external === true,
-    icon: item?.icon || '',
-    description: item?.description || '',
-    meta: item?.meta || '',
-    children
-  }
-}
-
-function hasTarget(item) {
-  return Boolean(item?.to || item?.href)
-}
+const hasTarget = hasMenuItemTarget
+const getItemTo = getMenuItemTo
+const getItemHref = getMenuItemHref
 
 function getItemComponent(item) {
-  if (!hasTarget(item)) {
-    return 'button'
-  }
-
-  return item.external ? 'a' : RouterLink
+  return getMenuItemComponent(item, 'div')
 }
 
-function getItemTo(item) {
-  return item.external || !item.to ? undefined : item.to
-}
-
-function getItemHref(item) {
-  return item.external ? item.href : undefined
+function isActive(item) {
+  return isMenuItemActive(item, props.activePath)
 }
 
 function handleSelect(item) {
@@ -124,7 +114,8 @@ function handleSelect(item) {
   width: 100%;
 }
 
-.site-mobile-nav-link:hover {
+.site-mobile-nav-link:hover,
+.site-mobile-nav-link-active {
   color: rgb(37 99 235);
   background: rgba(239, 246, 255, 0.96);
 }
@@ -154,7 +145,8 @@ function handleSelect(item) {
   width: 100%;
 }
 
-.site-mobile-nav-child-link:hover {
+.site-mobile-nav-child-link:hover,
+.site-mobile-nav-child-link-active {
   color: rgb(37 99 235);
   background: rgba(239, 246, 255, 0.96);
 }
@@ -164,14 +156,18 @@ function handleSelect(item) {
 }
 
 .site-mobile-nav-label {
+  flex: 1 1 auto;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .site-mobile-nav-child-text {
+  flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
+  overflow-wrap: anywhere;
 }
 
 .site-mobile-nav-description {
@@ -180,29 +176,31 @@ function handleSelect(item) {
   line-height: 1.35;
 }
 
-:global(.dark) .site-mobile-nav-link {
+:global(.dark .site-mobile-nav-link) {
   color: rgb(203 213 225);
   background: rgba(15, 23, 42, 0.72);
   border-color: rgba(71, 85, 105, 0.85);
 }
 
-:global(.dark) .site-mobile-nav-link:hover {
+:global(.dark .site-mobile-nav-link:hover),
+:global(.dark .site-mobile-nav-link-active) {
   color: rgb(191 219 254);
   background: rgba(30, 41, 59, 0.96);
 }
 
-:global(.dark) .site-mobile-nav-child-link {
+:global(.dark .site-mobile-nav-child-link) {
   color: rgb(203 213 225);
   background: rgba(15, 23, 42, 0.5);
   border-color: rgba(71, 85, 105, 0.72);
 }
 
-:global(.dark) .site-mobile-nav-child-link:hover {
+:global(.dark .site-mobile-nav-child-link:hover),
+:global(.dark .site-mobile-nav-child-link-active) {
   color: rgb(191 219 254);
   background: rgba(30, 41, 59, 0.96);
 }
 
-:global(.dark) .site-mobile-nav-description {
+:global(.dark .site-mobile-nav-description) {
   color: rgb(148 163 184);
 }
 </style>

@@ -1,5 +1,4 @@
 export {
-  BLOG_NAV_ITEMS,
   BLOG_PATH_PATTERNS,
   BLOG_ROUTE_NAMES,
   configureBlogRoutePatterns,

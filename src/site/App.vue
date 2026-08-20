@@ -1,9 +1,15 @@
 <template>
-  <BlogContainer>
-    <router-view />
-  </BlogContainer>
-  <CustomStyle />
-  <CustomScript />
+  <router-view v-slot="{ Component, route }">
+    <component v-if="route.meta.standalone" :is="Component" />
+    <BlogContainer v-else>
+      <component :is="Component" />
+    </BlogContainer>
+
+    <template v-if="!route.meta.standalone">
+      <CustomStyle />
+      <CustomScript />
+    </template>
+  </router-view>
 </template>
 
 <script setup>

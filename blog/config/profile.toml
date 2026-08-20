@@ -4,13 +4,10 @@ display_name = "Filling"
 username = "prosperousEnding"
 tagline = "记录前端工程化、静态博客和内容系统。"
 avatar_url = "icons/points.png"
-bio = "专注于前端工程化、静态博客和内容系统。"
-location = "Hangzhou, China"
 website = "https://filling.initzo.com"
 
 [[social_links]]
 name = "GitHub"
 url = "https://github.com/ProsperousEnding/Filling"
-icon = "GH"
-show_name = true
-weight = 100
+icon = "github"
+show_name = false

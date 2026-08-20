@@ -1,5 +1,5 @@
 <template>
-  <header :class="headerClass">
+  <header :class="headerClass" @keydown.esc="handleHeaderEscape">
     <div class="blog-container site-header-bar py-3">
       <div class="flex items-center justify-between gap-4">
         <div v-if="showBrandGroup" class="site-brand-group flex min-w-0 items-center gap-3">
@@ -52,7 +52,7 @@
 
         <div
           v-if="showDesktopMenu"
-          class="site-header-menu-groups hidden items-center gap-2 md:flex"
+          class="site-header-menu-groups hidden min-w-0 items-center gap-2 lg:flex"
         >
           <MenuRenderer
             v-for="group in desktopHeaderMenuGroups"
@@ -62,7 +62,7 @@
           />
         </div>
 
-        <div v-if="showActions" class="site-header-actions flex items-center space-x-3">
+        <div v-if="showActions" class="site-header-actions flex shrink-0 items-center space-x-3">
           <router-link
             v-if="showSearchAction"
             :to="searchPath"
@@ -89,23 +89,79 @@
             </svg>
           </button>
 
-          <button
+          <div
             v-if="showCoverStyleToggle"
-            type="button"
-            class="site-header-action site-header-cover-action rounded-full px-2.5 py-2 text-xs font-semibold transition-all"
-            :aria-label="`切换封面图源，当前为${currentCoverStyleLabel}`"
-            :title="`切换封面图源，当前为${currentCoverStyleLabel}`"
-            @click="toggleCoverStyle"
+            ref="coverStylePicker"
+            class="site-header-cover-picker"
           >
-            <span class="site-header-cover-label-full">{{ currentCoverStyleLabel }}</span>
-            <span class="site-header-cover-label-compact">{{ compactCoverStyleLabel }}</span>
-          </button>
+            <button
+              ref="coverStyleTrigger"
+              type="button"
+              class="site-header-action site-header-cover-action rounded-full p-2 transition-all"
+              :class="{ 'site-header-cover-action-active': coverStyleMenuTarget === 'desktop' }"
+              :aria-label="`选择文章封面风格，当前为${currentCoverStyleLabel}`"
+              :title="`文章封面风格：${currentCoverStyleLabel}`"
+              aria-haspopup="listbox"
+              :aria-expanded="coverStyleMenuTarget === 'desktop'"
+              aria-controls="site-header-cover-style-menu"
+              @click="toggleCoverStyleMenu('desktop')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2.5" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 15-5-5L5 21" />
+              </svg>
+            </button>
+
+            <Transition name="cover-style-menu">
+              <div
+                v-if="coverStyleMenuTarget === 'desktop'"
+                id="site-header-cover-style-menu"
+                class="site-header-cover-menu"
+                role="listbox"
+                aria-label="文章封面风格"
+              >
+                <div class="site-header-cover-menu-title">文章封面</div>
+                <div class="site-header-cover-options">
+                  <button
+                    v-for="option in coverStyleOptions"
+                    :key="option.style"
+                    type="button"
+                    class="site-header-cover-option"
+                    :class="{ 'site-header-cover-option-selected': option.style === config.coverStyle }"
+                    role="option"
+                    :aria-selected="option.style === config.coverStyle"
+                    :data-cover-style="option.style"
+                    @click="selectCoverStyle(option.style)"
+                  >
+                    <span class="site-header-cover-preview" aria-hidden="true">
+                      <img
+                        :src="option.previewUrl"
+                        alt=""
+                        loading="lazy"
+                        @error="handleCoverPreviewError"
+                      />
+                      <span
+                        v-if="option.style === config.coverStyle"
+                        class="site-header-cover-check"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" />
+                        </svg>
+                      </span>
+                    </span>
+                    <span class="site-header-cover-option-label">{{ option.label }}</span>
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
 
           <button
-            v-if="showSidebarToggle"
+            v-if="showStandaloneSidebarToggle"
             type="button"
-            class="site-header-action rounded-full p-2 transition-all md:hidden"
-            :aria-label="config.mobileSidebarOpen ? '关闭侧边栏' : '打开侧边栏'"
+            class="site-header-action rounded-full p-2 transition-all lg:hidden"
+            :aria-label="config.mobileSidebarOpen ? '关闭内容面板' : '打开内容面板'"
             @click="toggleSidebarDrawer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -115,9 +171,12 @@
 
           <button
             v-if="showMobileMenuToggle"
+            ref="mobileMenuTrigger"
             type="button"
-            class="site-header-action rounded-full p-2 transition-all md:hidden"
+            class="site-header-action rounded-full p-2 transition-all lg:hidden"
             :aria-label="mobileMenuOpen ? '关闭导航菜单' : '打开导航菜单'"
+            :aria-expanded="mobileMenuOpen"
+            aria-controls="site-mobile-navigation"
             @click="toggleMobileMenu"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -128,7 +187,11 @@
       </div>
     </div>
 
-    <div v-if="showMobileMenuPanel" :class="mobileNavClass">
+    <div
+      v-if="showMobileMenuPanel"
+      id="site-mobile-navigation"
+      :class="mobileNavClass"
+    >
       <div class="blog-container py-3">
         <MenuRenderer
           v-for="group in mobileHeaderMenuGroups"
@@ -137,16 +200,103 @@
           :renderer-props="group.rendererProps"
           @select="mobileMenuOpen = false"
         />
+
+        <div
+          v-if="showCoverStyleToggle || showSidebarToggle"
+          class="site-mobile-nav-tools"
+        >
+          <div
+            v-if="showCoverStyleToggle"
+            ref="mobileCoverStylePicker"
+            class="site-mobile-cover-picker"
+          >
+            <button
+              ref="mobileCoverStyleTrigger"
+              type="button"
+              class="site-mobile-nav-tool site-mobile-cover-trigger"
+              aria-haspopup="listbox"
+              :aria-expanded="coverStyleMenuTarget === 'mobile'"
+              aria-controls="site-mobile-cover-style-menu"
+              @click="toggleCoverStyleMenu('mobile')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="site-mobile-nav-tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2.5" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 15-5-5L5 21" />
+              </svg>
+              <span class="site-mobile-cover-copy">
+                <strong>封面风格</strong>
+                <small>{{ currentCoverStyleLabel }}</small>
+              </span>
+              <svg class="site-mobile-cover-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m8 10 4 4 4-4" />
+              </svg>
+            </button>
+
+            <Transition name="cover-style-menu">
+              <div
+                v-if="coverStyleMenuTarget === 'mobile'"
+                id="site-mobile-cover-style-menu"
+                class="site-mobile-cover-options"
+                role="listbox"
+                aria-label="文章封面风格"
+              >
+                <button
+                  v-for="option in coverStyleOptions"
+                  :key="option.style"
+                  type="button"
+                  class="site-header-cover-option"
+                  :class="{ 'site-header-cover-option-selected': option.style === config.coverStyle }"
+                  role="option"
+                  :aria-selected="option.style === config.coverStyle"
+                  :data-mobile-cover-style="option.style"
+                  @click="selectCoverStyle(option.style)"
+                >
+                  <span class="site-header-cover-preview" aria-hidden="true">
+                    <img
+                      :src="option.previewUrl"
+                      alt=""
+                      loading="lazy"
+                      @error="handleCoverPreviewError"
+                    />
+                    <span
+                      v-if="option.style === config.coverStyle"
+                      class="site-header-cover-check"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" />
+                      </svg>
+                    </span>
+                  </span>
+                  <span class="site-header-cover-option-label">{{ option.label }}</span>
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <button
+            v-if="showSidebarToggle"
+            type="button"
+            class="site-mobile-nav-tool"
+            @click="openSidebarFromMenu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="site-mobile-nav-tool-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 18.75h16.5M9.75 9.75h10.5M9.75 14.25h10.5M3.75 9.75h2.25v4.5H3.75z" />
+            </svg>
+            <span>内容面板</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConfigStore } from '../../stores/config'
 import MenuRenderer from '../menu/MenuRenderer.vue'
+import { createSeededArticleCover } from '../../utils/articleCover'
 import {
   getPrimaryMenuPagePath,
   resolveHeaderMenuGroups,
@@ -154,11 +304,19 @@ import {
 } from '../../utils/menuConfig'
 import { getSearchPath } from '../../utils/routeLinks'
 import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
+import { useBlogBaseUrl } from '../../runtime/runtimeContext'
 
 const route = useRoute()
 const mobileMenuOpen = ref(false)
+const mobileMenuTrigger = ref(null)
+const coverStyleMenuTarget = ref('')
+const coverStylePicker = ref(null)
+const coverStyleTrigger = ref(null)
+const mobileCoverStylePicker = ref(null)
+const mobileCoverStyleTrigger = ref(null)
 const configStore = useConfigStore()
 const config = configStore
+const baseUrl = useBlogBaseUrl()
 
 const leadingVisual = computed(() => (
   config.headerConfig?.leadingVisual || {
@@ -232,40 +390,48 @@ const showMobileMenuToggle = computed(() => (
   && navbar.value.showMobileMenuToggle
   && mobileHeaderMenuGroups.value.length > 0
 ))
+const showStandaloneSidebarToggle = computed(() => (
+  showSidebarToggle.value && !showMobileMenuToggle.value
+))
+const coverSourceSwitch = computed(() => (
+  config.coverConfig?.sourceSwitch || config.coverConfig?.styleSwitch || {}
+))
+const availableCoverStyles = computed(() => {
+  const styles = Array.isArray(coverSourceSwitch.value.sources)
+    ? coverSourceSwitch.value.sources
+    : Array.isArray(coverSourceSwitch.value.styles)
+      ? coverSourceSwitch.value.styles
+      : []
+
+  return styles.filter((style, index, list) => style && list.indexOf(style) === index)
+})
 const showCoverStyleToggle = computed(() => (
   config.coverConfig?.fallback === 'seeded'
-  && (config.coverConfig?.sourceSwitch?.enabled ?? config.coverConfig?.styleSwitch?.enabled) !== false
-  && (
-    (Array.isArray(config.coverConfig?.sourceSwitch?.sources) && config.coverConfig.sourceSwitch.sources.length > 1)
-    || (Array.isArray(config.coverConfig?.styleSwitch?.styles) && config.coverConfig.styleSwitch.styles.length > 1)
-  )
+  && coverSourceSwitch.value.enabled === true
+  && availableCoverStyles.value.length > 1
 ))
-const currentCoverStyleLabel = computed(() => (
-  config.coverConfig?.sourceSwitch?.labels?.[config.coverStyle]
-  || config.coverConfig?.styleSwitch?.labels?.[config.coverStyle]
-  || config.coverStyle
+const getCoverStyleLabel = style => (
+  coverSourceSwitch.value.labels?.[style] || style
+)
+const currentCoverStyleLabel = computed(() => getCoverStyleLabel(config.coverStyle))
+const coverStyleOptions = computed(() => (
+  availableCoverStyles.value.map(style => ({
+    style,
+    label: getCoverStyleLabel(style),
+    previewUrl: createSeededArticleCover('cover-style-preview', {
+      style,
+      width: 320,
+      height: 180,
+      format: config.coverConfig?.seededFormat || 'webp',
+      styleUrls: config.coverConfig?.sourceUrls || config.coverConfig?.styleUrls
+    })
+  }))
 ))
-const compactCoverStyleLabel = computed(() => {
-  const label = String(currentCoverStyleLabel.value || '').trim()
-
-  if (!label) {
-    return ''
-  }
-
-  const compactMap = {
-    'MWM 二次元': '二次',
-    'MWM 风景': '风景',
-    'XJH ACG': 'ACG',
-    'Bing 随机': 'Bing'
-  }
-
-  return compactMap[label] || label.replace(/\s+/g, '').slice(0, 4)
-})
 const showActions = computed(() => (
   showSearchAction.value
   || navbar.value.showThemeToggle
   || showCoverStyleToggle.value
-  || showSidebarToggle.value
+  || showStandaloneSidebarToggle.value
   || showMobileMenuToggle.value
 ))
 const showMobileMenuPanel = computed(() => (
@@ -281,7 +447,7 @@ const headerClass = computed(() => [
 ])
 const mobileNavClass = computed(() => [
   'site-mobile-nav',
-  'md:hidden',
+  'lg:hidden',
   'transition-all',
   'duration-300',
   navbar.value.blur ? 'site-mobile-nav-has-blur backdrop-blur-md' : ''
@@ -291,12 +457,45 @@ const toggleTheme = () => {
   configStore.toggleTheme()
 }
 
-const toggleCoverStyle = () => {
-  configStore.toggleCoverStyle()
+const closeCoverStyleMenu = ({ restoreFocus = false } = {}) => {
+  if (!coverStyleMenuTarget.value) {
+    return
+  }
+
+  const trigger = coverStyleMenuTarget.value === 'mobile'
+    ? mobileCoverStyleTrigger.value
+    : coverStyleTrigger.value
+  coverStyleMenuTarget.value = ''
+
+  if (restoreFocus) {
+    nextTick(() => trigger?.focus())
+  }
+}
+
+const toggleCoverStyleMenu = (target) => {
+  if (target === 'desktop') {
+    mobileMenuOpen.value = false
+  }
+
+  coverStyleMenuTarget.value = coverStyleMenuTarget.value === target ? '' : target
+}
+
+const selectCoverStyle = (style) => {
+  configStore.setCoverStyle(style)
+  closeCoverStyleMenu()
+}
+
+const handleCoverPreviewError = (event) => {
+  event.currentTarget.hidden = true
 }
 
 const toggleSidebarDrawer = () => {
   configStore.toggleMobileSidebar()
+}
+
+const openSidebarFromMenu = () => {
+  mobileMenuOpen.value = false
+  configStore.openMobileSidebar()
 }
 
 const toggleMobileMenu = () => {
@@ -305,7 +504,35 @@ const toggleMobileMenu = () => {
     return
   }
 
+  closeCoverStyleMenu()
   mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+function handleHeaderEscape(event) {
+  if (coverStyleMenuTarget.value) {
+    event?.preventDefault()
+    closeCoverStyleMenu({ restoreFocus: true })
+    return
+  }
+
+  if (!mobileMenuOpen.value) {
+    return
+  }
+
+  mobileMenuOpen.value = false
+  nextTick(() => mobileMenuTrigger.value?.focus())
+}
+
+function handleDocumentPointerDown(event) {
+  if (
+    !coverStyleMenuTarget.value
+    || coverStylePicker.value?.contains(event.target)
+    || mobileCoverStylePicker.value?.contains(event.target)
+  ) {
+    return
+  }
+
+  closeCoverStyleMenu()
 }
 
 function resolveHeaderAssetUrl(value) {
@@ -319,7 +546,6 @@ function resolveHeaderAssetUrl(value) {
     return rawValue
   }
 
-  const baseUrl = import.meta.env.BASE_URL || '/'
   const normalizedPath = rawValue.replace(/^\.?\//, '').replace(/^\/+/, '')
 
   return `${baseUrl}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
@@ -336,6 +562,7 @@ const leadingVisualTitleStyle = computed(() => ({
 
 watch(() => route.fullPath, () => {
   mobileMenuOpen.value = false
+  closeCoverStyleMenu()
 })
 
 watch(showMobileMenuToggle, (visible) => {
@@ -343,11 +570,31 @@ watch(showMobileMenuToggle, (visible) => {
     mobileMenuOpen.value = false
   }
 })
+
+watch(showCoverStyleToggle, (visible) => {
+  if (!visible) {
+    closeCoverStyleMenu()
+  }
+})
+
+onMounted(() => {
+  document.addEventListener('pointerdown', handleDocumentPointerDown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+})
 </script>
 
 <style scoped>
 header {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.site-mobile-nav {
+  max-height: calc(100dvh - 4.25rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .site-brand-copy {
@@ -391,12 +638,258 @@ header {
   transform: translateY(-0.5px);
 }
 
-.site-header-cover-label-compact {
+.site-header-cover-picker {
+  position: relative;
   display: none;
+  flex-shrink: 0;
 }
 
-:global(.dark) .site-header-leading-title {
+.site-header-cover-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.site-header-cover-action-active {
+  background: var(--theme-chip-hover);
+  color: var(--theme-link) !important;
+}
+
+.site-header-cover-menu {
+  position: absolute;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  z-index: 80;
+  width: 19rem;
+  padding: 0.72rem;
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 0.5rem;
+  background: var(--theme-popover-background);
+  box-shadow: var(--theme-shadow-md);
+}
+
+.site-header-cover-menu-title {
+  margin: 0 0 0.58rem;
+  color: var(--theme-heading-color);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.site-header-cover-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.site-header-cover-option {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.38rem;
+  padding: 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--theme-text-soft);
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 0;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.site-header-cover-option:hover {
+  background: var(--theme-panel-muted);
+  color: var(--theme-heading-color);
+}
+
+.site-header-cover-option:focus-visible {
+  outline: none;
+  border-color: rgba(var(--color-primary), 0.34);
+  box-shadow: var(--theme-control-focus-ring);
+}
+
+.site-header-cover-option-selected {
+  border-color: rgba(var(--color-primary), 0.28);
+  background: var(--theme-accent-softer);
+  color: var(--theme-link);
+}
+
+.site-header-cover-preview {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--theme-border);
+  border-radius: 0.3125rem;
+  aspect-ratio: 16 / 9;
+  background: var(--theme-feed-fallback);
+}
+
+.site-header-cover-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.site-header-cover-check {
+  position: absolute;
+  top: 0.34rem;
+  right: 0.34rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 9999px;
+  background: rgb(var(--color-primary));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+.site-header-cover-check svg {
+  width: 0.72rem;
+  height: 0.72rem;
+}
+
+.site-header-cover-option-label {
+  min-width: 0;
+  overflow: hidden;
+  padding-inline: 0.08rem;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cover-style-menu-enter-active,
+.cover-style-menu-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  transform-origin: top right;
+}
+
+.cover-style-menu-enter-from,
+.cover-style-menu-leave-to {
+  opacity: 0;
+  transform: translateY(-0.25rem) scale(0.98);
+}
+
+.site-mobile-nav-tools {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.site-mobile-cover-picker {
+  width: 100%;
+}
+
+.site-mobile-cover-trigger {
+  justify-content: flex-start;
+}
+
+.site-mobile-cover-copy {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.site-mobile-cover-copy strong {
+  color: inherit;
+  font-size: inherit;
+}
+
+.site-mobile-cover-copy small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--theme-text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-mobile-cover-chevron {
+  width: 1rem;
+  height: 1rem;
+  margin-left: auto;
+  flex: 0 0 auto;
+  transition: transform 0.16s ease;
+}
+
+.site-mobile-cover-trigger[aria-expanded="true"] .site-mobile-cover-chevron {
+  transform: rotate(180deg);
+}
+
+.site-mobile-cover-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid var(--theme-border);
+  border-radius: 0.5rem;
+  background: var(--theme-panel-muted);
+}
+
+.site-mobile-nav-tool {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: rgb(71 85 105);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+
+.site-mobile-nav-tool:hover {
+  color: rgb(37 99 235);
+  background: rgba(239, 246, 255, 0.92);
+}
+
+.site-mobile-nav-tool-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+}
+
+:global(.dark .site-mobile-nav-tools) {
+  border-top-color: rgba(71, 85, 105, 0.78);
+}
+
+:global(.dark .site-mobile-nav-tool) {
+  color: rgb(203 213 225);
+}
+
+:global(.dark .site-mobile-nav-tool:hover) {
+  color: rgb(191 219 254);
+  background: rgba(30, 41, 59, 0.92);
+}
+
+:global(.dark .site-header-leading-title) {
   color: rgb(241 245 249 / 0.88);
+}
+
+@media (min-width: 1024px) {
+  .site-header-cover-picker {
+    display: inline-flex;
+  }
 }
 
 @media (max-width: 640px) {
@@ -465,21 +958,9 @@ header {
   }
 
   .site-header-cover-action {
-    width: auto;
-    min-width: 2.35rem;
-    max-width: 3.35rem;
-    padding-inline: 0.5rem !important;
-    font-size: 0.68rem;
-    line-height: 1;
+    flex: 0 0 2.05rem;
   }
 
-  .site-header-cover-label-full {
-    display: none;
-  }
-
-  .site-header-cover-label-compact {
-    display: inline;
-  }
 }
 
 @media (max-width: 380px) {
@@ -490,12 +971,6 @@ header {
   .site-header-action {
     width: 1.92rem;
     height: 1.92rem;
-  }
-
-  .site-header-cover-action {
-    min-width: 2.15rem;
-    max-width: 2.8rem;
-    padding-inline: 0.38rem !important;
   }
 
   .site-header-leading-title {

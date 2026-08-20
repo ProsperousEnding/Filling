@@ -1,634 +1,52 @@
 import {
   getArticlePath,
   getCategoryPath,
-  getTagPath
+  getTagPath,
+  normalizeBlogRoutePatterns
 } from './routeLinks.js'
 import {
-  BUILT_IN_PAGE_DEFAULT_COMPONENTS,
-  isMenuPageComponentKey
-} from './pageComponentConfig.js'
+  findOverlappingRoute,
+  getCustomMenuPageRoutePatterns,
+  getDynamicBlogRoutePatterns,
+  isExternalMenuTarget as isExternalTarget,
+  isValidMenuPageKey,
+  MENU_COLLECTION_PAGE_COMPONENTS,
+  normalizeMenuPageKey as normalizePageKey,
+  normalizeMenuPagePath
+} from './menuRouteConfig.js'
+import { isMenuPageComponentKey } from './pageComponentConfig.js'
+import {
+  BUILT_IN_MENU_PAGE_KEYS,
+  DEFAULT_MENU_CONFIG,
+  DEFAULT_MENU_RENDERER_NAMES,
+  MENU_GROUPS
+} from './menuDefaults.js'
+import {
+  isPlainObject,
+  normalizeMenuConfig,
+  normalizeMenuGroup,
+  normalizeMenuItemChildren,
+  normalizeMenuPageComponent,
+  normalizeMenuSource,
+  normalizePositiveInteger,
+  normalizeString,
+  toCamelCase
+} from './menuConfigNormalization.js'
 
-const DEFAULT_MENU_CONFIG = Object.freeze({
-  header: Object.freeze([
-    Object.freeze({
-      key: 'primary',
-      renderer: 'header-pill',
-      source: 'blog-nav',
-      items: []
-    })
-  ]),
-  mobileHeader: Object.freeze([
-    Object.freeze({
-      key: 'primary-mobile',
-      renderer: 'header-stack',
-      source: 'blog-nav',
-      items: []
-    })
-  ]),
-  sidebar: Object.freeze([
-    Object.freeze({
-      key: 'categories',
-      title: '分类',
-      renderer: 'sidebar-link',
-      source: 'categories',
-      variant: 'default',
-      showCount: true,
-      limit: 0,
-      items: []
-    }),
-    Object.freeze({
-      key: 'tags',
-      title: '标签',
-      renderer: 'sidebar-link',
-      source: 'tags',
-      variant: 'tags',
-      showCount: true,
-      limit: 0,
-      items: []
-    }),
-    Object.freeze({
-      key: 'latest-articles',
-      title: '最新文章',
-      renderer: 'sidebar-article',
-      source: 'latest-articles',
-      variant: 'default',
-      showCount: false,
-      limit: 5,
-      items: []
-    })
-  ]),
-  pages: Object.freeze([])
-})
-
-const DEFAULT_MENU_PAGES = Object.freeze([
-  Object.freeze({
-    key: 'home',
-    label: '首页',
-    title: '最新文章',
-    description: '浏览站点最新发布的文章内容。',
-    component: BUILT_IN_PAGE_DEFAULT_COMPONENTS.home,
-    visible: true
-  }),
-  Object.freeze({
-    key: 'articles',
-    label: '文章',
-    title: '所有文章',
-    description: '浏览站点全部文章列表。',
-    component: BUILT_IN_PAGE_DEFAULT_COMPONENTS.articles,
-    visible: true
-  }),
-  Object.freeze({
-    key: 'categories',
-    label: '分类',
-    title: '文章分类',
-    description: '浏览站点所有文章分类。',
-    component: BUILT_IN_PAGE_DEFAULT_COMPONENTS.categories,
-    visible: true
-  }),
-  Object.freeze({
-    key: 'tags',
-    label: '标签',
-    title: '文章标签',
-    description: '浏览站点所有文章标签。',
-    component: BUILT_IN_PAGE_DEFAULT_COMPONENTS.tags,
-    visible: true
-  }),
-  Object.freeze({
-    key: 'archive',
-    label: '归档',
-    title: '文章归档',
-    description: '按年份浏览站点归档文章。',
-    component: BUILT_IN_PAGE_DEFAULT_COMPONENTS.archive,
-    visible: true
-  }),
-  Object.freeze({
-    key: 'search',
-    label: '搜索',
-    title: '搜索',
-    description: '搜索站点文章内容。',
-    component: '',
-    visible: false
-  })
-])
-
-const BUILT_IN_MENU_PAGE_KEYS = new Set(DEFAULT_MENU_PAGES.map(page => page.key))
-
-const SOURCE_ALIASES = Object.freeze({
-  blogNav: 'blog-nav',
-  blog_nav: 'blog-nav',
-  categories: 'categories',
-  tags: 'tags',
-  latestArticles: 'latest-articles',
-  latest_articles: 'latest-articles',
-  friendLinks: 'friend-links',
-  friend_links: 'friend-links',
-  custom: 'custom'
-})
+import {
+  getBuiltInMenuPages,
+  getCustomMenuPages,
+  getDefaultMenuPages,
+  getMenuPagePath,
+  getPrimaryMenuPage,
+  getPrimaryMenuPagePath,
+  resolveMenuPage,
+  resolveMenuPageRegistry,
+  resolveMenuPages,
+  resolvePrimaryMenuPage
+} from './menuPageRegistry.js'
 
 const menuSourceRegistry = new Map()
-
-function isPlainObject(value) {
-  return Object.prototype.toString.call(value) === '[object Object]'
-}
-
-function transformKeysDeep(value, transformKey) {
-  if (Array.isArray(value)) {
-    return value.map(item => transformKeysDeep(item, transformKey))
-  }
-
-  if (!isPlainObject(value)) {
-    return value
-  }
-
-  return Object.entries(value).reduce((result, [key, nestedValue]) => {
-    result[transformKey(key)] = transformKeysDeep(nestedValue, transformKey)
-    return result
-  }, {})
-}
-
-function toCamelKey(key) {
-  return String(key || '').replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
-}
-
-function toCamelCase(value) {
-  return transformKeysDeep(value, toCamelKey)
-}
-
-function normalizeString(value) {
-  return String(value || '').trim()
-}
-
-function normalizePageKey(value) {
-  return normalizeString(value).toLowerCase()
-}
-
-function normalizePositiveInteger(value, fallback = 0) {
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-}
-
-function normalizeStringList(values = []) {
-  if (!Array.isArray(values)) {
-    return []
-  }
-
-  return values
-    .map(value => normalizeString(value))
-    .filter(Boolean)
-}
-
-function normalizeMenuSource(source, fallback = 'custom') {
-  const normalizedSource = normalizeString(source)
-
-  if (!normalizedSource) {
-    return fallback
-  }
-
-  return SOURCE_ALIASES[normalizedSource] || normalizedSource.toLowerCase()
-}
-
-function normalizeMenuItems(items = []) {
-  return Array.isArray(items) ? items.slice() : []
-}
-
-function normalizeMenuItemChildren(children = []) {
-  return Array.isArray(children) ? children.slice() : []
-}
-
-function normalizeMenuEntries(entries, fallbackEntries = [], collectionKey = 'menu') {
-  if (entries === undefined) {
-    return fallbackEntries.map(entry => ({ ...entry, items: normalizeMenuItems(entry.items) }))
-  }
-
-  if (!Array.isArray(entries)) {
-    return []
-  }
-
-  return entries
-    .filter(entry => isPlainObject(entry))
-    .map((entry, index) => {
-      const normalizedEntry = toCamelCase(entry)
-      const fallbackEntry = fallbackEntries[index] || {}
-      const source = normalizeMenuSource(normalizedEntry.source, normalizeMenuSource(fallbackEntry.source, 'custom'))
-      const limit = normalizePositiveInteger(
-        normalizedEntry.limit,
-        normalizePositiveInteger(fallbackEntry.limit, 0)
-      )
-
-      return {
-        key: normalizeString(normalizedEntry.key) || `${collectionKey}-${index + 1}`,
-        title: normalizeString(normalizedEntry.title || fallbackEntry.title),
-        renderer: normalizeString(normalizedEntry.renderer || fallbackEntry.renderer),
-        source,
-        variant: normalizeString(normalizedEntry.variant || fallbackEntry.variant || 'default') || 'default',
-        showCount: typeof normalizedEntry.showCount === 'boolean'
-          ? normalizedEntry.showCount
-          : Boolean(fallbackEntry.showCount),
-        limit,
-        enabled: typeof normalizedEntry.enabled === 'boolean'
-          ? normalizedEntry.enabled
-          : fallbackEntry.enabled !== false,
-        items: normalizeMenuItems(normalizedEntry.items || fallbackEntry.items)
-      }
-    })
-    .filter(entry => entry.enabled && entry.renderer)
-}
-
-function isExternalTarget(target) {
-  return /^(https?:)?\/\//i.test(target) || target.startsWith('mailto:') || target.startsWith('tel:')
-}
-
-function normalizeMenuPageComponent(value, fallback = '') {
-  const normalizedValue = normalizeString(value)
-
-  if (!normalizedValue) {
-    return fallback
-  }
-
-  const normalizedComponent = normalizedValue.toLowerCase()
-  return isMenuPageComponentKey(normalizedComponent) ? normalizedComponent : fallback
-}
-
-function normalizeMenuPagePath(value, fallback = '') {
-  const normalizedValue = normalizeString(value)
-  const target = normalizedValue || normalizeString(fallback)
-
-  if (!target || isExternalTarget(target) || target.includes(':')) {
-    return ''
-  }
-
-  const withLeadingSlash = target.startsWith('/') ? target : `/${target}`
-  return withLeadingSlash === '/' ? withLeadingSlash : withLeadingSlash.replace(/\/+$/, '')
-}
-
-function normalizeMenuContentPath(value, kind = 'file') {
-  const normalizedValue = normalizeString(value)
-    .replace(/\\/g, '/')
-    .replace(/^\.?\//, '')
-    .replace(/^\/+/, '')
-  const segments = normalizedValue
-    .split('/')
-    .map(segment => segment.trim())
-    .filter(segment => segment && segment !== '.')
-
-  if (segments.length === 0 || segments.some(segment => segment === '..')) {
-    return ''
-  }
-
-  const resolvedPath = segments.join('/')
-
-  return kind === 'folder'
-    ? resolvedPath.replace(/\/+$/, '')
-    : resolvedPath
-}
-
-function createMenuPageItem(entry = {}, fallbackKey = '') {
-  if (!isPlainObject(entry)) {
-    return null
-  }
-
-  const target = normalizeString(entry.target || entry.to || entry.path || entry.href)
-  const title = normalizeString(entry.title || entry.label || entry.name)
-  const description = normalizeString(entry.description || entry.content || entry.body)
-  const meta = normalizeString(entry.meta || entry.eyebrow || entry.note)
-  const key = normalizeString(entry.key || entry.id || fallbackKey)
-
-  if (!title && !description) {
-    return null
-  }
-
-  return {
-    key: key || `page-item-${title || description}`,
-    title: title || description,
-    description: title && description ? description : '',
-    meta,
-    target,
-    to: target && !isExternalTarget(target) ? target : '',
-    href: target && isExternalTarget(target) ? target : '',
-    external: Boolean(target && isExternalTarget(target))
-  }
-}
-
-function parseMenuPageItemString(value, index) {
-  const normalizedValue = normalizeString(value)
-
-  if (!normalizedValue) {
-    return null
-  }
-
-  const [rawTitle = '', rawDescription = '', rawTarget = '', rawMeta = ''] = normalizedValue.split('|')
-
-  return createMenuPageItem({
-    key: `page-item-${index + 1}`,
-    title: rawTitle,
-    description: rawDescription,
-    target: rawTarget,
-    meta: rawMeta
-  }, `page-item-${index + 1}`)
-}
-
-function normalizeMenuPageItems(items = []) {
-  if (!Array.isArray(items)) {
-    return []
-  }
-
-  return items
-    .map((item, index) => {
-      if (typeof item === 'string') {
-        return parseMenuPageItemString(item, index)
-      }
-
-      return createMenuPageItem(item, `page-item-${index + 1}`)
-    })
-    .filter(Boolean)
-}
-
-function normalizeFriendApplicationConfig(application = {}) {
-  if (!isPlainObject(application)) {
-    return {
-      enabled: false,
-      title: '',
-      description: '',
-      requirements: [],
-      submissionFields: [],
-      template: '',
-      contactLabel: '',
-      contactUrl: ''
-    }
-  }
-
-  const normalizedApplication = toCamelCase(application)
-  const title = normalizeString(normalizedApplication.title || normalizedApplication.heading)
-  const description = normalizeString(
-    normalizedApplication.description
-    || normalizedApplication.summary
-    || normalizedApplication.content
-  )
-  const requirements = normalizeStringList(
-    normalizedApplication.requirements
-    || normalizedApplication.rules
-    || normalizedApplication.conditions
-  )
-  const submissionFields = normalizeStringList(
-    normalizedApplication.submissionFields
-    || normalizedApplication.fields
-    || normalizedApplication.items
-  )
-  const template = normalizeString(
-    normalizedApplication.template
-    || normalizedApplication.example
-    || normalizedApplication.sample
-  )
-  const contactLabel = normalizeString(
-    normalizedApplication.contactLabel
-    || normalizedApplication.ctaLabel
-    || normalizedApplication.actionText
-  )
-  const contactUrl = normalizeString(
-    normalizedApplication.contactUrl
-    || normalizedApplication.contact
-    || normalizedApplication.href
-    || normalizedApplication.target
-  )
-
-  return {
-    enabled: Boolean(
-      title
-      || description
-      || requirements.length > 0
-      || submissionFields.length > 0
-      || template
-      || contactLabel
-      || contactUrl
-    ),
-    title,
-    description,
-    requirements,
-    submissionFields,
-    template,
-    contactLabel,
-    contactUrl
-  }
-}
-
-function normalizeMenuPages(pages = []) {
-  if (!Array.isArray(pages)) {
-    return []
-  }
-
-  return pages
-    .filter(entry => isPlainObject(entry))
-    .map((entry, index) => {
-      const normalizedEntry = toCamelCase(entry)
-      const key = normalizePageKey(normalizedEntry.key || normalizedEntry.id || `page-${index + 1}`)
-
-      return {
-        key,
-        label: normalizeString(normalizedEntry.label || normalizedEntry.name || normalizedEntry.title),
-        title: normalizeString(normalizedEntry.title || normalizedEntry.label || normalizedEntry.name),
-        path: normalizeMenuPagePath(normalizedEntry.path || normalizedEntry.to || normalizedEntry.href, ''),
-        component: normalizeMenuPageComponent(normalizedEntry.component, ''),
-        description: normalizeString(normalizedEntry.description || normalizedEntry.summary),
-        enabled: typeof normalizedEntry.enabled === 'boolean' ? normalizedEntry.enabled : true,
-        visible: typeof normalizedEntry.visible === 'boolean' ? normalizedEntry.visible : true,
-        content: normalizeString(normalizedEntry.content || normalizedEntry.body || normalizedEntry.text),
-        items: normalizeMenuPageItems(normalizedEntry.items),
-        file: normalizeMenuContentPath(normalizedEntry.file || normalizedEntry.sourceFile, 'file'),
-        folder: normalizeMenuContentPath(normalizedEntry.folder || normalizedEntry.sourceFolder, 'folder'),
-        application: normalizeFriendApplicationConfig(normalizedEntry.application)
-      }
-    })
-    .filter(entry => entry.key)
-}
-
-export function normalizeMenuConfig(menus = {}) {
-  const normalizedMenus = isPlainObject(menus) ? toCamelCase(menus) : {}
-
-  return {
-    header: normalizeMenuEntries(normalizedMenus.header, DEFAULT_MENU_CONFIG.header, 'header'),
-    mobileHeader: normalizeMenuEntries(
-      normalizedMenus.mobileHeader,
-      DEFAULT_MENU_CONFIG.mobileHeader,
-      'mobile-header'
-    ),
-    sidebar: normalizeMenuEntries(normalizedMenus.sidebar, DEFAULT_MENU_CONFIG.sidebar, 'sidebar'),
-    pages: normalizeMenuPages(normalizedMenus.pages)
-  }
-}
-
-function resolveBuiltInMenuPagePath(key, routePatterns = {}) {
-  switch (key) {
-    case 'home':
-      return normalizeMenuPagePath(routePatterns.home, '/')
-    case 'articles':
-      return normalizeMenuPagePath(routePatterns.articles, '/articles')
-    case 'categories':
-      return normalizeMenuPagePath(routePatterns.categories, '/category')
-    case 'tags':
-      return normalizeMenuPagePath(routePatterns.tags, '/tag')
-    case 'archive':
-      return normalizeMenuPagePath(routePatterns.archive, '/archive')
-    case 'search':
-      return normalizeMenuPagePath(routePatterns.search, '/search')
-    default:
-      return ''
-  }
-}
-
-function createDefaultMenuPage(definition, routePatterns = {}) {
-  return {
-    ...definition,
-    path: resolveBuiltInMenuPagePath(definition.key, routePatterns),
-    content: '',
-    items: [],
-    file: '',
-    folder: '',
-    enabled: definition.enabled !== false,
-    visible: definition.visible !== false,
-    builtIn: true
-  }
-}
-
-export function getDefaultMenuPages(routePatterns = {}) {
-  return DEFAULT_MENU_PAGES
-    .map(page => createDefaultMenuPage(page, routePatterns))
-    .filter(page => page.path)
-}
-
-export function resolveMenuPages(menuConfig = {}, routePatterns = {}) {
-  const normalizedMenuConfig = normalizeMenuConfig(menuConfig)
-  const defaultPages = getDefaultMenuPages(routePatterns)
-  const resolvedPages = []
-  const resolvedKeys = new Set()
-  const reservedPaths = new Set(
-    [normalizeMenuPagePath(routePatterns?.notFound, '')]
-      .filter(Boolean)
-  )
-
-  defaultPages.forEach((defaultPage) => {
-    const override = normalizedMenuConfig.pages.find(page => page.key === defaultPage.key) || null
-    const enabled = typeof override?.enabled === 'boolean' ? override.enabled : defaultPage.enabled !== false
-
-    if (!enabled) {
-      resolvedKeys.add(defaultPage.key)
-      return
-    }
-
-    resolvedPages.push({
-      ...defaultPage,
-      label: normalizeString(override?.label || defaultPage.label) || defaultPage.label,
-      title: normalizeString(override?.title || defaultPage.title) || defaultPage.title,
-      component: normalizeMenuPageComponent(override?.component, defaultPage.component),
-      description: normalizeString(override?.description || defaultPage.description),
-      enabled: true,
-      visible: typeof override?.visible === 'boolean' ? override.visible : defaultPage.visible !== false
-    })
-    resolvedKeys.add(defaultPage.key)
-  })
-
-  const usedPaths = new Set(resolvedPages.map(page => page.path))
-
-  normalizedMenuConfig.pages.forEach((page) => {
-    if (resolvedKeys.has(page.key)) {
-      return
-    }
-
-    const path = normalizeMenuPagePath(page.path, `/${page.key}`)
-    const label = normalizeString(page.label || page.title || page.key)
-    const title = normalizeString(page.title || page.label || page.key)
-    const enabled = page.enabled !== false
-
-    if (!enabled || !page.key || !path || !label || !title) {
-      return
-    }
-
-    if (reservedPaths.has(path) || usedPaths.has(path)) {
-      return
-    }
-
-    resolvedPages.push({
-      key: page.key,
-      label,
-      title,
-      path,
-      component: normalizeMenuPageComponent(page.component, 'context'),
-      description: normalizeString(page.description),
-      enabled: true,
-      visible: page.visible !== false,
-      content: normalizeString(page.content),
-      items: Array.isArray(page.items) ? page.items.map(item => ({ ...item })) : [],
-      file: normalizeMenuContentPath(page.file, 'file'),
-      folder: normalizeMenuContentPath(page.folder, 'folder'),
-      application: page.application,
-      builtIn: false
-    })
-    resolvedKeys.add(page.key)
-    usedPaths.add(path)
-  })
-
-  return resolvedPages
-}
-
-export function resolveMenuPage(pageOrKey, menuConfig = {}, routePatterns = {}) {
-  const pages = resolveMenuPages(menuConfig, routePatterns)
-  const key = normalizePageKey(
-    typeof pageOrKey === 'object' && pageOrKey !== null
-      ? pageOrKey.key || pageOrKey.path
-      : pageOrKey
-  )
-  const path = normalizeMenuPagePath(
-    typeof pageOrKey === 'object' && pageOrKey !== null
-      ? pageOrKey.path
-      : pageOrKey,
-    ''
-  )
-
-  if (!key && !path) {
-    return null
-  }
-
-  return pages.find(page => page.key === key || page.path === path) || null
-}
-
-export function getCustomMenuPages(menuConfig = {}, routePatterns = {}) {
-  return resolveMenuPages(menuConfig, routePatterns)
-    .filter(page => !page.builtIn)
-}
-
-export function getBuiltInMenuPages(menuConfig = {}, routePatterns = {}) {
-  return resolveMenuPages(menuConfig, routePatterns)
-    .filter(page => page.builtIn)
-}
-
-export function resolveMenuPageRegistry(menuConfig = {}, routePatterns = {}) {
-  return resolveMenuPages(menuConfig, routePatterns).reduce((registry, page) => {
-    registry[page.key] = { ...page }
-    return registry
-  }, {})
-}
-
-export function resolvePrimaryMenuPage(menuConfig = {}, routePatterns = {}) {
-  const pages = resolveMenuPages(menuConfig, routePatterns)
-
-  return (
-    pages.find(page => page.key === 'home')
-    || pages.find(page => page.visible !== false)
-    || pages[0]
-    || null
-  )
-}
-
-export function getPrimaryMenuPage(menuConfig = {}, routePatterns = {}) {
-  return resolvePrimaryMenuPage(menuConfig, routePatterns)
-}
-
-export function getPrimaryMenuPagePath(menuConfig = {}, routePatterns = {}) {
-  return resolvePrimaryMenuPage(menuConfig, routePatterns)?.path || '/'
-}
-
-export function getMenuPagePath(pageOrKey, menuConfig = {}, routePatterns = {}) {
-  return resolveMenuPage(pageOrKey, menuConfig, routePatterns)?.path || '/'
-}
 
 function createResolvedMenuItem({
   key,
@@ -639,6 +57,8 @@ function createResolvedMenuItem({
   meta = '',
   icon = '',
   description = '',
+  menuGroup = 'auto',
+  menuOrder = 0,
   children = []
 }) {
   const normalizedLabel = normalizeString(label)
@@ -662,6 +82,8 @@ function createResolvedMenuItem({
     meta: normalizeString(meta),
     icon: normalizeString(icon),
     description: normalizeString(description),
+    menuGroup: normalizeMenuGroup(menuGroup, 'auto'),
+    menuOrder: normalizePositiveInteger(menuOrder, 0),
     children: normalizedChildren
   }
 }
@@ -680,6 +102,8 @@ export function createMenuItem(item = {}) {
     meta: item.meta || item.description,
     icon: item.icon,
     description: item.description,
+    menuGroup: item.menuGroup,
+    menuOrder: item.menuOrder,
     children: normalizeMenuItemChildren(item.children)
   })
 }
@@ -776,6 +200,8 @@ function createPageMenuItem(page = {}, overrides = {}) {
     meta: overrides.meta || overrides.description,
     icon: overrides.icon || page.icon,
     description: overrides.description || page.description,
+    menuGroup: overrides.menuGroup || page.menuGroup,
+    menuOrder: overrides.menuOrder || page.menuOrder,
     children: normalizeMenuItemChildren(overrides.children)
   })
 }
@@ -819,8 +245,21 @@ function resolveBlogNavMenuItem(rawItem, index, navItems = []) {
     meta: item.meta || item.description,
     icon: item.icon,
     description: item.description,
+    menuGroup: item.menuGroup,
+    menuOrder: item.menuOrder,
     children
   })
+}
+
+function sortBlogNavPages(pages = []) {
+  return pages
+    .map((page, index) => ({ page, index }))
+    .sort((left, right) => (
+      normalizePositiveInteger(left.page.menuOrder, Number.MAX_SAFE_INTEGER)
+      - normalizePositiveInteger(right.page.menuOrder, Number.MAX_SAFE_INTEGER)
+      || left.index - right.index
+    ))
+    .map(entry => entry.page)
 }
 
 function resolveBlogNavMenuSource(definition, context = {}) {
@@ -834,8 +273,7 @@ function resolveBlogNavMenuSource(definition, context = {}) {
       .filter(Boolean)
   }
 
-  return navItems
-    .filter(item => item.visible !== false)
+  return sortBlogNavPages(navItems.filter(item => item.visible !== false))
     .map(item => createPageMenuItem(item))
 }
 
@@ -955,10 +393,55 @@ function resolveMenuSourceItems(definition, context = {}) {
   )
 }
 
+function resolveAutomaticHeaderOverflow(entry, items) {
+  if (
+    entry.source !== 'blog-nav'
+    || entry.items.length > 0
+    || normalizePositiveInteger(entry.primaryLimit, 0) <= 0
+  ) {
+    return items
+  }
+
+  const primaryItems = items.filter(item => item.menuGroup !== 'more')
+  const overflowItems = new Set(items.filter(item => item.menuGroup === 'more'))
+
+  while (primaryItems.length > entry.primaryLimit) {
+    let overflowIndex = -1
+
+    for (let index = primaryItems.length - 1; index >= 0; index -= 1) {
+      if (primaryItems[index].menuGroup !== 'primary') {
+        overflowIndex = index
+        break
+      }
+    }
+
+    if (overflowIndex < 0) {
+      break
+    }
+
+    overflowItems.add(primaryItems[overflowIndex])
+    primaryItems.splice(overflowIndex, 1)
+  }
+
+  if (overflowItems.size === 0) {
+    return primaryItems
+  }
+
+  const overflowChildren = items.filter(item => overflowItems.has(item))
+  const overflowMenuItem = createResolvedMenuItem({
+    key: `${entry.key}-overflow`,
+    label: entry.overflowLabel || '更多',
+    children: overflowChildren
+  })
+
+  return overflowMenuItem ? [...primaryItems, overflowMenuItem] : primaryItems
+}
+
 function resolveHeaderMenuCollection(entries, context = {}) {
   return entries
     .map((entry) => {
-      const items = resolveMenuSourceItems(entry, context)
+      const sourceItems = resolveMenuSourceItems(entry, context)
+      const items = resolveAutomaticHeaderOverflow(entry, sourceItems)
 
       if (items.length === 0) {
         return null
@@ -1055,11 +538,441 @@ export function getMaxMenuSourceLimit(menuConfig = {}, source, collections = ['s
   }, 0) || fallback
 }
 
+function createMenuDiagnostic(level, code, message, path) {
+  return { level, code, message, path }
+}
+
+function resolveConfiguredMenuItemKey(rawItem, index) {
+  if (typeof rawItem === 'string') {
+    const value = normalizeString(rawItem)
+    return value && !value.includes('|') ? normalizePageKey(value) : `custom-item-${index + 1}`
+  }
+
+  if (!isPlainObject(rawItem)) {
+    return ''
+  }
+
+  const item = toCamelCase(rawItem)
+  const hasTarget = Boolean(item.target || item.to || item.path || item.href)
+  const hasChildren = Array.isArray(item.children) && item.children.length > 0
+  const pageKey = normalizePageKey(
+    item.page || item.pageKey || (!hasTarget && !hasChildren ? item.key : '')
+  )
+
+  return normalizeString(item.key || pageKey || `menu-item-${index + 1}`)
+}
+
+function validateMenuEntryItems(
+  items,
+  pageKeys,
+  collectionPath,
+  diagnostics,
+  { depth = 1, maxDepth = 2, validatePageReferences = true } = {}
+) {
+  const normalizedItems = Array.isArray(items) ? items : []
+  const siblingKeys = new Set()
+
+  normalizedItems.forEach((rawItem, index) => {
+    const itemPath = `${collectionPath}[${index}]`
+    const itemKey = resolveConfiguredMenuItemKey(rawItem, index)
+
+    if (itemKey && siblingKeys.has(itemKey)) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'duplicate-menu-item-key',
+        `Menu item key "${itemKey}" is duplicated at the same level.`,
+        `${itemPath}.key`
+      ))
+    }
+    siblingKeys.add(itemKey)
+
+    if (depth > maxDepth) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'menu-item-depth-exceeded',
+        `Menu items support at most ${maxDepth} levels.`,
+        itemPath
+      ))
+    }
+
+    if (typeof rawItem === 'string') {
+      const value = normalizeString(rawItem)
+
+      if (
+        validatePageReferences
+        && value
+        && !value.includes('|')
+        && !pageKeys.has(normalizePageKey(value))
+      ) {
+        diagnostics.push(createMenuDiagnostic(
+          'warning',
+          'unknown-menu-page',
+          `Menu item references unknown or disabled page "${value}".`,
+          itemPath
+        ))
+      }
+      return
+    }
+
+    if (!isPlainObject(rawItem)) {
+      return
+    }
+
+    const item = toCamelCase(rawItem)
+    const hasTarget = Boolean(item.target || item.to || item.path || item.href)
+    const hasChildren = Array.isArray(item.children) && item.children.length > 0
+    const explicitPageKey = normalizePageKey(
+      item.page || item.pageKey || (!hasTarget && !hasChildren ? item.key : '')
+    )
+
+    if (validatePageReferences && explicitPageKey && !pageKeys.has(explicitPageKey)) {
+      diagnostics.push(createMenuDiagnostic(
+        'warning',
+        'unknown-menu-page',
+        `Menu item references unknown or disabled page "${explicitPageKey}".`,
+        itemPath
+      ))
+    }
+
+    validateMenuEntryItems(item.children, pageKeys, `${itemPath}.children`, diagnostics, {
+      depth: depth + 1,
+      maxDepth,
+      validatePageReferences
+    })
+  })
+}
+
+function collectMenuPageReferences(items, pageKeys, references) {
+  const normalizedItems = Array.isArray(items) ? items : []
+
+  normalizedItems.forEach((rawItem) => {
+    if (typeof rawItem === 'string') {
+      const value = normalizeString(rawItem)
+      const pageKey = !value.includes('|') ? normalizePageKey(value) : ''
+
+      if (pageKeys.has(pageKey)) {
+        references.add(pageKey)
+      }
+      return
+    }
+
+    if (!isPlainObject(rawItem)) {
+      return
+    }
+
+    const item = toCamelCase(rawItem)
+    const pageKey = normalizePageKey(item.page || item.pageKey || item.key)
+
+    if (pageKeys.has(pageKey)) {
+      references.add(pageKey)
+    }
+
+    collectMenuPageReferences(item.children, pageKeys, references)
+  })
+}
+
+export function getMenuConfigDiagnostics(menuConfig = {}, routePatterns = {}, options = {}) {
+  const normalizedMenuConfig = normalizeMenuConfig(menuConfig)
+  const normalizedRoutePatterns = normalizeBlogRoutePatterns(routePatterns)
+  const rawMenuConfig = isPlainObject(menuConfig) ? toCamelCase(menuConfig) : {}
+  const rawPages = Array.isArray(rawMenuConfig.pages) ? rawMenuConfig.pages : []
+  const diagnostics = []
+  const seenPageKeys = new Set()
+  const duplicatePageKeys = new Set()
+
+  normalizedMenuConfig.pages.forEach((page, index) => {
+    if (seenPageKeys.has(page.key) && !duplicatePageKeys.has(page.key)) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'duplicate-menu-page-key',
+        `Menu page key "${page.key}" is configured more than once.`,
+        `menus.pages[${index}].key`
+      ))
+      duplicatePageKeys.add(page.key)
+    }
+
+    seenPageKeys.add(page.key)
+  })
+
+  rawPages.forEach((rawPage, index) => {
+    if (!isPlainObject(rawPage)) {
+      return
+    }
+
+    const component = normalizeString(rawPage.component).toLowerCase()
+    const menuGroup = normalizeString(rawPage.menuGroup).toLowerCase()
+    const menuOrder = Number(rawPage.menuOrder)
+    const pageKey = normalizePageKey(rawPage.key || rawPage.id)
+    const configuredPath = normalizeString(rawPage.path || rawPage.to || rawPage.href)
+
+    if (!pageKey) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'missing-menu-page-key',
+        'Menu page key is required.',
+        `menus.pages[${index}].key`
+      ))
+    } else if (!isValidMenuPageKey(pageKey)) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'invalid-menu-page-key',
+        `Menu page key "${pageKey}" may contain only letters, numbers, underscores, and hyphens.`,
+        `menus.pages[${index}].key`
+      ))
+    }
+
+    if (configuredPath && !normalizeMenuPagePath(configuredPath, '')) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'invalid-menu-page-path',
+        `Menu page path "${configuredPath}" is not a safe static path.`,
+        `menus.pages[${index}].path`
+      ))
+    }
+
+    if (component && !isMenuPageComponentKey(component)) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'unknown-menu-page-component',
+        `Menu page component "${component}" is not supported.`,
+        `menus.pages[${index}].component`
+      ))
+    }
+
+    if (menuGroup && !MENU_GROUPS.has(menuGroup)) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'unknown-menu-group',
+        `Menu group "${menuGroup}" must be auto, primary, or more.`,
+        `menus.pages[${index}].menuGroup`
+      ))
+    }
+
+    if (
+      rawPage.menuOrder !== undefined
+      && (!Number.isInteger(menuOrder) || menuOrder <= 0)
+    ) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'invalid-menu-order',
+        'Menu order must be a positive integer.',
+        `menus.pages[${index}].menuOrder`
+      ))
+    }
+  })
+
+  const builtInPages = getDefaultMenuPages(normalizedRoutePatterns).filter((page) => {
+    const override = normalizedMenuConfig.pages.find(entry => entry.key === page.key)
+    return override?.enabled !== false
+  })
+  const usedPaths = new Map(builtInPages.map(page => [page.path, page.key]))
+  const reservedPath = normalizeMenuPagePath(normalizedRoutePatterns.notFound, '')
+  const reservedDynamicRoutes = getDynamicBlogRoutePatterns(normalizedRoutePatterns)
+  const customRoutes = []
+
+  normalizedMenuConfig.pages.forEach((page, index) => {
+    if (BUILT_IN_MENU_PAGE_KEYS.has(page.key) || page.enabled === false || duplicatePageKeys.has(page.key)) {
+      return
+    }
+
+    const path = normalizeMenuPagePath(page.path, `/${page.key}`)
+    const pathOwner = usedPaths.get(path)
+
+    if (path && (path === reservedPath || pathOwner)) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'duplicate-menu-page-path',
+        pathOwner
+          ? `Menu page path "${path}" is already used by page "${pathOwner}".`
+          : `Menu page path "${path}" conflicts with the not-found route.`,
+        `menus.pages[${index}].path`
+      ))
+      return
+    }
+
+    const resolvedPage = {
+      ...page,
+      path,
+      component: normalizeMenuPageComponent(page.component, 'context')
+    }
+    const pageRoutes = getCustomMenuPageRoutePatterns(resolvedPage)
+    const enabledBuiltInRoutes = builtInPages.map(entry => ({
+      key: entry.key,
+      pattern: entry.path,
+      type: 'page'
+    }))
+    const routeConflict = findOverlappingRoute(
+      pageRoutes,
+      [...enabledBuiltInRoutes, ...reservedDynamicRoutes, ...customRoutes]
+    )
+
+    if (routeConflict) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'conflicting-menu-page-route',
+        `Menu page route "${routeConflict.route.pattern}" conflicts with route "${routeConflict.conflict.pattern}".`,
+        `menus.pages[${index}].path`
+      ))
+      return
+    }
+
+    if (path) {
+      usedPaths.set(path, page.key)
+      customRoutes.push(...pageRoutes)
+    }
+  })
+
+  const configuredRenderers = new Set(
+    Array.isArray(options.renderers)
+      ? options.renderers.map(renderer => normalizeString(renderer)).filter(Boolean)
+      : DEFAULT_MENU_RENDERER_NAMES
+  )
+  const resolvedPages = resolveMenuPages(normalizedMenuConfig, normalizedRoutePatterns)
+  const resolvedPageKeys = new Set(resolvedPages.map(page => page.key))
+
+  normalizedMenuConfig.header.forEach((entry, index) => {
+    if (entry.source !== 'blog-nav' || entry.items.length > 0 || entry.primaryLimit <= 0) {
+      return
+    }
+
+    const primaryPages = resolvedPages.filter(page => (
+      page.visible !== false && page.menuGroup === 'primary'
+    ))
+
+    if (primaryPages.length > entry.primaryLimit) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'too-many-primary-menu-pages',
+        `Primary menu pages (${primaryPages.map(page => page.key).join(', ')}) exceed the limit of ${entry.primaryLimit}.`,
+        `menus.header[${index}].primaryLimit`
+      ))
+    }
+  })
+
+  resolvedPages.forEach((page) => {
+    if (page.builtIn || page.enabled === false) {
+      return
+    }
+
+    const pageIndex = normalizedMenuConfig.pages.findIndex(entry => entry.key === page.key)
+    const pagePath = `menus.pages[${Math.max(pageIndex, 0)}]`
+
+    if (page.component === 'context' && !page.file && !page.content) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'missing-menu-page-file',
+        `Context page "${page.key}" requires file or inline content.`,
+        `${pagePath}.file`
+      ))
+    }
+
+    if (
+      MENU_COLLECTION_PAGE_COMPONENTS.has(page.component)
+      && !page.folder
+      && page.items.length === 0
+    ) {
+      diagnostics.push(createMenuDiagnostic(
+        'error',
+        'missing-menu-page-folder',
+        `Collection page "${page.key}" requires folder or inline items.`,
+        `${pagePath}.folder`
+      ))
+    }
+  })
+
+  const collectionKeys = ['header', 'mobileHeader', 'sidebar']
+
+  collectionKeys.forEach((collectionKey) => {
+    const entries = normalizedMenuConfig[collectionKey]
+    const seenEntryKeys = new Set()
+
+    entries.forEach((entry, index) => {
+      const entryPath = `menus.${collectionKey}[${index}]`
+
+      if (seenEntryKeys.has(entry.key)) {
+        diagnostics.push(createMenuDiagnostic(
+          'error',
+          'duplicate-menu-entry-key',
+          `Menu entry key "${entry.key}" is duplicated in ${collectionKey}.`,
+          `${entryPath}.key`
+        ))
+      }
+      seenEntryKeys.add(entry.key)
+
+      if (!resolveMenuSource(entry.source)) {
+        diagnostics.push(createMenuDiagnostic(
+          'warning',
+          'unknown-menu-source',
+          `Menu source "${entry.source}" is not registered.`,
+          `${entryPath}.source`
+        ))
+      }
+
+      if (!configuredRenderers.has(entry.renderer)) {
+        diagnostics.push(createMenuDiagnostic(
+          'warning',
+          'unknown-menu-renderer',
+          `Menu renderer "${entry.renderer}" is not registered for the site build.`,
+          `${entryPath}.renderer`
+        ))
+      }
+
+      if (entry.items.length > 0) {
+        validateMenuEntryItems(entry.items, resolvedPageKeys, `${entryPath}.items`, diagnostics, {
+          maxDepth: collectionKey === 'sidebar' ? 1 : 2,
+          validatePageReferences: entry.source === 'blog-nav'
+        })
+      }
+    })
+
+    const rawEntries = rawMenuConfig[collectionKey]
+    const hasExplicitItems = Array.isArray(rawEntries) && rawEntries.some(entry => (
+      isPlainObject(entry) && Array.isArray(entry.items) && entry.items.length > 0
+    ))
+
+    if (!hasExplicitItems || collectionKey === 'sidebar') {
+      return
+    }
+
+    const references = new Set()
+    entries.forEach((entry) => {
+      if (entry.source === 'blog-nav') {
+        collectMenuPageReferences(entry.items, resolvedPageKeys, references)
+      }
+    })
+
+    resolvedPages
+      .filter(page => page.visible !== false && !references.has(page.key))
+      .forEach((page) => {
+        diagnostics.push(createMenuDiagnostic(
+          'warning',
+          'unreferenced-visible-page',
+          `Visible page "${page.key}" is omitted from the explicit ${collectionKey} menu.`,
+          `menus.${collectionKey}`
+        ))
+      })
+  })
+
+  return diagnostics
+}
+
 export function getDefaultMenuConfig() {
   return normalizeMenuConfig()
 }
 
 export {
   BUILT_IN_MENU_PAGE_KEYS,
-  DEFAULT_MENU_CONFIG
+  DEFAULT_MENU_CONFIG,
+  DEFAULT_MENU_RENDERER_NAMES,
+  getBuiltInMenuPages,
+  getCustomMenuPages,
+  getDefaultMenuPages,
+  getMenuPagePath,
+  getPrimaryMenuPage,
+  getPrimaryMenuPagePath,
+  normalizeMenuConfig,
+  resolveMenuPage,
+  resolveMenuPageRegistry,
+  resolveMenuPages,
+  resolvePrimaryMenuPage
 }

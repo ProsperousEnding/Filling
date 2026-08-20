@@ -2,8 +2,3 @@
 
 enabled = true
 mode = "gradient"
-
-# 如果要用图片背景，改成:
-# mode = "image"
-# image = "backgrounds/site-light.webp"
-# dark_image = "backgrounds/site-dark.webp"

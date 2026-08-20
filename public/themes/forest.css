@@ -30,6 +30,7 @@
   --theme-chip-hover: rgba(220, 252, 231, 0.9);
   --theme-panel-background: rgba(255, 255, 252, 0.78);
   --theme-panel-strong: rgba(255, 255, 253, 0.92);
+  --theme-popover-background: #fffffd;
   --theme-panel-muted: rgba(248, 250, 245, 0.88);
   --theme-border: rgba(163, 190, 159, 0.22);
   --theme-border-strong: rgba(74, 107, 72, 0.26);
@@ -77,6 +78,7 @@
   --theme-chip-hover: rgba(24, 43, 31, 0.92);
   --theme-panel-background: rgba(10, 18, 13, 0.8);
   --theme-panel-strong: rgba(16, 29, 21, 0.92);
+  --theme-popover-background: #101d15;
   --theme-panel-muted: rgba(16, 29, 21, 0.9);
   --theme-border: rgba(74, 95, 78, 0.42);
   --theme-border-strong: rgba(134, 239, 172, 0.22);

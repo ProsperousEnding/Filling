@@ -3,7 +3,7 @@
     <!-- 搜索标题 -->
     <div class="theme-page-header mb-8">
       <h1 class="theme-page-title text-3xl font-bold mb-4">
-        搜索结果
+        {{ searchPerformed || trimmedQuery ? '搜索结果' : '搜索' }}
       </h1>
       <!-- 搜索框 -->
       <div class="mb-6">
@@ -16,8 +16,9 @@
               v-model="searchQuery"
               type="text"
               placeholder="搜索内容..."
+              aria-label="搜索内容"
               class="search-input"
-              @keyup.enter="performSearch(true, 1)"
+              @keyup.enter="submitSearch"
             />
             <button
               v-if="searchQuery"
@@ -32,7 +33,7 @@
             </button>
             <button
               type="button"
-              @click="performSearch(true, 1)"
+              @click="submitSearch"
               :disabled="!trimmedQuery"
               class="search-submit-btn"
               aria-label="搜索"
@@ -45,7 +46,12 @@
         </div>
       </div>
       <!-- 搜索状态 -->
-      <div v-if="searchPerformed" class="theme-page-status">
+      <div
+        v-if="searchPerformed && !loading"
+        class="theme-page-status"
+        role="status"
+        aria-live="polite"
+      >
         找到 {{ total }} 条与 "{{ displayQuery }}" 相关的结果
       </div>
     </div>
@@ -100,14 +106,55 @@
         </div>
       </div>
     </div>
+
+    <!-- 默认发现内容 -->
+    <div v-else class="search-discovery">
+      <section class="search-discovery-section" aria-labelledby="search-latest-title">
+        <h2 id="search-latest-title" class="theme-section-title text-xl font-semibold mb-5">
+          最新内容
+        </h2>
+
+        <div v-if="discoveryLoading" class="py-8 flex justify-center">
+          <div class="theme-loading-inline inline-flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            加载中...
+          </div>
+        </div>
+
+        <div v-else-if="discoveryArticles.length > 0" class="search-result-list">
+          <SearchResultCard
+            v-for="article in discoveryArticles"
+            :key="article.id"
+            :article="article"
+            :keywords="[]"
+          />
+        </div>
+      </section>
+
+      <section
+        v-if="suggestedTagsLoading || defaultSuggestedTags.length > 0"
+        class="search-discovery-section"
+        aria-label="热门标签"
+      >
+        <TagCloud
+          title="热门标签"
+          :tags="defaultSuggestedTags"
+          :loading="suggestedTagsLoading"
+        />
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSearchStore } from '../stores/search'
 import { useTagStore } from '../stores/tag'
+import { useArticleStore } from '../stores/article'
 import { useConfigStore } from '../stores/config'
 import SearchResultCard from '../components/core/SearchResultCard.vue'
 import TagCloud from '../components/core/TagCloud.vue'
@@ -122,6 +169,7 @@ const router = useRouter()
 // 获取store
 const searchStore = useSearchStore()
 const tagStore = useTagStore()
+const articleStore = useArticleStore()
 const configStore = useConfigStore()
 
 // 状态
@@ -136,9 +184,16 @@ const currentPage = ref(parseInt(route.query.page) || 1)
 const pageSize = computed(() => configStore.pageSize || 10)
 const suggestedTags = ref([])
 const suggestedTagsLoading = ref(false)
+const discoveryArticles = ref([])
+const discoveryLoading = ref(false)
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
+const defaultSuggestedTags = computed(() => suggestedTags.value.slice(0, 12))
 const activeSearchQuery = computed(() => displayQuery.value || trimmedQuery.value)
 const activeKeywords = computed(() => activeSearchQuery.value.split(/\s+/).filter(Boolean))
+const REALTIME_SEARCH_DELAY = 250
+let searchTimer = null
+let activeSearchRequestId = 0
+const pendingSearchLocations = new Set()
 
 usePageMetadata({
   title: () => displayQuery.value ? `搜索：${displayQuery.value}` : '搜索',
@@ -150,11 +205,17 @@ usePageMetadata({
 
 onMounted(() => {
   loadSuggestedTags().catch(() => {})
+  loadDiscoveryArticles().catch(() => {})
 })
 
 const syncFromRoute = () => {
-  const keyword = (route.query.keyword ?? route.query.q ?? '').toString()
+  const keyword = (route.query.keyword ?? route.query.q ?? '').toString().trim()
   const page = parseInt(route.query.page) || 1
+  const isPendingInputNavigation = pendingSearchLocations.delete(route.fullPath)
+
+  if (isPendingInputNavigation && trimmedQuery.value !== keyword) {
+    return
+  }
 
   if (keyword !== searchQuery.value) {
     searchQuery.value = keyword
@@ -164,14 +225,36 @@ const syncFromRoute = () => {
   if (keyword) {
     performSearch(false, page)
   } else {
-    searchPerformed.value = false
-    displayQuery.value = ''
-    articles.value = []
-    total.value = 0
+    resetSearchResults()
   }
 }
 
 watch(() => [route.query.keyword, route.query.q, route.query.page], syncFromRoute, { immediate: true })
+
+watch(searchQuery, () => {
+  cancelScheduledSearch()
+
+  const keyword = trimmedQuery.value
+  const routeKeyword = (route.query.keyword ?? route.query.q ?? '').toString().trim()
+
+  if (keyword === routeKeyword) {
+    return
+  }
+
+  if (!keyword) {
+    resetSearchResults()
+
+    if (routeKeyword || route.query.page) {
+      router.replace(getSearchRoute()).catch(() => {})
+    }
+    return
+  }
+
+  searchTimer = setTimeout(() => {
+    searchTimer = null
+    performSearch(true, 1, { replace: true })
+  }, REALTIME_SEARCH_DELAY)
+})
 
 watch(pageSize, () => {
   if (!searchPerformed.value || !activeSearchQuery.value.trim()) {
@@ -183,7 +266,7 @@ watch(pageSize, () => {
 })
 
 // 执行搜索
-async function performSearch(updateUrl = true, page = currentPage.value) {
+async function performSearch(updateUrl = true, page = currentPage.value, options = {}) {
   const keyword = trimmedQuery.value
   if (!keyword) return
 
@@ -196,11 +279,17 @@ async function performSearch(updateUrl = true, page = currentPage.value) {
     const sameKeyword = route.query.keyword === keyword || route.query.q === keyword
     const samePage = String(route.query.page || '1') === String(page)
     if (!sameKeyword || !samePage) {
-      router.push(getSearchRoute(nextQuery))
+      const navigate = options.replace === true ? router.replace : router.push
+      const location = getSearchRoute(nextQuery)
+      const fullPath = router.resolve(location).fullPath
+      pendingSearchLocations.add(fullPath)
+      navigate(location).catch(() => pendingSearchLocations.delete(fullPath))
     }
     return
   }
 
+  const requestId = activeSearchRequestId + 1
+  activeSearchRequestId = requestId
   loading.value = true
   searchPerformed.value = true
   displayQuery.value = keyword
@@ -212,15 +301,43 @@ async function performSearch(updateUrl = true, page = currentPage.value) {
       pageSize: pageSize.value
     })
 
-    articles.value = result.data || []
-    total.value = result.total || 0
+    if (requestId === activeSearchRequestId) {
+      articles.value = result.data || []
+      total.value = result.total || 0
+    }
   } catch (error) {
-    console.error('搜索失败:', error)
-    articles.value = []
-    total.value = 0
+    if (requestId === activeSearchRequestId) {
+      console.error('搜索失败:', error)
+      articles.value = []
+      total.value = 0
+    }
   } finally {
-    loading.value = false
+    if (requestId === activeSearchRequestId) {
+      loading.value = false
+    }
   }
+}
+
+function cancelScheduledSearch() {
+  if (searchTimer !== null) {
+    clearTimeout(searchTimer)
+    searchTimer = null
+  }
+}
+
+function resetSearchResults() {
+  activeSearchRequestId += 1
+  loading.value = false
+  searchPerformed.value = false
+  displayQuery.value = ''
+  articles.value = []
+  total.value = 0
+  currentPage.value = 1
+}
+
+function submitSearch() {
+  cancelScheduledSearch()
+  performSearch(true, 1)
 }
 
 async function loadSuggestedTags() {
@@ -247,22 +364,36 @@ async function loadSuggestedTags() {
   }
 }
 
+async function loadDiscoveryArticles() {
+  if (discoveryLoading.value || discoveryArticles.value.length > 0) {
+    return
+  }
+
+  discoveryLoading.value = true
+
+  try {
+    const latestArticles = await articleStore.fetchLatestArticles(5)
+    discoveryArticles.value = (Array.isArray(latestArticles) ? latestArticles : [])
+      .map(article => ({
+        ...article,
+        kind: article?.kind || 'article'
+      }))
+  } catch (error) {
+    discoveryArticles.value = []
+  } finally {
+    discoveryLoading.value = false
+  }
+}
+
 // 清除搜索
 const clearSearch = () => {
+  cancelScheduledSearch()
   searchQuery.value = ''
-  displayQuery.value = ''
-  searchPerformed.value = false
-  articles.value = []
-  total.value = 0
-  currentPage.value = 1
-
-  if (route.query.keyword || route.query.q || route.query.page) {
-    router.push(getSearchRoute())
-  }
 }
 
 // 页码变更
 const handlePageChange = (page) => {
+  cancelScheduledSearch()
   currentPage.value = page
   const keyword = activeSearchQuery.value.trim()
   if (!keyword) return
@@ -279,6 +410,11 @@ const handlePageChange = (page) => {
   })
 }
 
+onBeforeUnmount(() => {
+  cancelScheduledSearch()
+  activeSearchRequestId += 1
+})
+
 </script> 
 
 
@@ -290,6 +426,11 @@ const handlePageChange = (page) => {
 .search-result-list {
   display: grid;
   gap: 1.25rem;
+}
+
+.search-discovery {
+  display: grid;
+  gap: 2.5rem;
 }
 
 .search-bar {
@@ -401,29 +542,29 @@ const handlePageChange = (page) => {
   pointer-events: none;
 }
 
-:global(.dark) .search-bar {
+:global(.dark .search-bar) {
   border-color: rgba(96, 165, 250, 0.55);
   background: rgba(31, 41, 55, 0.84);
 }
 
-:global(.dark) .search-bar:focus-within {
+:global(.dark .search-bar:focus-within) {
   border-color: rgba(96, 165, 250, 0.9);
   box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
 }
 
-:global(.dark) .search-input {
+:global(.dark .search-input) {
   color: rgb(243 244 246);
 }
 
-:global(.dark) .search-input::placeholder {
+:global(.dark .search-input::placeholder) {
   color: rgb(156 163 175);
 }
 
-:global(.dark) .search-clear-btn {
+:global(.dark .search-clear-btn) {
   color: rgb(156 163 175);
 }
 
-:global(.dark) .search-clear-btn:hover {
+:global(.dark .search-clear-btn:hover) {
   background: rgb(55 65 81);
   color: rgb(229 231 235);
 }

@@ -323,17 +323,17 @@ function getTagKey(tag) {
   color: rgb(148 163 184);
 }
 
-:global(.dark) .search-result-cover {
+:global(.dark .search-result-cover) {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.96));
 }
 
-:global(.dark) .search-result-kind,
-:global(.dark) .search-result-chip {
+:global(.dark .search-result-kind),
+:global(.dark .search-result-chip) {
   border-color: rgba(71, 85, 105, 0.72);
   background: rgba(15, 23, 42, 0.42);
 }
 
-:global(.dark) .search-result-kind {
+:global(.dark .search-result-kind) {
   color: rgb(147 197 253);
 }
 

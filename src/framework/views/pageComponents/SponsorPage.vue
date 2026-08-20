@@ -127,6 +127,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useConfigStore } from '../../stores/config'
+import { useBlogBaseUrl } from '../../runtime/runtimeContext'
 
 defineProps({
   page: {
@@ -140,6 +141,7 @@ defineProps({
 })
 
 const configStore = useConfigStore()
+const baseUrl = useBlogBaseUrl()
 
 const sponsorConfig = computed(() => (
   configStore.sponsorConfig || {
@@ -191,7 +193,6 @@ function resolveAssetUrl(value) {
     return normalizedValue
   }
 
-  const baseUrl = import.meta.env.BASE_URL || '/'
   const normalizedPath = normalizedValue.replace(/^\.?\//, '').replace(/^\/+/, '')
   return `${baseUrl}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
 }

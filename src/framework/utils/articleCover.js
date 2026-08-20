@@ -7,16 +7,20 @@ export const SEEDED_COVER_STYLES = Object.freeze([
   'cataas',
   'mwm-anime',
   'mwm-scenery',
-  'xjh-acg',
-  'bing-rand'
+  'paugram-anime',
+  'dmoe-anime',
+  'loremflickr',
+  'paugram-bing'
 ])
 export const DEFAULT_SEEDED_COVER_URLS = Object.freeze({
   picsum: 'https://picsum.photos/seed/{seed}/{width}/{height}.{format}',
   cataas: 'https://cataas.com/cat?width={width}&height={height}&seed={hash}',
   'mwm-anime': 'https://t.mwm.moe/pc?seed={hash}',
   'mwm-scenery': 'https://t.mwm.moe/fj?seed={hash}',
-  'xjh-acg': 'https://img.xjh.me/random_img.php?type=bg&ctype=acg&return=302&seed={hash}',
-  'bing-rand': 'https://bing.img.run/rand.php?seed={hash}'
+  'paugram-anime': 'https://api.paugram.com/wallpaper/?seed={hash}',
+  'dmoe-anime': 'https://www.dmoe.cc/random.php?seed={hash}',
+  loremflickr: 'https://loremflickr.com/{width}/{height}/landscape?lock={hash}',
+  'paugram-bing': 'https://api.paugram.com/bing/?seed={hash}'
 })
 
 function normalizeString(value) {
@@ -66,6 +70,10 @@ function resolveStyleAlias(value) {
     return 'loremflickr'
   }
 
+  if (['paugram-anime', 'paugram', 'paul-anime'].includes(normalized)) {
+    return 'paugram-anime'
+  }
+
   if (['image-cdn', 'imagecdn', 'random-imagecdn'].includes(normalized)) {
     return 'imagecdn'
   }
@@ -78,8 +86,8 @@ function resolveStyleAlias(value) {
     return 'cataas'
   }
 
-  if (['dmoe', 'sakura', 'yinghua'].includes(normalized)) {
-    return 'dmoe'
+  if (['dmoe-anime', 'dmoe', 'sakura', 'yinghua'].includes(normalized)) {
+    return 'dmoe-anime'
   }
 
   if (['btstu-anime', 'btstu-dongman', 'dongman'].includes(normalized)) {
@@ -106,6 +114,10 @@ function resolveStyleAlias(value) {
     return 'dujin-bing'
   }
 
+  if (['paugram-bing', 'paul-bing'].includes(normalized)) {
+    return 'paugram-bing'
+  }
+
   if (['mwm-anime', 'mwm', 'mwm-pc'].includes(normalized)) {
     return 'mwm-anime'
   }
@@ -116,14 +128,6 @@ function resolveStyleAlias(value) {
 
   if (['loliapi', 'loli-api'].includes(normalized)) {
     return 'loliapi'
-  }
-
-  if (['xjh-acg', 'xjh'].includes(normalized)) {
-    return 'xjh-acg'
-  }
-
-  if (['bing-rand', 'bing-random'].includes(normalized)) {
-    return 'bing-rand'
   }
 
   return normalized
@@ -258,6 +262,7 @@ function isGeneratedSeededCoverUrl(value) {
     || /^https?:\/\/image\.pollinations\.ai\/prompt\//i.test(normalizedValue)
     || /^https?:\/\/cataas\.com\/cat/i.test(normalizedValue)
     || /^https?:\/\/www\.dmoe\.cc\/random\.php\?/i.test(normalizedValue)
+    || /^https?:\/\/api\.paugram\.com\/(?:wallpaper|bing)\//i.test(normalizedValue)
     || /^https?:\/\/www\.btstu\.cn\/sjbz\/api\.php\?/i.test(normalizedValue)
     || /^https?:\/\/api\.ixiaowai\.cn\/api\/api2\.php\?/i.test(normalizedValue)
     || /^https?:\/\/api\.r10086\.com\/img-api\.php\?/i.test(normalizedValue)

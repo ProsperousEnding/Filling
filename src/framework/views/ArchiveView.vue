@@ -92,11 +92,11 @@ usePageMetadata({
   description: () => pageDescription.value
 })
 
-fetchArchiveGroups()
+fetchArchiveGroups().catch(() => {})
 
-function fetchArchiveGroups() {
+async function fetchArchiveGroups() {
   try {
-    archiveGroups.value = articleStore.fetchArchiveGroups()
+    archiveGroups.value = await articleStore.fetchArchiveGroups()
   } catch (error) {
     console.error('获取归档列表失败:', error)
     archiveGroups.value = []

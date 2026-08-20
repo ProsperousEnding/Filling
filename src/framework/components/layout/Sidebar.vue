@@ -2,15 +2,16 @@
   <aside
     class="sidebar-container"
     :class="mobile ? 'sidebar-container-mobile' : 'sidebar-container-desktop'"
+    :aria-label="mobile ? '内容面板' : '侧边栏'"
   >
     <div class="sidebar-content">
       <div v-if="mobile" class="sidebar-mobile-actions">
         <div class="sidebar-mobile-actions-inner">
-          <h2 class="sidebar-mobile-title">导航</h2>
+          <h2 id="sidebar-mobile-title" class="sidebar-mobile-title">内容面板</h2>
           <button
             type="button"
             class="sidebar-close-button"
-            aria-label="关闭侧边栏"
+            aria-label="关闭内容面板"
             @click="closeSidebar"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-close-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
@@ -26,7 +27,10 @@
           class="sidebar-profile-panel"
         >
           <div class="sidebar-profile-card">
-            <div class="sidebar-profile-stack">
+            <div
+              class="sidebar-profile-stack"
+              :class="{ 'sidebar-profile-stack-without-avatar': !showProfileAvatar }"
+            >
               <div v-if="showProfileAvatar" class="sidebar-profile-avatar-frame">
                 <div class="sidebar-profile-avatar-shell">
                   <div class="sidebar-profile-avatar">
@@ -51,35 +55,51 @@
 
               <p v-if="displayBio" class="sidebar-profile-bio">{{ displayBio }}</p>
 
-              <div v-if="profileMeta.length > 0" class="sidebar-profile-meta">
-                <component
-                  :is="meta.href ? 'a' : 'span'"
-                  v-for="meta in profileMeta"
-                  :key="meta.key"
-                  :href="meta.href || undefined"
-                  class="sidebar-profile-meta-item"
-                  :target="meta.href ? '_blank' : undefined"
-                  :rel="meta.href ? 'noreferrer' : undefined"
-                >
-                  {{ meta.label }}
-                </component>
-              </div>
+              <div
+                v-if="profileSocialLinks.length > 0 || profileMeta.length > 0"
+                class="sidebar-profile-links-row"
+              >
+                <div v-if="profileSocialLinks.length > 0" class="sidebar-profile-socials">
+                  <a
+                    v-for="link in profileSocialLinks"
+                    :key="link.id"
+                    :href="link.url"
+                    class="sidebar-profile-social-link"
+                    :class="{ 'sidebar-profile-social-link-icon-only': link.icon && !link.showName }"
+                    :title="link.name"
+                    :aria-label="link.name"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <svg
+                      v-if="link.iconKey === 'github'"
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="sidebar-profile-social-icon sidebar-profile-social-icon-github"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.47.11-3.05 0 0 .96-.31 3.16 1.18A10.9 10.9 0 0 1 12 6.12c.98 0 1.95.13 2.87.39 2.19-1.49 3.15-1.18 3.15-1.18.63 1.58.24 2.76.12 3.05.74.8 1.18 1.83 1.18 3.08 0 4.4-2.71 5.38-5.29 5.67.42.36.79 1.07.79 2.16v3.26c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" />
+                    </svg>
+                    <span v-else-if="link.icon" class="sidebar-profile-social-icon">{{ link.icon }}</span>
+                    <span v-if="link.showName || !link.icon" class="sidebar-profile-social-name">{{ link.name }}</span>
+                  </a>
+                </div>
 
-              <div v-if="profileSocialLinks.length > 0" class="sidebar-profile-socials">
-                <a
-                  v-for="link in profileSocialLinks"
-                  :key="link.id"
-                  :href="link.url"
-                  class="sidebar-profile-social-link"
-                  :class="{ 'sidebar-profile-social-link-icon-only': link.icon && !link.showName }"
-                  :title="link.name"
-                  :aria-label="link.name"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span v-if="link.icon" class="sidebar-profile-social-icon">{{ link.icon }}</span>
-                  <span v-if="link.showName || !link.icon" class="sidebar-profile-social-name">{{ link.name }}</span>
-                </a>
+                <div v-if="profileMeta.length > 0" class="sidebar-profile-meta">
+                  <component
+                    :is="meta.href ? 'a' : 'span'"
+                    v-for="meta in profileMeta"
+                    :key="meta.key"
+                    :href="meta.href || undefined"
+                    class="sidebar-profile-meta-item"
+                    :class="{ 'sidebar-profile-meta-item-website': meta.key === 'website' }"
+                    :target="meta.href ? '_blank' : undefined"
+                    :rel="meta.href ? 'noreferrer' : undefined"
+                  >
+                    {{ meta.label }}
+                  </component>
+                </div>
               </div>
             </div>
           </div>
@@ -120,46 +140,126 @@
           v-else-if="componentKey === 'search' && searchPageEnabled"
           class="sidebar-search-panel"
         >
-          <div class="sidebar-search" role="search">
-            <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-search-leading" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              v-model="searchKeyword"
-              type="text"
-              placeholder="搜索文章..."
-              class="sidebar-search-input font-sf-pro"
-              @keyup.enter="handleSearch"
-            />
-            <button
-              v-if="searchKeyword"
-              type="button"
-              class="sidebar-search-clear"
-              aria-label="清除搜索"
-              @click="searchKeyword = ''"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          <div
+            class="sidebar-search-combobox"
+            @focusin="handleSearchFocus"
+            @focusout="handleSearchFocusOut"
+          >
+            <div class="sidebar-search" role="search">
+              <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-search-leading" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            </button>
-            <button
-              type="button"
-              class="sidebar-search-submit"
-              :disabled="!trimmedSearchKeyword"
-              title="搜索"
-              aria-label="搜索"
-              @click="handleSearch"
+              <input
+                v-model="searchKeyword"
+                type="search"
+                placeholder="搜索文章..."
+                aria-label="搜索文章"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-haspopup="listbox"
+                :aria-expanded="showSearchSuggestions"
+                :aria-controls="searchSuggestions.length > 0 ? searchListboxId : undefined"
+                :aria-activedescendant="activeSearchSuggestionId || undefined"
+                autocomplete="off"
+                class="sidebar-search-input font-sf-pro"
+                @keydown="handleSearchKeydown"
+              />
+              <button
+                v-if="searchKeyword"
+                type="button"
+                class="sidebar-search-clear"
+                aria-label="清除搜索"
+                @click="clearSidebarSearch"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <button
+                v-if="trimmedSearchKeyword"
+                type="button"
+                class="sidebar-search-submit"
+                title="查看完整搜索结果"
+                aria-label="查看完整搜索结果"
+                @click="handleSearch"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
+
+            <div
+              v-if="showSearchSuggestions"
+              class="sidebar-search-suggestions"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+              <div
+                v-if="searchSuggestionsLoading || !searchSuggestionsReady"
+                class="sidebar-search-message"
+                role="status"
+                aria-live="polite"
+              >
+                搜索中...
+              </div>
+              <div
+                v-else-if="searchSuggestions.length > 0"
+                :id="searchListboxId"
+                class="sidebar-search-listbox"
+                role="listbox"
+                aria-label="搜索建议"
+              >
+                <RouterLink
+                  v-for="(suggestion, index) in searchSuggestions"
+                  :id="getSearchSuggestionId(index)"
+                  :key="suggestion.key"
+                  :to="suggestion.to"
+                  class="sidebar-search-suggestion"
+                  :class="{ 'sidebar-search-suggestion-active': index === activeSearchSuggestionIndex }"
+                  role="option"
+                  :aria-selected="index === activeSearchSuggestionIndex"
+                  @mouseenter="activeSearchSuggestionIndex = index"
+                  @click="selectSearchSuggestion"
+                >
+                  <span class="sidebar-search-suggestion-title">{{ suggestion.title }}</span>
+                  <span class="sidebar-search-suggestion-meta">{{ suggestion.meta }}</span>
+                </RouterLink>
+              </div>
+              <div v-else class="sidebar-search-message" role="status" aria-live="polite">
+                未找到相关内容
+              </div>
+
+              <button
+                type="button"
+                class="sidebar-search-view-all"
+                @click="handleSearch"
+              >
+                查看全部结果<span v-if="searchSuggestionsReady">（{{ searchSuggestionsTotal }}）</span>
+              </button>
+            </div>
           </div>
         </section>
 
         <template v-else-if="isSidebarMenuComponent(componentKey)">
           <div
-            v-if="!isLoading && shouldShowEmptySidebarMenuState && isFirstSidebarMenuComponent(componentKey)"
+            v-if="isLoading && !hasVisibleSidebarMenuContent && isFirstSidebarMenuComponent(componentKey)"
+            class="sidebar-loading-state"
+          >
+            <div class="loading-spinner"></div>
+          </div>
+
+          <div
+            v-else-if="shouldShowSidebarDataError(componentKey)"
+            class="sidebar-error-state"
+            role="alert"
+          >
+            <p class="sidebar-error-title">{{ getSidebarDataErrorMessage(componentKey) }}</p>
+            <button type="button" class="sidebar-retry-button" @click="retrySidebarData">
+              重新加载
+            </button>
+          </div>
+
+          <div
+            v-else-if="shouldShowEmptySidebarMenuState && isFirstSidebarMenuComponent(componentKey)"
             class="sidebar-empty-state"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-3 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,19 +269,14 @@
             <p class="sidebar-empty-copy">添加分类、标签或文章后会显示在这里。</p>
           </div>
 
-          <div
-            v-else-if="isLoading && isFirstSidebarMenuComponent(componentKey)"
-            class="sidebar-loading-state"
-          >
-            <div class="loading-spinner"></div>
-          </div>
-
           <template v-else-if="getSidebarMenuSections(componentKey).length > 0">
             <SidebarSection
               v-for="section in getSidebarMenuSections(componentKey)"
               :key="`${componentKey}-${section.key}`"
               :title="section.title"
               :items="section.items"
+              :view-all-to="getSidebarSectionViewAllTo(section)"
+              :view-all-label="getSidebarSectionViewAllLabel(section)"
               show-item-count
             >
               <MenuRenderer
@@ -197,16 +292,18 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
 import { useConfigStore } from '../../stores/config'
 import { useCategoryStore } from '../../stores/category'
 import { useTagStore } from '../../stores/tag'
 import { useArticleStore } from '../../stores/article'
-import { getSearchRoute } from '../../utils/routeLinks'
+import { useSearchStore } from '../../stores/search'
+import { getCategoriesPath, getSearchRoute, getTagsPath } from '../../utils/routeLinks'
 import { getMaxMenuSourceLimit, menuUsesSource, resolveSidebarMenuSections } from '../../utils/menuConfig'
 import { resolveSidebarComponents } from '../../utils/sidebarLayout'
+import { useBlogBaseUrl } from '../../runtime/runtimeContext'
 import MenuRenderer from '../menu/MenuRenderer.vue'
 
 const props = defineProps({
@@ -224,6 +321,8 @@ const configStore = useConfigStore()
 const categoryStore = useCategoryStore()
 const tagStore = useTagStore()
 const articleStore = useArticleStore()
+const searchStore = useSearchStore()
+const baseUrl = useBlogBaseUrl()
 
 const config = configStore
 const categories = ref([])
@@ -231,7 +330,24 @@ const tags = ref([])
 const latestArticles = ref([])
 const avatarLoadFailed = ref(false)
 const searchKeyword = ref('')
+const searchSuggestions = ref([])
+const searchSuggestionsTotal = ref(0)
+const searchSuggestionsLoading = ref(false)
+const searchSuggestionsReady = ref(false)
+const searchSuggestionsOpen = ref(false)
+const activeSearchSuggestionIndex = ref(-1)
 const isLoading = ref(false)
+const sidebarDataErrors = ref({
+  categories: '',
+  tags: '',
+  'latest-articles': ''
+})
+const searchListboxId = `sidebar-search-results-${useId()}`
+const SIDEBAR_SEARCH_DELAY = 250
+const SIDEBAR_SEARCH_LIMIT = 5
+let searchTimer = null
+let activeSearchRequestId = 0
+let sidebarDataRequestId = 0
 const SIDEBAR_MENU_COMPONENT_KEYS = Object.freeze([
   'categories',
   'tags',
@@ -252,6 +368,14 @@ const DEFAULT_PROFILE_DISPLAY = Object.freeze({
 })
 
 const trimmedSearchKeyword = computed(() => searchKeyword.value.trim())
+const showSearchSuggestions = computed(() => Boolean(
+  searchSuggestionsOpen.value && trimmedSearchKeyword.value
+))
+const activeSearchSuggestionId = computed(() => (
+  activeSearchSuggestionIndex.value >= 0
+    ? getSearchSuggestionId(activeSearchSuggestionIndex.value)
+    : ''
+))
 const profileDisplay = computed(() => ({
   ...DEFAULT_PROFILE_DISPLAY,
   ...(config.userProfile?.display || {})
@@ -288,11 +412,12 @@ const displayTagline = computed(() => (
     ? toTrimmedString(config.userProfile?.tagline) || toTrimmedString(config.blogDescription)
     : ''
 ))
-const displayBio = computed(() => (
-  profileDisplay.value.showBio
-    ? toTrimmedString(config.userProfile?.bio)
-    : ''
-))
+const displayBio = computed(() => {
+  if (!profileDisplay.value.showBio) return ''
+
+  const bio = toTrimmedString(config.userProfile?.bio)
+  return bio && bio !== displayTagline.value ? bio : ''
+})
 const profileSocialLinks = computed(() => (
   profileDisplay.value.showSocialLinks && Array.isArray(config.userProfile?.socialLinks)
     ? config.userProfile.socialLinks
@@ -311,6 +436,7 @@ const profileSocialLinks = computed(() => (
           name,
           url,
           icon,
+          iconKey: icon.toLowerCase(),
           showName
         }
       })
@@ -353,19 +479,27 @@ const hasProfileContent = computed(() => Boolean(
   profileSocialLinks.value.length
 ))
 const avatarInitial = computed(() => (displayName.value || '?').charAt(0).toUpperCase())
-const needsCategories = computed(() => (
-  Boolean(config.pageRegistry?.categories) && menuUsesSource(config.menus, 'categories')
-))
-const needsTags = computed(() => (
-  Boolean(config.pageRegistry?.tags) && menuUsesSource(config.menus, 'tags')
-))
-const latestArticlesLimit = computed(() => getMaxMenuSourceLimit(config.menus, 'latest-articles', ['sidebar'], 0))
-const needsLatestArticles = computed(() => latestArticlesLimit.value > 0 && menuUsesSource(config.menus, 'latest-articles'))
 const isArticleDetailPage = computed(() => route.name === BLOG_ROUTE_NAMES.articleDetail)
 const activeSidebarComponents = computed(() => resolveSidebarComponents(config.sidebarLayout, {
   mobile: props.mobile,
   article: isArticleDetailPage.value
 }))
+const needsCategories = computed(() => (
+  activeSidebarComponents.value.includes('categories')
+  && Boolean(config.pageRegistry?.categories)
+  && menuUsesSource(config.menus, 'categories')
+))
+const needsTags = computed(() => (
+  activeSidebarComponents.value.includes('tags')
+  && Boolean(config.pageRegistry?.tags)
+  && menuUsesSource(config.menus, 'tags')
+))
+const latestArticlesLimit = computed(() => getMaxMenuSourceLimit(config.menus, 'latest-articles', ['sidebar'], 0))
+const needsLatestArticles = computed(() => (
+  activeSidebarComponents.value.includes('latest-articles')
+  && latestArticlesLimit.value > 0
+  && menuUsesSource(config.menus, 'latest-articles')
+))
 const sidebarAnnouncement = computed(() => config.announcement || {})
 const sidebarAnnouncementBadge = computed(() => {
   switch (sidebarAnnouncement.value.variant) {
@@ -457,14 +591,163 @@ function getWebsiteLabel(value) {
 }
 
 function handleSearch() {
-  if (!trimmedSearchKeyword.value) return
+  const keyword = trimmedSearchKeyword.value
+  if (!keyword) return
 
   router.push(getSearchRoute({
-    keyword: trimmedSearchKeyword.value,
+    keyword,
     page: 1
   }))
 
+  resetSidebarSearch()
+  closeSidebar()
+}
+
+function cancelScheduledSearch() {
+  if (searchTimer !== null) {
+    clearTimeout(searchTimer)
+    searchTimer = null
+  }
+}
+
+function clearSearchSuggestionState() {
+  searchSuggestions.value = []
+  searchSuggestionsTotal.value = 0
+  searchSuggestionsLoading.value = false
+  searchSuggestionsReady.value = false
+  activeSearchSuggestionIndex.value = -1
+}
+
+function resetSidebarSearch() {
+  cancelScheduledSearch()
+  activeSearchRequestId += 1
+  searchSuggestionsOpen.value = false
+  clearSearchSuggestionState()
   searchKeyword.value = ''
+}
+
+function clearSidebarSearch() {
+  resetSidebarSearch()
+}
+
+function handleSearchFocus() {
+  if (trimmedSearchKeyword.value) {
+    searchSuggestionsOpen.value = true
+  }
+}
+
+function handleSearchFocusOut(event) {
+  if (event.currentTarget?.contains(event.relatedTarget)) {
+    return
+  }
+
+  searchSuggestionsOpen.value = false
+  activeSearchSuggestionIndex.value = -1
+}
+
+function getSearchSuggestionId(index) {
+  return `${searchListboxId}-option-${index}`
+}
+
+function getSearchSuggestionMeta(record) {
+  if (record?.kind === 'page') return '页面'
+  if (record?.kind === 'entry') return toTrimmedString(record.sectionTitle) || '内容'
+
+  return toTrimmedString(record?.category?.name) || '文章'
+}
+
+function normalizeSearchSuggestions(records = []) {
+  return (Array.isArray(records) ? records : [])
+    .map((record, index) => {
+      const title = toTrimmedString(record?.title)
+      const to = toTrimmedString(record?.to)
+
+      if (!title || !to) {
+        return null
+      }
+
+      return {
+        key: toTrimmedString(record?.id) || `${to}-${index}`,
+        title,
+        to,
+        meta: getSearchSuggestionMeta(record)
+      }
+    })
+    .filter(Boolean)
+}
+
+async function loadSearchSuggestions(keyword, requestId) {
+  searchSuggestionsLoading.value = true
+
+  try {
+    const result = await searchStore.search({
+      keyword,
+      page: 1,
+      pageSize: SIDEBAR_SEARCH_LIMIT
+    })
+
+    if (requestId !== activeSearchRequestId || keyword !== trimmedSearchKeyword.value) {
+      return
+    }
+
+    searchSuggestions.value = normalizeSearchSuggestions(result?.data)
+    searchSuggestionsTotal.value = Number(result?.total) || 0
+  } catch (error) {
+    if (requestId === activeSearchRequestId) {
+      console.error('加载搜索建议失败', error)
+      searchSuggestions.value = []
+      searchSuggestionsTotal.value = 0
+    }
+  } finally {
+    if (requestId === activeSearchRequestId) {
+      searchSuggestionsLoading.value = false
+      searchSuggestionsReady.value = true
+    }
+  }
+}
+
+function handleSearchKeydown(event) {
+  if (event.key === 'Escape') {
+    searchSuggestionsOpen.value = false
+    activeSearchSuggestionIndex.value = -1
+    return
+  }
+
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    const suggestion = searchSuggestions.value[activeSearchSuggestionIndex.value]
+
+    if (suggestion) {
+      router.push(suggestion.to)
+      selectSearchSuggestion()
+      return
+    }
+
+    handleSearch()
+    return
+  }
+
+  if (!['ArrowDown', 'ArrowUp'].includes(event.key) || searchSuggestions.value.length === 0) {
+    return
+  }
+
+  event.preventDefault()
+  searchSuggestionsOpen.value = true
+  const direction = event.key === 'ArrowDown' ? 1 : -1
+  const itemCount = searchSuggestions.value.length
+
+  if (activeSearchSuggestionIndex.value < 0) {
+    activeSearchSuggestionIndex.value = direction > 0 ? 0 : itemCount - 1
+    return
+  }
+
+  const nextIndex = activeSearchSuggestionIndex.value + direction
+  activeSearchSuggestionIndex.value = (nextIndex + itemCount) % itemCount
+}
+
+function selectSearchSuggestion() {
+  resetSidebarSearch()
+  closeSidebar()
 }
 
 function formatDate(dateString) {
@@ -499,12 +782,49 @@ function getSidebarMenuSections(componentKey) {
   return sidebarMenuSectionsBySource.value[componentKey] || []
 }
 
+function getSidebarSectionViewAllTo(section) {
+  if (section?.source === 'categories' && categories.value.length > section.items) {
+    return getCategoriesPath(config.routePatterns)
+  }
+
+  if (section?.source === 'tags' && tags.value.length > section.items) {
+    return getTagsPath(config.routePatterns)
+  }
+
+  return ''
+}
+
+function getSidebarSectionViewAllLabel(section) {
+  if (section?.source === 'categories') return '全部分类'
+  if (section?.source === 'tags') return '全部标签'
+  return '查看全部'
+}
+
 function isFirstSidebarMenuComponent(componentKey) {
   if (!isSidebarMenuComponent(componentKey)) {
     return false
   }
 
   return activeSidebarComponents.value.find(key => SIDEBAR_MENU_COMPONENT_KEY_SET.has(key)) === componentKey
+}
+
+function shouldShowSidebarDataError(componentKey) {
+  return Boolean(sidebarDataErrors.value[componentKey])
+    && getSidebarMenuSections(componentKey).length === 0
+}
+
+function getSidebarDataErrorMessage(componentKey) {
+  const labels = {
+    categories: '分类',
+    tags: '标签',
+    'latest-articles': '最新文章'
+  }
+
+  return `${labels[componentKey] || '侧边栏内容'}加载失败`
+}
+
+function retrySidebarData() {
+  loadSidebarData().catch(() => {})
 }
 
 function resolveAssetUrl(value) {
@@ -522,1107 +842,126 @@ function resolveAssetUrl(value) {
     return ''
   }
 
-  const baseUrl = import.meta.env.BASE_URL || '/'
   const normalizedPath = normalizedValue.replace(/^\.?\//, '').replace(/^\/+/, '')
   return `${baseUrl}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
 }
 
-function loadSidebarData() {
-  try {
-    const categoriesData = needsCategories.value ? categoryStore.fetchCategories() : []
-    const tagsData = needsTags.value ? tagStore.fetchTags() : []
-    const latestArticlesData = needsLatestArticles.value
-      ? articleStore.fetchLatestArticles(latestArticlesLimit.value)
-      : []
+async function loadSidebarData() {
+  const requestId = sidebarDataRequestId + 1
+  sidebarDataRequestId = requestId
+  const sources = [
+    {
+      key: 'categories',
+      needed: needsCategories.value,
+      load: () => categoryStore.fetchCategories(),
+      assign: (value) => {
+        categories.value = (value || []).filter(category => category && category.id && category.name)
+      }
+    },
+    {
+      key: 'tags',
+      needed: needsTags.value,
+      load: () => tagStore.fetchTags(),
+      assign: (value) => {
+        tags.value = Array.isArray(value) ? value : []
+      }
+    },
+    {
+      key: 'latest-articles',
+      needed: needsLatestArticles.value,
+      load: () => articleStore.fetchLatestArticles(latestArticlesLimit.value),
+      assign: (value) => {
+        latestArticles.value = Array.isArray(value) ? value : []
+      }
+    }
+  ]
+  const requestedSources = sources.filter(source => source.needed)
+  const nextErrors = { ...sidebarDataErrors.value }
 
-    categories.value = (categoriesData || []).filter(category => category && category.id && category.name)
-    tags.value = tagsData || []
-    latestArticles.value = latestArticlesData || []
-  } catch (error) {
-    console.error('加载侧边栏数据失败', error)
+  sources.filter(source => !source.needed).forEach((source) => {
+    source.assign([])
+    nextErrors[source.key] = ''
+  })
+  sidebarDataErrors.value = nextErrors
+
+  if (requestedSources.length === 0) {
+    isLoading.value = false
+    return
+  }
+
+  isLoading.value = true
+  const results = await Promise.allSettled(requestedSources.map(source => source.load()))
+
+  if (requestId !== sidebarDataRequestId) {
+    return
+  }
+
+  const resolvedErrors = { ...sidebarDataErrors.value }
+  results.forEach((result, index) => {
+    const source = requestedSources[index]
+
+    if (result.status === 'fulfilled') {
+      source.assign(result.value)
+      resolvedErrors[source.key] = ''
+      return
+    }
+
+    resolvedErrors[source.key] = getSidebarDataErrorMessage(source.key)
+    console.error(`${resolvedErrors[source.key]}:`, result.reason)
+  })
+
+  sidebarDataErrors.value = resolvedErrors
+  if (requestId === sidebarDataRequestId) {
+    isLoading.value = false
   }
 }
-
-loadSidebarData()
 
 watch(() => config.userProfile?.avatarUrl, () => {
   avatarLoadFailed.value = false
 })
+
+watch(
+  () => [
+    needsCategories.value,
+    needsTags.value,
+    needsLatestArticles.value,
+    latestArticlesLimit.value
+  ],
+  () => {
+    loadSidebarData().catch(() => {})
+  },
+  { immediate: true }
+)
+
+watch(searchKeyword, () => {
+  cancelScheduledSearch()
+  activeSearchRequestId += 1
+  clearSearchSuggestionState()
+
+  const keyword = trimmedSearchKeyword.value
+  if (!keyword) {
+    searchSuggestionsOpen.value = false
+    return
+  }
+
+  const requestId = activeSearchRequestId
+  searchSuggestionsOpen.value = true
+  searchTimer = setTimeout(() => {
+    searchTimer = null
+    loadSearchSuggestions(keyword, requestId)
+  }, SIDEBAR_SEARCH_DELAY)
+})
+
+watch(() => route.fullPath, () => {
+  searchSuggestionsOpen.value = false
+  activeSearchSuggestionIndex.value = -1
+})
+
+onBeforeUnmount(() => {
+  cancelScheduledSearch()
+  activeSearchRequestId += 1
+  sidebarDataRequestId += 1
+})
 </script>
 
-<style scoped>
-.font-sf-pro {
-  font-family: var(--font-sans);
-}
-
-.sidebar-container {
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid rgb(241 245 249);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
-}
-
-.sidebar-container-desktop {
-  border-radius: 1.75rem;
-  padding: 1.45rem 1.25rem;
-}
-
-.sidebar-container-mobile {
-  height: 100%;
-  overflow-y: auto;
-  border: 0 !important;
-  border-radius: inherit;
-  padding: max(0.85rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
-  background: transparent !important;
-  box-shadow: none !important;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
-}
-
-.sidebar-container-mobile .sidebar-content {
-  gap: 0.82rem;
-}
-
-.sidebar-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.18rem;
-}
-
-.sidebar-mobile-actions {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  margin: -0.85rem -1rem 0;
-  padding: max(0.85rem, env(safe-area-inset-top)) 1rem 0.75rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.9));
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.sidebar-mobile-actions-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  min-height: 2.25rem;
-}
-
-.sidebar-mobile-title {
-  margin: 0;
-  color: rgb(15 23 42);
-  font-size: 1.16rem;
-  line-height: 1.15;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
-
-.sidebar-close-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.15rem;
-  height: 2.15rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(226, 232, 240, 0.92);
-  background: rgb(255 255 255);
-  color: rgb(100 116 139);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  pointer-events: auto;
-  transition: background-color 0.18s ease, color 0.18s ease;
-}
-
-.sidebar-close-button:hover {
-  background: rgba(15, 23, 42, 0.12);
-  color: rgba(15, 23, 42, 0.72);
-}
-
-.sidebar-close-icon {
-  width: 1rem;
-  height: 1rem;
-  color: currentColor;
-  opacity: 1;
-  stroke: currentColor;
-  flex-shrink: 0;
-  pointer-events: none;
-}
-
-.sidebar-profile-panel {
-  padding: 0.05rem 0 0;
-}
-
-.sidebar-profile-card {
-  padding: 0.2rem 0 0.15rem;
-}
-
-.sidebar-container-mobile .sidebar-profile-card {
-  padding: 0.85rem;
-  border-radius: 1.15rem;
-  background: rgb(255 255 255);
-  border: 1px solid rgba(226, 232, 240, 0.92);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.07);
-}
-
-.sidebar-profile-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  text-align: center;
-}
-
-.sidebar-container-mobile .sidebar-profile-stack {
-  display: grid;
-  grid-template-columns: 3.45rem minmax(0, 1fr);
-  align-items: center;
-  gap: 0.52rem 0.68rem;
-  text-align: left;
-}
-
-.sidebar-profile-avatar-frame {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 5rem;
-  height: 5rem;
-}
-
-.sidebar-container-mobile .sidebar-profile-avatar-frame {
-  grid-column: 1;
-  grid-row: 1;
-  width: 3.45rem;
-  height: 3.45rem;
-}
-
-.sidebar-profile-avatar-shell {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border-radius: 9999px;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  flex-shrink: 0;
-}
-
-.sidebar-profile-avatar {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 9999px;
-  background: rgb(255 255 255);
-  border: 1px solid rgba(191, 219, 254, 0.9);
-  flex-shrink: 0;
-}
-
-.sidebar-profile-avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.sidebar-profile-avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 1.55rem;
-  font-weight: 700;
-  color: rgb(59 130 246);
-}
-
-.sidebar-profile-copy {
-  min-width: 0;
-  max-width: 15.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.sidebar-container-mobile .sidebar-profile-copy {
-  grid-column: 2;
-  grid-row: 1;
-  max-width: none;
-  align-items: flex-start;
-}
-
-.sidebar-profile-handle {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 0.02rem;
-  margin-bottom: 0;
-  color: rgb(100 116 139);
-  font-size: 0.74rem;
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-.sidebar-profile-name {
-  margin: 0;
-  font-size: 1.08rem;
-  line-height: 1.2;
-  font-weight: 600;
-  color: rgb(30 41 59);
-  letter-spacing: -0.02em;
-  word-break: break-word;
-}
-
-.sidebar-container-mobile .sidebar-profile-name {
-  max-width: 100%;
-  font-size: 1rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-profile-tagline {
-  margin-bottom: 0;
-  margin-top: 0.04rem;
-  font-size: 0.78rem;
-  line-height: 1.5;
-  color: rgb(100 116 139);
-  word-break: break-word;
-}
-
-.sidebar-container-mobile .sidebar-profile-tagline {
-  display: -webkit-box;
-  max-width: 100%;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
-.sidebar-profile-bio {
-  max-width: 15.5rem;
-  margin: -0.02rem 0 0;
-  font-size: 0.74rem;
-  line-height: 1.58;
-  color: rgb(75 85 99);
-}
-
-.sidebar-container-mobile .sidebar-profile-bio {
-  grid-column: 1 / -1;
-  max-width: none;
-  margin-top: -0.08rem;
-  text-align: left;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.sidebar-profile-meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.34rem;
-}
-
-.sidebar-container-mobile .sidebar-profile-meta,
-.sidebar-container-mobile .sidebar-profile-socials {
-  grid-column: 1 / -1;
-  justify-content: flex-start;
-}
-
-.sidebar-container-mobile .sidebar-profile-meta-item {
-  min-height: 1.42rem;
-  padding: 0.12rem 0.5rem;
-  background: rgb(248 250 252);
-  border-color: rgba(226, 232, 240, 0.92);
-}
-
-.sidebar-container-mobile .sidebar-profile-social-link {
-  min-height: 1.5rem;
-  padding: 0.15rem 0.6rem;
-}
-
-.sidebar-profile-socials {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.36rem;
-  max-width: 15.5rem;
-}
-
-.sidebar-profile-meta-item {
-  display: inline-flex;
-  align-items: center;
-  max-width: 100%;
-  min-height: 1.5rem;
-  padding: 0.14rem 0.56rem;
-  border-radius: 9999px;
-  background: rgb(248 250 252);
-  border: 1px solid rgba(226, 232, 240, 0.92);
-  color: rgb(100 116 139);
-  font-size: 0.68rem;
-  line-height: 1.2;
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-a.sidebar-profile-meta-item:hover {
-  border-color: rgba(var(--color-primary), 0.2);
-  color: rgb(var(--color-primary));
-}
-
-.sidebar-profile-social-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.34rem;
-  min-height: 1.62rem;
-  padding: 0.18rem 0.66rem;
-  border-radius: 9999px;
-  background: rgba(219, 234, 254, 0.5);
-  border: 1px solid rgba(191, 219, 254, 0.92);
-  color: rgb(37 99 235);
-  font-size: 0.7rem;
-  line-height: 1.2;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-}
-
-.sidebar-profile-social-link-icon-only {
-  width: 1.85rem;
-  padding-left: 0.22rem;
-  padding-right: 0.22rem;
-}
-
-.sidebar-profile-social-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0.9rem;
-  font-size: 0.72rem;
-  line-height: 1;
-  font-weight: 700;
-}
-
-.sidebar-profile-social-name {
-  min-width: 0;
-}
-
-.sidebar-profile-social-link:hover {
-  background: rgba(191, 219, 254, 0.72);
-  border-color: rgba(147, 197, 253, 0.96);
-  color: rgb(29 78 216);
-}
-
-.sidebar-announcement-panel {
-  padding: 0.05rem 0 0.15rem;
-}
-
-.sidebar-announcement-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.78rem;
-  padding: 1rem 1rem 1.05rem;
-  border-radius: 1.35rem;
-  border: 1px solid rgba(191, 219, 254, 0.95);
-  background:
-    radial-gradient(circle at top right, rgba(191, 219, 254, 0.38), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.94));
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
-}
-
-.sidebar-announcement-card[data-variant='success'] {
-  border-color: rgba(167, 243, 208, 0.92);
-  background:
-    radial-gradient(circle at top right, rgba(167, 243, 208, 0.34), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(240, 253, 244, 0.94));
-}
-
-.sidebar-announcement-card[data-variant='warning'] {
-  border-color: rgba(253, 230, 138, 0.96);
-  background:
-    radial-gradient(circle at top right, rgba(253, 230, 138, 0.32), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 251, 235, 0.94));
-}
-
-.sidebar-announcement-copy {
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
-}
-
-.sidebar-announcement-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.6rem;
-  min-height: 1.65rem;
-  padding: 0.28rem 0.65rem;
-  border-radius: 9999px;
-  background: rgba(37, 99, 235, 0.1);
-  color: rgb(37 99 235);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  flex-shrink: 0;
-}
-
-.sidebar-announcement-card[data-variant='success'] .sidebar-announcement-badge {
-  background: rgba(16, 185, 129, 0.12);
-  color: rgb(5 150 105);
-}
-
-.sidebar-announcement-card[data-variant='warning'] .sidebar-announcement-badge {
-  background: rgba(245, 158, 11, 0.14);
-  color: rgb(217 119 6);
-}
-
-.sidebar-announcement-content {
-  min-width: 0;
-}
-
-.sidebar-announcement-title {
-  display: block;
-  color: rgb(15 23 42);
-  font-size: 0.94rem;
-  line-height: 1.45;
-}
-
-.sidebar-announcement-text {
-  margin: 0.18rem 0 0;
-  color: rgb(71 85 105);
-  font-size: 0.86rem;
-  line-height: 1.6;
-}
-
-.sidebar-announcement-link {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  min-height: 2rem;
-  padding: 0.34rem 0.9rem;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.75);
-  color: rgb(37 99 235);
-  text-decoration: none;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
-}
-
-.sidebar-announcement-link:hover {
-  background: rgba(255, 255, 255, 0.96);
-  transform: translateY(-1px);
-}
-
-.sidebar-search {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 2.8rem;
-  padding: 0.2rem 0.24rem 0.2rem 0.82rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(191, 219, 254, 0.9);
-  background: rgb(255 255 255);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
-  transition: background-color 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-}
-
-.sidebar-container-mobile .sidebar-search {
-  min-height: 2.58rem;
-  padding-left: 0.72rem;
-  background: rgb(255 255 255);
-  border-color: rgba(226, 232, 240, 0.92);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-}
-
-.sidebar-container-mobile .sidebar-search-clear,
-.sidebar-container-mobile .sidebar-search-submit {
-  width: 1.95rem;
-  height: 1.95rem;
-}
-
-.sidebar-search:focus-within {
-  border-color: rgba(147, 197, 253, 1);
-  box-shadow: 0 0 0 3px rgba(191, 219, 254, 0.55);
-}
-
-.sidebar-search-leading {
-  width: 1.02rem;
-  height: 1.02rem;
-  flex-shrink: 0;
-  color: rgb(148 163 184);
-}
-
-.sidebar-search-input {
-  min-width: 0;
-  flex: 1;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  outline: none !important;
-  padding: 0 !important;
-  color: rgb(51 65 85);
-  font-size: 0.92rem;
-}
-
-.sidebar-search-input::placeholder {
-  color: rgb(148 163 184);
-}
-
-.sidebar-search-clear,
-.sidebar-search-submit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.08rem;
-  height: 2.08rem;
-  border: 0;
-  border-radius: 9999px;
-  padding: 0 !important;
-  transition: background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
-}
-
-.sidebar-search-clear {
-  background: transparent;
-  color: rgb(156 163 175);
-}
-
-.sidebar-search-clear:hover {
-  background: rgba(229, 231, 235, 0.9);
-  color: rgb(75 85 99);
-}
-
-.sidebar-search-submit {
-  background: rgb(191 219 254);
-  color: rgb(59 130 246);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.sidebar-search-submit:hover {
-  background: rgb(147 197 253);
-  color: rgb(37 99 235);
-}
-
-.sidebar-search-submit:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.sidebar-search-submit:disabled:hover {
-  background: rgb(191 219 254);
-}
-
-.sidebar-empty-state,
-.sidebar-loading-state {
-  padding: 1rem 0.75rem;
-  text-align: center;
-  background: rgba(249, 250, 251, 0.8);
-  border-radius: 0.75rem;
-}
-
-.sidebar-empty-title {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: rgb(75 85 99);
-}
-
-.sidebar-empty-copy {
-  margin: 0.3rem 0 0;
-  font-size: 0.75rem;
-  line-height: 1.5;
-  color: rgb(107 114 128);
-}
-
-.sidebar-loading-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 5rem;
-}
-
-.sidebar-nav-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.sidebar-nav-list > li + li {
-  margin-top: 0.22rem;
-}
-
-.sidebar-nav-list-tags {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.sidebar-nav-list-latest {
-  gap: 0;
-}
-
-.sidebar-nav-list-tags > li + li {
-  margin-top: 0;
-}
-
-.sidebar-nav-list-latest > li + li {
-  margin-top: 0.62rem;
-  padding-top: 0;
-  border-top: 0;
-}
-
-.sidebar-nav-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  min-height: 1.8rem;
-  padding: 0;
-  border-radius: 0;
-  color: rgb(71 85 105);
-  font-size: 0.98rem;
-  transition: color 0.18s ease, background-color 0.18s ease;
-}
-
-.sidebar-nav-item-tag {
-  justify-content: flex-start;
-  min-height: auto;
-  width: auto;
-  padding: 0.26rem 0.66rem;
-  border-radius: 9999px;
-  background: rgb(248 250 252);
-  border: 1px solid rgba(226, 232, 240, 0.92);
-  font-size: 0.8rem;
-  line-height: 1.2;
-}
-
-.sidebar-nav-item-article {
-  display: block;
-  min-height: auto;
-  padding: 0;
-  border-radius: 0;
-}
-
-.sidebar-nav-item:hover {
-  background: transparent;
-  color: rgb(37 99 235);
-}
-
-.sidebar-nav-item-active {
-  background: transparent;
-  color: rgb(37 99 235);
-}
-
-.sidebar-nav-label {
-  min-width: 0;
-  flex: 1 1 auto;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-nav-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.2rem;
-  height: 1.2rem;
-  padding: 0 0.34rem;
-  border-radius: 9999px;
-  background: rgb(248 250 252);
-  color: rgb(148 163 184);
-  font-size: 0.72rem;
-  line-height: 1;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.sidebar-nav-meta {
-  min-width: 0;
-}
-
-.sidebar-nav-title {
-  margin: 0;
-  font-size: 0.94rem;
-  line-height: 1.35;
-  font-weight: 600;
-  color: inherit;
-}
-
-.sidebar-nav-submeta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.18rem;
-  margin-top: 0.18rem;
-  color: rgb(100 116 139);
-  font-size: 0.74rem;
-}
-
-.sidebar-nav-submeta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.22rem;
-}
-
-.sidebar-nav-submeta-icon {
-  width: 0.78rem;
-  height: 0.78rem;
-  flex-shrink: 0;
-}
-
-.sidebar-nav-date {
-  display: block;
-  margin: 0;
-  font-size: 0.75rem;
-}
-
-.sidebar-container-mobile :deep(.sidebar-section) {
-  padding: 0.78rem 0.85rem 0.85rem;
-  border: 1px solid rgba(226, 232, 240, 0.86);
-  border-radius: 1.05rem;
-  background: rgb(255 255 255);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.055);
-}
-
-.sidebar-container-mobile :deep(.sidebar-section + .sidebar-section) {
-  margin-top: 0.18rem;
-}
-
-.sidebar-container-mobile :deep(.sidebar-section-header) {
-  min-height: 1.62rem;
-  margin-bottom: 0.55rem;
-}
-
-.sidebar-container-mobile :deep(.sidebar-section-title) {
-  font-size: 0.88rem;
-  letter-spacing: -0.01em;
-}
-
-.sidebar-container-mobile :deep(.sidebar-section-count) {
-  min-width: 1.34rem;
-  height: 1.34rem;
-  background: rgb(248 250 252);
-  border-color: rgba(226, 232, 240, 0.92);
-  color: rgb(100 116 139);
-}
-
-.sidebar-container-mobile :deep(.sidebar-nav-item:not(.sidebar-nav-item-tag):not(.sidebar-nav-item-article)) {
-  min-height: 2rem;
-  padding: 0.1rem 0.1rem 0.1rem 0;
-  font-size: 0.96rem;
-}
-
-.sidebar-container-mobile :deep(.sidebar-nav-item-tag) {
-  padding: 0.3rem 0.7rem;
-  background: rgb(248 250 252);
-  border-color: rgba(226, 232, 240, 0.92);
-  box-shadow: none;
-}
-
-.sidebar-container-mobile :deep(.sidebar-nav-list-tags) {
-  gap: 0.42rem;
-}
-
-.sidebar-container-mobile :deep(.sidebar-nav-list-latest > li + li) {
-  margin-top: 0.48rem;
-}
-
-.sidebar-container-mobile :deep(.sidebar-nav-item-article) {
-  padding: 0.05rem 0;
-}
-
-.sidebar-container-mobile :deep(.sidebar-nav-title) {
-  font-size: 0.9rem;
-  line-height: 1.32;
-}
-
-.sidebar-container-mobile :deep(.sidebar-nav-submeta) {
-  margin-top: 0.12rem;
-}
-
-.sidebar-tag-count {
-  color: currentColor;
-  opacity: 0.45;
-  font-size: 0.7rem;
-}
-
-.loading-spinner {
-  width: 1.4rem;
-  height: 1.4rem;
-  border: 2px solid rgba(var(--color-primary), 0.15);
-  border-top-color: rgb(var(--color-primary));
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-.sidebar-container-mobile::-webkit-scrollbar {
-  width: 6px;
-}
-
-.sidebar-container-mobile::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-container-mobile::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.3);
-  border-radius: 9999px;
-}
-
-.sidebar-container-mobile::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 0.4);
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.28s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-:global(.dark) .sidebar-container {
-  background: rgba(15, 23, 42, 0.96);
-  border-color: rgba(75, 85, 99, 0.7);
-  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.28);
-}
-
-:global(.dark) .sidebar-mobile-actions {
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.94));
-  border-bottom-color: rgba(51, 65, 85, 0.9);
-}
-
-:global(.dark) .sidebar-mobile-title {
-  color: rgb(248 250 252);
-}
-
-:global(.dark) .sidebar-close-button,
-:global(.dark) .sidebar-search-clear {
-  color: rgb(156 163 175);
-}
-
-:global(.dark) .sidebar-close-button {
-  background: rgba(15, 23, 42, 0.96);
-  border-color: rgba(51, 65, 85, 0.9);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
-}
-
-:global(.dark) .sidebar-close-button:hover,
-:global(.dark) .sidebar-search-clear:hover {
-  background: rgba(75, 85, 99, 0.85);
-  color: rgb(243 244 246);
-}
-
-:global(.dark) .sidebar-profile-name,
-:global(.dark) .sidebar-empty-title {
-  color: rgb(243 244 246);
-}
-
-:global(.dark) .sidebar-profile-panel {
-  padding-top: 0.05rem;
-}
-
-:global(.dark) .sidebar-profile-card {
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
-}
-
-:global(.dark) .sidebar-container-mobile .sidebar-profile-card {
-  background: rgba(15, 23, 42, 0.92);
-  border-color: rgba(51, 65, 85, 0.9);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
-}
-
-:global(.dark) .sidebar-container-mobile .sidebar-profile-meta-item {
-  background: rgba(30, 41, 59, 0.92);
-  border-color: rgba(51, 65, 85, 0.9);
-}
-
-:global(.dark) .sidebar-container-mobile :deep(.sidebar-section) {
-  background: rgba(15, 23, 42, 0.92);
-  border-color: rgba(51, 65, 85, 0.9);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
-}
-
-:global(.dark) .sidebar-container-mobile :deep(.sidebar-section-count),
-:global(.dark) .sidebar-container-mobile :deep(.sidebar-nav-item-tag) {
-  background: rgba(30, 41, 59, 0.92);
-  border-color: rgba(51, 65, 85, 0.9);
-}
-
-:global(.dark) .sidebar-profile-avatar-shell {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-}
-
-:global(.dark) .sidebar-profile-avatar {
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid rgba(96, 165, 250, 0.22);
-}
-
-:global(.dark) .sidebar-profile-avatar-fallback {
-  color: rgb(191 219 254);
-}
-
-:global(.dark) .sidebar-profile-handle {
-  color: rgb(156 163 175);
-}
-
-:global(.dark) .sidebar-profile-bio {
-  color: rgb(203 213 225);
-}
-
-:global(.dark) .sidebar-profile-tagline {
-  color: rgb(186 199 215);
-}
-
-:global(.dark) .sidebar-nav-submeta,
-:global(.dark) .sidebar-nav-date,
-:global(.dark) .sidebar-tag-count,
-:global(.dark) .sidebar-empty-copy,
-:global(.dark) .sidebar-search-input::placeholder {
-  color: rgb(156 163 175);
-}
-
-:global(.dark) .sidebar-profile-meta-item {
-  background: rgba(30, 41, 59, 0.86);
-  border-color: rgba(71, 85, 105, 0.88);
-  color: rgb(203 213 225);
-}
-
-:global(.dark) a.sidebar-profile-meta-item:hover {
-  color: rgb(191 219 254);
-  border-color: rgba(96, 165, 250, 0.34);
-}
-
-:global(.dark) .sidebar-announcement-card {
-  border-color: rgba(59, 130, 246, 0.3);
-  background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 34%),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.86));
-  box-shadow: 0 22px 42px rgba(2, 6, 23, 0.35);
-}
-
-:global(.dark) .sidebar-announcement-card[data-variant='success'] {
-  border-color: rgba(16, 185, 129, 0.26);
-  background:
-    radial-gradient(circle at top right, rgba(16, 185, 129, 0.13), transparent 34%),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(6, 78, 59, 0.5));
-}
-
-:global(.dark) .sidebar-announcement-card[data-variant='warning'] {
-  border-color: rgba(245, 158, 11, 0.26);
-  background:
-    radial-gradient(circle at top right, rgba(245, 158, 11, 0.13), transparent 34%),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(120, 53, 15, 0.5));
-}
-
-:global(.dark) .sidebar-announcement-title {
-  color: rgb(241 245 249);
-}
-
-:global(.dark) .sidebar-announcement-text {
-  color: rgb(203 213 225);
-}
-
-:global(.dark) .sidebar-announcement-link {
-  background: rgba(15, 23, 42, 0.52);
-  color: rgb(191 219 254);
-}
-
-:global(.dark) .sidebar-search {
-  border-color: rgba(71, 85, 105, 0.88);
-  background: rgba(15, 23, 42, 0.92);
-}
-
-:global(.dark) .sidebar-search:focus-within {
-  border-color: rgba(147, 197, 253, 0.92);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-:global(.dark) .sidebar-search-input {
-  color: rgb(243 244 246);
-}
-
-:global(.dark) .sidebar-empty-state,
-:global(.dark) .sidebar-loading-state {
-  background: rgba(55, 65, 81, 0.45);
-}
-
-:global(.dark) .sidebar-container-mobile {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  scrollbar-color: rgba(107, 114, 128, 0.42) transparent;
-}
-
-:global(.dark) .sidebar-container-mobile::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.42);
-}
-
-:global(.dark) .sidebar-container-mobile::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.52);
-}
-
-:global(.dark) .sidebar-search-submit {
-  background: rgb(59 130 246);
-  color: rgb(239 246 255);
-}
-
-:global(.dark) .sidebar-search-submit:hover {
-  background: rgb(37 99 235);
-}
-
-:global(.dark) .sidebar-nav-item:hover {
-  background: transparent;
-}
-
-:global(.dark) .sidebar-nav-item,
-:global(.dark) .sidebar-nav-badge,
-:global(.dark) .sidebar-nav-item-tag {
-  color: rgb(209 213 219);
-}
-
-:global(.dark) .sidebar-nav-item-tag,
-:global(.dark) .sidebar-nav-badge {
-  background: rgba(30, 41, 59, 0.86);
-  border-color: rgba(71, 85, 105, 0.82);
-}
-
-:global(.dark) .sidebar-nav-item-active {
-  background: transparent;
-  color: rgb(191 219 254);
-}
-
-:global(.dark) .sidebar-nav-item:hover {
-  background: rgba(55, 65, 81, 0.72);
-  color: rgb(191 219 254);
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>
+<style scoped src="./Sidebar.css"></style>

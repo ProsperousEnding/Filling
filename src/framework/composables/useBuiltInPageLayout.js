@@ -1,5 +1,6 @@
 import { computed, ref, unref, watch } from 'vue'
 import { useConfigStore } from '../stores/config'
+import { readLocalStorage, removeLocalStorage, writeLocalStorage } from '../utils/localStorage'
 import { resolveBuiltInPageLayout } from '../utils/pageLayoutConfig'
 
 const LAYOUT_STORAGE_PREFIX = 'vue-blog-layout:'
@@ -9,24 +10,20 @@ function resolveSourceValue(source) {
 }
 
 function readStoredLayout(storageKey) {
-  if (typeof window === 'undefined' || !storageKey) {
-    return ''
-  }
-
-  return String(window.localStorage.getItem(storageKey) || '').trim().toLowerCase()
+  return String(readLocalStorage(storageKey, '')).trim().toLowerCase()
 }
 
 function writeStoredLayout(storageKey, layout) {
-  if (typeof window === 'undefined' || !storageKey) {
+  if (!storageKey) {
     return
   }
 
   if (layout) {
-    window.localStorage.setItem(storageKey, layout)
+    writeLocalStorage(storageKey, layout)
     return
   }
 
-  window.localStorage.removeItem(storageKey)
+  removeLocalStorage(storageKey)
 }
 
 export function useBuiltInPageLayout(pageKeySource, requestedComponentSource = '') {

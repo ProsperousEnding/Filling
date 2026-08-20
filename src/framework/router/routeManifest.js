@@ -233,10 +233,6 @@ export function getBlogNavItems(routePatterns = currentBlogPathPatterns) {
     .filter(item => normalizeString(item.path))
 }
 
-export const BLOG_NAV_ITEMS = Object.freeze(
-  getBlogNavItems(normalizeBlogRoutePatterns(BLOG_PATH_PATTERNS))
-)
-
 export function resolveArticleId(articleOrId) {
   return resolveLookupId(articleOrId, ['slug', 'id'])
 }

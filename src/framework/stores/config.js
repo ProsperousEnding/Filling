@@ -1,17 +1,23 @@
 import { defineStore } from 'pinia'
-import { loadAllConfigs } from '../config/configLoader'
+import { loadStoreConfigs } from '../runtime/runtimeContext.js'
 import { normalizeBackgroundConfig } from '../utils/backgroundConfig'
 import { normalizeCodeBlockConfig } from '../utils/codeBlockConfig'
 import { normalizeCoverConfig } from '../utils/coverConfig'
 import { normalizeFontConfig } from '../utils/fontConfig'
 import { normalizeGuestbookConfig } from '../utils/guestbookConfig'
 import { normalizeMarkdownConfig } from '../utils/markdownConfig'
-import { configureBlogRoutePatterns, normalizeBlogRoutePatterns } from '../router/routeManifest'
+import { normalizeBlogRoutePatterns } from '../router/routeManifest'
 import { normalizeMenuConfig, resolveMenuPageRegistry } from '../utils/menuConfig'
 import { normalizeBuiltInPageLayoutsConfig } from '../utils/pageLayoutConfig'
 import { normalizeSidebarLayout } from '../utils/sidebarLayout'
 import { normalizeThemeAssetPath } from '../utils/themeAsset'
 import { normalizeSeededCoverStyle } from '../utils/articleCover'
+import { normalizeAnalyticsConfig } from '../utils/analyticsConfig'
+import {
+  resolveFeatureMenuConfig,
+  resolveSponsorDisplayTargets
+} from '../utils/featurePageConfig'
+import { readLocalStorage, writeLocalStorage } from '../utils/localStorage'
 
 const DEFAULT_SITE_CONFIG = {
   title: '',
@@ -112,7 +118,7 @@ const DEFAULT_SITE_CONFIG = {
     exclude_tags: [],
     include_ids: [],
     exclude_ids: [],
-    fallback_to_latest: true
+    fallback_to_latest: false
   }
 }
 
@@ -217,233 +223,6 @@ const DEFAULT_SPONSOR_CONFIG = {
   supporters: []
 }
 
-const DEFAULT_LICENSE_CONFIG = {
-  enabled: false,
-  name: '',
-  url: ''
-}
-
-const DEFAULT_ANALYTICS_CONFIG = {
-  enabled: false,
-  respect_dnt: false,
-  track_localhost: false,
-  umami: {
-    enabled: false,
-    script_url: 'https://cloud.umami.is/script.js',
-    website_id: '',
-    host_url: '',
-    domains: [],
-    auto_track: true,
-    do_not_track: true,
-    exclude_search: false,
-    exclude_hash: false,
-    performance: false,
-    tag: ''
-  },
-  plausible: {
-    enabled: false,
-    script_url: 'https://plausible.io/js/script.js',
-    domain: '',
-    endpoint: '',
-    auto_capture_pageviews: true,
-    capture_on_localhost: false,
-    hash_based_routing: false,
-    outbound_links: false,
-    file_downloads: false,
-    tagged_events: false
-  },
-  google_analytics: {
-    enabled: false,
-    measurement_id: '',
-    manual_pageviews: true,
-    debug_mode: false
-  },
-  clarity: {
-    enabled: false,
-    project_id: ''
-  }
-}
-
-const DEFAULT_FONT_CONFIG = {
-  enabled: false,
-  preset: '',
-  current_preset: '',
-  preload: '',
-  base_size: '',
-  families: {
-    sans: '',
-    heading: '',
-    serif: '',
-    mono: ''
-  },
-  dark_families: {},
-  presets: {},
-  faces: []
-}
-
-const DEFAULT_CODE_BLOCK_CONFIG = {
-  enabled: true,
-  show_language: true,
-  show_filename: true,
-  show_copy_button: true,
-  show_line_numbers: true,
-  line_number_start: 1,
-  theme: 'default',
-  dark_theme: 'default',
-  copy_label: '复制代码',
-  copied_label: '已复制',
-  wrap_long_lines: false,
-  max_height: '',
-  collapsible: true,
-  collapse_threshold_lines: 18,
-  preview_lines: 18,
-  expand_label: '展开代码',
-  collapse_label: '收起代码',
-  mark_diff_lines: true,
-  languages: {}
-}
-
-const DEFAULT_MARKDOWN_CONFIG = {
-  enabled: true,
-  callouts: {
-    enabled: true,
-    syntax: 'github',
-    default_type: 'note',
-    show_icon: true,
-    labels: {},
-    icons: {},
-    aliases: {}
-  },
-  mermaid: {
-    enabled: false,
-    render: true,
-    script_url: 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js',
-    theme: 'default',
-    dark_theme: 'dark',
-    security_level: 'strict'
-  },
-  math: {
-    enabled: false,
-    render: true,
-    engine: 'katex',
-    script_url: 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js',
-    css_url: 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css',
-    inline_dollar: true,
-    inline_parentheses: true,
-    block_dollar: true,
-    block_brackets: true,
-    throw_on_error: false,
-    error_color: '#dc2626',
-    strict: 'warn'
-  }
-}
-
-const DEFAULT_BACKGROUND_CONFIG = {
-  enabled: false,
-  mode: 'gradient',
-  gradient_light: 'radial-gradient(72rem 42rem at 0% 0%, rgba(59, 130, 246, 0.14), transparent 56%), radial-gradient(56rem 34rem at 100% 8%, rgba(16, 185, 129, 0.1), transparent 48%), linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(255, 255, 255, 0.98) 38%, rgba(248, 250, 252, 0.94) 100%)',
-  gradient_dark: 'radial-gradient(72rem 42rem at 0% 0%, rgba(37, 99, 235, 0.18), transparent 54%), radial-gradient(54rem 32rem at 100% 10%, rgba(14, 165, 233, 0.12), transparent 46%), linear-gradient(180deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.98) 42%, rgba(15, 23, 42, 0.94) 100%)',
-  image: '',
-  dark_image: '',
-  overlay_light: 'none',
-  overlay_dark: 'none',
-  position: 'center top',
-  size: 'cover',
-  repeat: 'no-repeat',
-  attachment: 'scroll',
-  opacity: 1
-}
-
-const DEFAULT_COVER_CONFIG = {
-  enabled: true,
-  fallback: 'seeded',
-  fallback_image: '',
-  seeded_width: 1200,
-  seeded_height: 630,
-  seeded_format: 'webp',
-  seeded_style: 'picsum',
-  style_switch: {
-    enabled: true,
-    storage_key: 'vue-blog-cover-source',
-    styles: [
-      'picsum',
-      'cataas',
-      'mwm-anime',
-      'mwm-scenery',
-      'xjh-acg',
-      'bing-rand'
-    ],
-    labels: {
-      picsum: 'Picsum',
-      cataas: 'Cataas',
-      'mwm-anime': 'MWM 二次元',
-      'mwm-scenery': 'MWM 风景',
-      'xjh-acg': 'XJH ACG',
-      'bing-rand': 'Bing 随机'
-    }
-  },
-  source_switch: {
-    enabled: true,
-    storage_key: 'vue-blog-cover-source',
-    sources: [
-      'picsum',
-      'cataas',
-      'mwm-anime',
-      'mwm-scenery',
-      'xjh-acg',
-      'bing-rand'
-    ],
-    labels: {
-      picsum: 'Picsum',
-      cataas: 'Cataas',
-      'mwm-anime': 'MWM 二次元',
-      'mwm-scenery': 'MWM 风景',
-      'xjh-acg': 'XJH ACG',
-      'bing-rand': 'Bing 随机'
-    }
-  },
-  list: {
-    show_cover: true,
-    loading: 'lazy',
-    aspect_ratio: '',
-    object_fit: 'cover',
-    placeholder: 'gradient'
-  },
-  detail: {
-    show_cover: true,
-    show_related_cover: true,
-    display_mode: 'image',
-    loading: 'eager',
-    aspect_ratio: '',
-    object_fit: 'cover',
-    placeholder: 'gradient',
-    page_background: {
-      content_style: 'transparent'
-    },
-    watermark: {
-      enabled: false,
-      text: '',
-      position: 'bottom-right',
-      opacity: 0.72
-    }
-  }
-}
-
-const DEFAULT_GUESTBOOK_CONFIG = {
-  enabled: false,
-  kicker: '留言板',
-  title: '欢迎留下你的来访足迹',
-  description: '如果你路过这里，可以简单介绍自己，或者留下一句想说的话。',
-  guidelines: [],
-  template: '',
-  contact_label: '',
-  contact_url: '',
-  comment_title: '开始留言',
-  comment_description: '评论区会按当前页面路径独立保存留言内容。',
-  comment_not_ready_text: '',
-  comment: {}
-}
-
 const SIDEBAR_POSITION_VALUES = new Set(['left', 'right', 'hidden'])
 const GISCUS_MAPPING_VALUES = new Set(['pathname', 'url', 'title', 'og:title', 'specific'])
 const GISCUS_INPUT_POSITION_VALUES = new Set(['top', 'bottom'])
@@ -500,6 +279,7 @@ const RAW_COMMENT_CONFIG_KEYS = new Set([
 ])
 const RAW_SPONSOR_CONFIG_KEYS = new Set([
   'enabled',
+  'show',
   'title',
   'description',
   'button_text',
@@ -666,6 +446,24 @@ const RAW_GUESTBOOK_CONFIG_KEYS = new Set([
   'comment_not_ready_text',
   'commentNotReadyText',
   'comment'
+])
+const CONFIG_NAMESPACE_KEYS = Object.freeze([
+  'site',
+  'profile',
+  'theme',
+  'links',
+  'announcement',
+  'comment',
+  'sponsor',
+  'license',
+  'analytics',
+  'font',
+  'codeBlock',
+  'code_block',
+  'markdown',
+  'background',
+  'cover',
+  'guestbook'
 ])
 
 let reloadSeq = 0
@@ -1068,125 +866,6 @@ function normalizeLicenseConfig(license = {}) {
   }
 }
 
-function normalizeAnalyticsScriptUrl(value, fallback = '') {
-  const normalizedValue = String(value || '').trim()
-
-  if (!normalizedValue) {
-    return fallback
-  }
-
-  if (/^(https?:)?\/\//i.test(normalizedValue)) {
-    return normalizedValue
-  }
-
-  return ''
-}
-
-function normalizeAnalyticsConfig(analytics = {}) {
-  const merged = {
-    ...DEFAULT_ANALYTICS_CONFIG,
-    ...(isPlainObject(analytics) ? analytics : {})
-  }
-  const umamiSource = isPlainObject(merged.umami) ? merged.umami : {}
-  const plausibleSource = isPlainObject(merged.plausible) ? merged.plausible : {}
-  const googleAnalyticsSource = isPlainObject(merged.google_analytics)
-    ? merged.google_analytics
-    : isPlainObject(merged.googleAnalytics)
-      ? merged.googleAnalytics
-      : {}
-  const claritySource = isPlainObject(merged.clarity) ? merged.clarity : {}
-  const globalEnabled = merged.enabled === true
-
-  const umami = {
-    enabled: globalEnabled && umamiSource.enabled === true,
-    scriptUrl: normalizeAnalyticsScriptUrl(
-      umamiSource.script_url || umamiSource.scriptUrl,
-      DEFAULT_ANALYTICS_CONFIG.umami.script_url
-    ),
-    websiteId: String(umamiSource.website_id || umamiSource.websiteId || '').trim(),
-    hostUrl: normalizeAnalyticsScriptUrl(umamiSource.host_url || umamiSource.hostUrl),
-    domains: normalizeStringList(umamiSource.domains),
-    autoTrack: typeof umamiSource.auto_track === 'boolean'
-      ? umamiSource.auto_track
-      : DEFAULT_ANALYTICS_CONFIG.umami.auto_track,
-    doNotTrack: typeof umamiSource.do_not_track === 'boolean'
-      ? umamiSource.do_not_track
-      : DEFAULT_ANALYTICS_CONFIG.umami.do_not_track,
-    excludeSearch: umamiSource.exclude_search === true,
-    excludeHash: umamiSource.exclude_hash === true,
-    performance: umamiSource.performance === true,
-    tag: String(umamiSource.tag || '').trim()
-  }
-  umami.ready = umami.enabled && Boolean(umami.scriptUrl && umami.websiteId)
-
-  const plausible = {
-    enabled: globalEnabled && plausibleSource.enabled === true,
-    scriptUrl: normalizeAnalyticsScriptUrl(
-      plausibleSource.script_url || plausibleSource.scriptUrl,
-      DEFAULT_ANALYTICS_CONFIG.plausible.script_url
-    ),
-    domain: String(plausibleSource.domain || '').trim(),
-    endpoint: normalizeAnalyticsScriptUrl(
-      plausibleSource.endpoint
-      || plausibleSource.api_host
-      || plausibleSource.apiHost
-    ),
-    autoCapturePageviews: typeof plausibleSource.auto_capture_pageviews === 'boolean'
-      ? plausibleSource.auto_capture_pageviews
-      : DEFAULT_ANALYTICS_CONFIG.plausible.auto_capture_pageviews,
-    captureOnLocalhost: typeof plausibleSource.capture_on_localhost === 'boolean'
-      ? plausibleSource.capture_on_localhost
-      : DEFAULT_ANALYTICS_CONFIG.plausible.capture_on_localhost,
-    hashBasedRouting: plausibleSource.hash_based_routing === true,
-    outboundLinks: plausibleSource.outbound_links === true,
-    fileDownloads: plausibleSource.file_downloads === true,
-    taggedEvents: plausibleSource.tagged_events === true
-  }
-  plausible.ready = plausible.enabled && Boolean(plausible.scriptUrl)
-
-  const googleAnalytics = {
-    enabled: globalEnabled && googleAnalyticsSource.enabled === true,
-    measurementId: String(
-      googleAnalyticsSource.measurement_id
-      || googleAnalyticsSource.measurementId
-      || ''
-    ).trim(),
-    manualPageviews: typeof googleAnalyticsSource.manual_pageviews === 'boolean'
-      ? googleAnalyticsSource.manual_pageviews
-      : DEFAULT_ANALYTICS_CONFIG.google_analytics.manual_pageviews,
-    debugMode: typeof googleAnalyticsSource.debug_mode === 'boolean'
-      ? googleAnalyticsSource.debug_mode
-      : DEFAULT_ANALYTICS_CONFIG.google_analytics.debug_mode
-  }
-  googleAnalytics.ready = googleAnalytics.enabled && Boolean(googleAnalytics.measurementId)
-
-  const clarity = {
-    enabled: globalEnabled && claritySource.enabled === true,
-    projectId: String(claritySource.project_id || claritySource.projectId || '').trim()
-  }
-  clarity.ready = clarity.enabled && Boolean(clarity.projectId)
-
-  const providers = ['umami', 'plausible', 'googleAnalytics', 'clarity']
-    .filter((providerName) => {
-      if (providerName === 'googleAnalytics') {
-        return googleAnalytics.ready
-      }
-
-      return ({ umami, plausible, clarity })[providerName].ready
-    })
-
-  return {
-    enabled: globalEnabled && providers.length > 0,
-    respectDnt: merged.respect_dnt === true,
-    trackLocalhost: merged.track_localhost === true,
-    umami,
-    plausible,
-    googleAnalytics,
-    clarity,
-    providers
-  }
-}
-
 function normalizeProfile(profile = {}) {
   const merged = {
     ...DEFAULT_PROFILE_CONFIG,
@@ -1367,9 +1046,10 @@ function normalizeSponsorSupporters(supporters = []) {
 }
 
 function normalizeSponsorConfig(sponsor = {}) {
+  const source = isPlainObject(sponsor) ? sponsor : {}
   const merged = {
     ...DEFAULT_SPONSOR_CONFIG,
-    ...(isPlainObject(sponsor) ? sponsor : {})
+    ...source
   }
   const buttonLink = normalizeAnnouncementLink(merged.button_url)
   const methods = normalizeSponsorMethods(merged.methods)
@@ -1382,12 +1062,9 @@ function normalizeSponsorConfig(sponsor = {}) {
   const buttonText = String(merged.button_text || '').trim()
   const buttonNote = String(merged.button_note || '').trim()
   const enabled = merged.enabled === true
-  const showOnArticles = typeof merged.show_on_articles === 'boolean'
-    ? merged.show_on_articles
-    : DEFAULT_SPONSOR_CONFIG.show_on_articles
-  const pageEnabled = typeof merged.page_enabled === 'boolean'
-    ? merged.page_enabled
-    : DEFAULT_SPONSOR_CONFIG.page_enabled
+  const displayTargets = resolveSponsorDisplayTargets(source)
+  const showOnArticles = displayTargets.includes('articles')
+  const pageEnabled = displayTargets.includes('page')
   const articleEnabled = enabled && showOnArticles && Boolean(
     description
     || buttonLink.url
@@ -1555,14 +1232,17 @@ function normalizeUtterancesConfig(config = {}) {
 }
 
 function normalizeCommentConfig(comment = {}) {
+  const source = isPlainObject(comment) ? comment : {}
   const merged = {
     ...DEFAULT_COMMENT_CONFIG,
-    ...(isPlainObject(comment) ? comment : {})
+    ...source
   }
   const provider = normalizeCommentProvider(merged.provider)
   const giscus = normalizeGiscusConfig(merged.giscus)
   const utterances = normalizeUtterancesConfig(merged.utterances)
-  const enabled = merged.enabled === true
+  const enabled = typeof source.enabled === 'boolean'
+    ? source.enabled
+    : Boolean(String(source.provider || '').trim())
   const title = String(merged.title || '').trim() || DEFAULT_COMMENT_CONFIG.title
   const description = String(merged.description || '').trim()
   const notReadyText = String(merged.not_ready_text || merged.notReadyText || '').trim()
@@ -1730,11 +1410,23 @@ function normalizeRoutingConfig(routing = {}) {
   return normalizeBlogRoutePatterns(routing)
 }
 
-function normalizeMenusConfig(menus = {}) {
-  return normalizeMenuConfig(menus)
-}
-
-function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {}, announcement = {}, comment = {}, sponsor = {}, license = {}, analytics = {}, font = {}, codeBlock = {}, markdown = {}, background = {}, cover = {}, guestbook = {} } = {}) {
+function normalizeConfigState({
+  site = {},
+  profile = {},
+  theme = {},
+  links = {},
+  announcement = {},
+  comment = {},
+  sponsor = {},
+  license = {},
+  analytics = {},
+  font = {},
+  codeBlock = {},
+  markdown = {},
+  background = {},
+  cover = {},
+  guestbook = {}
+} = {}) {
   const mergedSite = {
     ...DEFAULT_SITE_CONFIG,
     ...site,
@@ -1794,7 +1486,10 @@ function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {},
   const sidebarPosition = normalizeSidebarPosition(mergedSite.features.sidebar_position)
   const sidebarVisible = sidebarPosition !== 'hidden' && mergedSite.features.sidebar_visible !== false
   const routePatterns = normalizeRoutingConfig(mergedSite.routing)
-  const menus = normalizeMenusConfig(mergedSite.menus)
+  const menus = normalizeMenuConfig(resolveFeatureMenuConfig(mergedSite.menus, {
+    guestbook,
+    sponsor
+  }))
   const pageRegistry = resolveMenuPageRegistry(menus, routePatterns)
 
   return {
@@ -1831,30 +1526,12 @@ function normalizeConfigState({ site = {}, profile = {}, theme = {}, links = {},
     sponsorConfig: normalizeSponsorConfig(sponsor),
     defaultLicense: normalizeLicenseConfig(license),
     analyticsConfig: normalizeAnalyticsConfig(analytics),
-    fontConfig: normalizeFontConfig({
-      ...DEFAULT_FONT_CONFIG,
-      ...(isPlainObject(font) ? font : {})
-    }),
-    codeBlockConfig: normalizeCodeBlockConfig({
-      ...DEFAULT_CODE_BLOCK_CONFIG,
-      ...(isPlainObject(codeBlock) ? codeBlock : {})
-    }),
-    markdownConfig: normalizeMarkdownConfig({
-      ...DEFAULT_MARKDOWN_CONFIG,
-      ...(isPlainObject(markdown) ? markdown : {})
-    }),
-    backgroundConfig: normalizeBackgroundConfig({
-      ...DEFAULT_BACKGROUND_CONFIG,
-      ...(isPlainObject(background) ? background : {})
-    }),
-    coverConfig: normalizeCoverConfig({
-      ...DEFAULT_COVER_CONFIG,
-      ...(isPlainObject(cover) ? cover : {})
-    }),
-    guestbookConfig: normalizeGuestbookConfig({
-      ...DEFAULT_GUESTBOOK_CONFIG,
-      ...(isPlainObject(guestbook) ? guestbook : {})
-    }),
+    fontConfig: normalizeFontConfig(font),
+    codeBlockConfig: normalizeCodeBlockConfig(codeBlock),
+    markdownConfig: normalizeMarkdownConfig(markdown),
+    backgroundConfig: normalizeBackgroundConfig(background),
+    coverConfig: normalizeCoverConfig(cover),
+    guestbookConfig: normalizeGuestbookConfig(guestbook),
     currentThemePreset,
     themePresets,
     themeCSSFile: normalizeThemeAssetPath(activeThemePreset?.cssFile || mergedTheme.css_file || ''),
@@ -1871,81 +1548,57 @@ function pickConfigSubset(source, allowedKeys) {
   }, {})
 }
 
+function createNamespacedConfigInput(config = {}) {
+  return {
+    site: config.site,
+    profile: config.profile,
+    theme: config.theme,
+    links: config.links,
+    announcement: config.announcement,
+    comment: config.comment,
+    sponsor: config.sponsor,
+    license: config.license,
+    analytics: config.analytics,
+    font: config.font,
+    codeBlock: config.codeBlock || config.code_block,
+    markdown: config.markdown,
+    background: config.background,
+    cover: config.cover,
+    guestbook: config.guestbook
+  }
+}
+
 function normalizeRuntimeConfigInput(config = {}) {
   if (!isPlainObject(config)) {
     return config
   }
 
-  const hasNamespacedConfig = ['site', 'profile', 'theme', 'links', 'announcement', 'comment', 'sponsor', 'license', 'analytics', 'font', 'codeBlock', 'code_block', 'markdown', 'background', 'cover', 'guestbook']
+  const hasNamespacedConfig = CONFIG_NAMESPACE_KEYS
     .some(key => Object.prototype.hasOwnProperty.call(config, key))
 
   if (hasNamespacedConfig) {
-    return normalizeConfigState({
-      site: config.site,
-      profile: config.profile,
-      theme: config.theme,
-      links: config.links,
-      announcement: config.announcement,
-      comment: config.comment,
-      sponsor: config.sponsor,
-      license: config.license,
-      analytics: config.analytics,
-      font: config.font,
-      codeBlock: config.codeBlock || config.code_block,
-      markdown: config.markdown,
-      background: config.background,
-      cover: config.cover,
-      guestbook: config.guestbook
-    })
+    return normalizeConfigState(createNamespacedConfigInput(config))
   }
 
-  const site = pickConfigSubset(config, RAW_SITE_CONFIG_KEYS)
-  const profile = pickConfigSubset(config, RAW_PROFILE_CONFIG_KEYS)
-  const theme = pickConfigSubset(config, RAW_THEME_CONFIG_KEYS)
-  const links = pickConfigSubset(config, RAW_LINKS_CONFIG_KEYS)
-  const comment = pickConfigSubset(config, RAW_COMMENT_CONFIG_KEYS)
-  const sponsor = pickConfigSubset(config, RAW_SPONSOR_CONFIG_KEYS)
-  const license = pickConfigSubset(config, RAW_LICENSE_CONFIG_KEYS)
-  const analytics = pickConfigSubset(config, RAW_ANALYTICS_CONFIG_KEYS)
-  const font = pickConfigSubset(config, RAW_FONT_CONFIG_KEYS)
-  const codeBlock = pickConfigSubset(config, RAW_CODE_BLOCK_CONFIG_KEYS)
-  const markdown = pickConfigSubset(config, RAW_MARKDOWN_CONFIG_KEYS)
-  const background = pickConfigSubset(config, RAW_BACKGROUND_CONFIG_KEYS)
-  const cover = pickConfigSubset(config, RAW_COVER_CONFIG_KEYS)
-  const guestbook = pickConfigSubset(config, RAW_GUESTBOOK_CONFIG_KEYS)
+  const rawConfig = {
+    site: pickConfigSubset(config, RAW_SITE_CONFIG_KEYS),
+    profile: pickConfigSubset(config, RAW_PROFILE_CONFIG_KEYS),
+    theme: pickConfigSubset(config, RAW_THEME_CONFIG_KEYS),
+    links: pickConfigSubset(config, RAW_LINKS_CONFIG_KEYS),
+    comment: pickConfigSubset(config, RAW_COMMENT_CONFIG_KEYS),
+    sponsor: pickConfigSubset(config, RAW_SPONSOR_CONFIG_KEYS),
+    license: pickConfigSubset(config, RAW_LICENSE_CONFIG_KEYS),
+    analytics: pickConfigSubset(config, RAW_ANALYTICS_CONFIG_KEYS),
+    font: pickConfigSubset(config, RAW_FONT_CONFIG_KEYS),
+    codeBlock: pickConfigSubset(config, RAW_CODE_BLOCK_CONFIG_KEYS),
+    markdown: pickConfigSubset(config, RAW_MARKDOWN_CONFIG_KEYS),
+    background: pickConfigSubset(config, RAW_BACKGROUND_CONFIG_KEYS),
+    cover: pickConfigSubset(config, RAW_COVER_CONFIG_KEYS),
+    guestbook: pickConfigSubset(config, RAW_GUESTBOOK_CONFIG_KEYS)
+  }
 
-  if (
-    Object.keys(site).length > 0 ||
-    Object.keys(profile).length > 0 ||
-    Object.keys(theme).length > 0 ||
-    Object.keys(links).length > 0 ||
-    Object.keys(comment).length > 0 ||
-    Object.keys(sponsor).length > 0 ||
-    Object.keys(license).length > 0 ||
-    Object.keys(analytics).length > 0 ||
-    Object.keys(font).length > 0 ||
-    Object.keys(codeBlock).length > 0 ||
-    Object.keys(markdown).length > 0 ||
-    Object.keys(background).length > 0 ||
-    Object.keys(cover).length > 0 ||
-    Object.keys(guestbook).length > 0
-  ) {
-    return normalizeConfigState({
-      site,
-      profile,
-      theme,
-      links,
-      comment,
-      sponsor,
-      license,
-      analytics,
-      font,
-      codeBlock,
-      markdown,
-      background,
-      cover,
-      guestbook
-    })
+  if (Object.values(rawConfig).some(section => Object.keys(section).length > 0)) {
+    return normalizeConfigState(rawConfig)
   }
 
   return config
@@ -1970,8 +1623,6 @@ function syncConfiguredRoutePatterns(configPatch = {}) {
   }
 
   const nextRoutePatterns = normalizeRoutingConfig(configPatch.routePatterns)
-  configureBlogRoutePatterns(nextRoutePatterns)
-
   return {
     ...configPatch,
     routePatterns: nextRoutePatterns
@@ -2026,13 +1677,17 @@ export const useConfigStore = defineStore('config', {
       this.coverStyle = resolveCoverStyle(this.coverStyle, this.coverConfig)
     },
 
-    toggleTheme() {
-      this.theme = this.theme === 'light' ? 'dark' : 'light'
+    setTheme(theme, { persist = true } = {}) {
+      this.theme = theme === 'dark' ? 'dark' : 'light'
       applyDocumentTheme(this.theme)
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('vue-blog-theme', this.theme)
+      if (persist) {
+        writeLocalStorage('vue-blog-theme', this.theme)
       }
+    },
+
+    toggleTheme() {
+      this.setTheme(this.theme === 'light' ? 'dark' : 'light')
     },
 
     toggleSidebar() {
@@ -2052,12 +1707,7 @@ export const useConfigStore = defineStore('config', {
     },
 
     loadThemeFromStorage() {
-      if (typeof window === 'undefined') {
-        applyDocumentTheme(this.theme)
-        return
-      }
-
-      const savedTheme = localStorage.getItem('vue-blog-theme')
+      const savedTheme = readLocalStorage('vue-blog-theme')
       if (savedTheme === 'light' || savedTheme === 'dark') {
         this.theme = savedTheme
       }
@@ -2068,8 +1718,8 @@ export const useConfigStore = defineStore('config', {
     setCoverStyle(style, { persist = true } = {}) {
       this.coverStyle = resolveCoverStyle(style, this.coverConfig)
 
-      if (persist && typeof window !== 'undefined') {
-        localStorage.setItem(getCoverStyleStorageKey(this.coverConfig), this.coverStyle)
+      if (persist) {
+        writeLocalStorage(getCoverStyleStorageKey(this.coverConfig), this.coverStyle)
       }
     },
 
@@ -2082,12 +1732,7 @@ export const useConfigStore = defineStore('config', {
     },
 
     loadCoverStyleFromStorage() {
-      if (typeof window === 'undefined') {
-        this.coverStyle = resolveCoverStyle(this.coverStyle, this.coverConfig)
-        return
-      }
-
-      const savedStyle = localStorage.getItem(getCoverStyleStorageKey(this.coverConfig))
+      const savedStyle = readLocalStorage(getCoverStyleStorageKey(this.coverConfig))
       this.coverStyle = resolveCoverStyle(savedStyle || this.coverConfig?.seededSource || this.coverConfig?.seededStyle, this.coverConfig)
     },
 
@@ -2098,29 +1743,13 @@ export const useConfigStore = defineStore('config', {
 
     async reloadConfig() {
       const currentSeq = ++reloadSeq
-      const configs = await loadAllConfigs()
+      const configs = await loadStoreConfigs(this)
 
       if (currentSeq !== reloadSeq) {
         return
       }
 
-      this.$patch(buildNormalizedState({
-        site: configs?.site || {},
-        profile: configs?.profile || {},
-        theme: configs?.theme || {},
-        links: configs?.links || {},
-        announcement: configs?.announcement || {},
-        comment: configs?.comment || {},
-        sponsor: configs?.sponsor || {},
-        license: configs?.license || {},
-        analytics: configs?.analytics || {},
-        font: configs?.font || {},
-        codeBlock: configs?.code_block || {},
-        markdown: configs?.markdown || {},
-        background: configs?.background || {},
-        cover: configs?.cover || {},
-        guestbook: configs?.guestbook || {}
-      }))
+      this.$patch(buildNormalizedState(createNamespacedConfigInput(configs)))
       this.coverStyle = resolveCoverStyle(this.coverStyle, this.coverConfig)
     },
 

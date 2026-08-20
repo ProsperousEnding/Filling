@@ -6,15 +6,9 @@ description = "一个基于 Vue 3 的静态博客与内容系统。"
 site_url = "https://filling.initzo.com"
 
 [seo]
-lang = "zh-CN"
-locale = "zh_CN"
-robots = "index,follow"
 og_image = "icons/points.png"
-twitter_image = "icons/points.png"
 
 [header.leading_visual]
-visible = true
-type = "dots"
 title = "Filling"
 title_size = "18"
 
@@ -22,42 +16,10 @@ title_size = "18"
 show_title = false
 
 [features]
-sidebar_position = "right"
 show_sidebar_on_articles = false
-show_profile_in_sidebar = true
-
-[sidebar]
-desktop_components = ["profile", "announcement", "search", "categories", "tags", "latest-articles"]
-
-[pagination]
-page_size = 10
 
 [home_articles]
-mode = "latest"
-page_size = 8
-paginate = true
-include_sticky = true
-sticky_first = true
-
-[[menus.pages]]
-key = "home"
-component = "list"
-
-[[menus.pages]]
-key = "articles"
-component = "card"
-
-[[menus.pages]]
-key = "categories"
-component = "grid"
-
-[[menus.pages]]
-key = "tags"
-component = "list"
-
-[[menus.pages]]
-key = "archive"
-component = "timeline"
+mode = "mixed"
 
 [[menus.pages]]
 key = "about"
@@ -70,19 +32,6 @@ key = "friends"
 title = "友链"
 description = "一些会定期访问，也愿意推荐给别人的站点。"
 component = "friends"
-
-[[menus.pages]]
-key = "guestbook"
-title = "留言板"
-description = "如果你路过这里，欢迎留下几句话。"
-component = "guestbook"
-
-[[menus.pages]]
-key = "sponsor"
-title = "赞助"
-description = "支持本站持续更新。"
-component = "sponsor"
-visible = false
 
 [footer]
 text = "版权所有 © Filling"

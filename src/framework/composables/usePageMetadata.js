@@ -1,6 +1,15 @@
 import { computed, watch } from 'vue'
 import { useConfigStore } from '../stores/config'
+import { useBlogBaseUrl } from '../runtime/runtimeContext'
 import { createSeededArticleCover } from '../utils/articleCover'
+import {
+  buildAbsoluteUrl,
+  normalizeBasePath,
+  normalizeSiteUrl,
+  resolveMetadataAssetUrl,
+  resolveShareImageUrl,
+  stripBasePath
+} from '../utils/pageMetadataModel'
 
 function resolveSourceValue(source) {
   return typeof source === 'function' ? source() : source
@@ -162,123 +171,6 @@ function upsertCanonicalElement(href) {
   element.setAttribute('href', normalizedHref)
 }
 
-function normalizeSiteUrl(value) {
-  const normalized = String(value || '').trim()
-
-  if (!normalized) {
-    return ''
-  }
-
-  if (/^https?:\/\//i.test(normalized)) {
-    return normalized.replace(/\/+$/, '')
-  }
-
-  return `https://${normalized}`.replace(/\/+$/, '')
-}
-
-function buildBaseRelativeUrl(basePath, assetPath) {
-  const normalizedAssetPath = String(assetPath || '')
-    .trim()
-    .replace(/^\.?\//, '')
-    .replace(/^\/+/, '')
-  const normalizedBasePath = normalizeBasePath(basePath)
-
-  if (!normalizedAssetPath) {
-    return ''
-  }
-
-  return normalizedBasePath === '/'
-    ? `/${normalizedAssetPath}`
-    : `${normalizedBasePath}${normalizedAssetPath}`.replace(/(?<!:)\/{2,}/g, '/')
-}
-
-function joinUrl(base, path) {
-  const normalizedBase = normalizeSiteUrl(base)
-  const normalizedPath = String(path || '').trim()
-
-  if (!normalizedBase || !normalizedPath || normalizedPath === '/') {
-    return normalizedBase
-  }
-
-  return `${normalizedBase}/${normalizedPath.replace(/^\/+/, '')}`
-}
-
-function normalizeBasePath(value) {
-  const normalizedValue = String(value || '').trim()
-
-  if (!normalizedValue || normalizedValue === '/') {
-    return '/'
-  }
-
-  return normalizedValue.startsWith('/')
-    ? (normalizedValue.endsWith('/') ? normalizedValue : `${normalizedValue}/`)
-    : `/${normalizedValue.replace(/\/+$/, '')}/`
-}
-
-function stripBasePath(path, basePath) {
-  const normalizedPath = String(path || '').trim()
-  const normalizedBasePath = normalizeBasePath(basePath)
-
-  if (!normalizedPath) {
-    return ''
-  }
-
-  if (normalizedBasePath === '/') {
-    return normalizedPath
-  }
-
-  const basePrefix = normalizedBasePath.replace(/\/+$/, '')
-  const matchesBasePrefix = normalizedPath === basePrefix || normalizedPath.startsWith(`${basePrefix}/`)
-
-  return matchesBasePrefix
-    ? normalizedPath.slice(basePrefix.length) || '/'
-    : normalizedPath
-}
-
-function buildAbsoluteUrl(siteUrl, basePath, routePath) {
-  const normalizedSiteUrl = normalizeSiteUrl(siteUrl)
-  const normalizedRoutePath = String(routePath || '').trim()
-  const normalizedBasePath = normalizeBasePath(basePath)
-
-  if (!normalizedSiteUrl) {
-    return ''
-  }
-
-  if (!normalizedRoutePath || normalizedRoutePath === '/') {
-    return normalizedBasePath === '/'
-      ? normalizedSiteUrl
-      : joinUrl(normalizedSiteUrl, normalizedBasePath)
-  }
-
-  const normalizedPath = normalizedRoutePath.replace(/^\/+/, '')
-
-  return normalizedBasePath === '/'
-    ? joinUrl(normalizedSiteUrl, normalizedPath)
-    : joinUrl(normalizedSiteUrl, `${normalizedBasePath.replace(/^\/+/, '')}${normalizedPath}`)
-}
-
-function resolveAssetUrl(assetPath, { siteUrl = '', basePath = '/', absolute = false } = {}) {
-  const normalizedAssetPath = String(assetPath || '').trim()
-
-  if (!normalizedAssetPath) {
-    return ''
-  }
-
-  if (/^(https?:)?\/\//i.test(normalizedAssetPath) || normalizedAssetPath.startsWith('data:')) {
-    return normalizedAssetPath
-  }
-
-  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalizedAssetPath)) {
-    return ''
-  }
-
-  if (absolute && siteUrl) {
-    return buildAbsoluteUrl(siteUrl, basePath, normalizedAssetPath)
-  }
-
-  return buildBaseRelativeUrl(basePath, normalizedAssetPath)
-}
-
 function normalizeShareImageConfig(seo = {}) {
   const shareImage = seo.shareImage && typeof seo.shareImage === 'object'
     ? seo.shareImage
@@ -311,52 +203,9 @@ function buildSeededShareImage(seed, shareImageConfig) {
   })
 }
 
-function resolveShareImageUrl({
-  pageImage,
-  seed,
-  shareImageConfig,
-  siteUrl,
-  basePath,
-  twitter = false
-}) {
-  if (!shareImageConfig.enabled) {
-    return ''
-  }
-
-  if (shareImageConfig.preferPageImage) {
-    const resolvedPageImage = resolveAssetUrl(pageImage, {
-      siteUrl,
-      basePath,
-      absolute: true
-    })
-
-    if (resolvedPageImage) {
-      return resolvedPageImage
-    }
-  }
-
-  const configuredImage = twitter
-    ? (shareImageConfig.twitterImage || shareImageConfig.defaultImage)
-    : shareImageConfig.defaultImage
-  const resolvedConfiguredImage = resolveAssetUrl(configuredImage, {
-    siteUrl,
-    basePath,
-    absolute: Boolean(siteUrl)
-  })
-
-  if (resolvedConfiguredImage) {
-    return resolvedConfiguredImage
-  }
-
-  if (shareImageConfig.fallback === 'seeded') {
-    return buildSeededShareImage(seed, shareImageConfig)
-  }
-
-  return ''
-}
-
 export function usePageMetadata(options = {}) {
   const configStore = useConfigStore()
+  const baseUrl = useBlogBaseUrl()
 
   const pageTitle = computed(() => normalizeMetaText(resolveSourceValue(options.title)))
   const pageDescription = computed(() => normalizeMetaText(resolveSourceValue(options.description)))
@@ -369,7 +218,7 @@ export function usePageMetadata(options = {}) {
   const siteUrl = computed(() => normalizeSiteUrl(
     configStore.siteUrl || (typeof window !== 'undefined' ? window.location.origin : '')
   ))
-  const appBasePath = normalizeBasePath(import.meta.env.BASE_URL || '/')
+  const appBasePath = normalizeBasePath(baseUrl)
   const siteSeo = computed(() => (
     configStore.seo && typeof configStore.seo === 'object' ? configStore.seo : {}
   ))
@@ -406,7 +255,8 @@ export function usePageMetadata(options = {}) {
       shareImageConfig: shareImageConfig.value,
       siteUrl: siteUrl.value,
       basePath: appBasePath,
-      twitter: false
+      twitter: false,
+      createSeededImage: buildSeededShareImage
     })
   })
   const robots = computed(() => (
@@ -423,17 +273,17 @@ export function usePageMetadata(options = {}) {
   const siteStartDate = computed(() => normalizeMetaText(siteSeo.value.siteStartDate))
   const timezone = computed(() => normalizeMetaText(siteSeo.value.timezone))
   const themeColor = computed(() => normalizeMetaText(siteSeo.value.themeColor))
-  const faviconHref = computed(() => resolveAssetUrl(siteSeo.value.favicon, {
+  const faviconHref = computed(() => resolveMetadataAssetUrl(siteSeo.value.favicon, {
     siteUrl: siteUrl.value,
     basePath: appBasePath,
     absolute: false
   }))
-  const appleTouchIconHref = computed(() => resolveAssetUrl(siteSeo.value.appleTouchIcon, {
+  const appleTouchIconHref = computed(() => resolveMetadataAssetUrl(siteSeo.value.appleTouchIcon, {
     siteUrl: siteUrl.value,
     basePath: appBasePath,
     absolute: false
   }))
-  const maskIconHref = computed(() => resolveAssetUrl(siteSeo.value.maskIcon, {
+  const maskIconHref = computed(() => resolveMetadataAssetUrl(siteSeo.value.maskIcon, {
     siteUrl: siteUrl.value,
     basePath: appBasePath,
     absolute: false
@@ -448,7 +298,8 @@ export function usePageMetadata(options = {}) {
       shareImageConfig: shareImageConfig.value,
       siteUrl: siteUrl.value,
       basePath: appBasePath,
-      twitter: true
+      twitter: true,
+      createSeededImage: buildSeededShareImage
     })
   })
   const twitterCardType = computed(() => (

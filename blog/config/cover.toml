@@ -1,17 +1,2 @@
-# 文章封面
-
-enabled = true
-fallback = "seeded"
+# 文章无封面时，自动生成的图片风格
 seeded_style = "mwm-anime"
-
-[source_switch]
-enabled = true
-sources = ["picsum", "cataas", "mwm-anime", "mwm-scenery", "xjh-acg", "bing-rand"]
-
-[detail]
-display_mode = "image"
-
-[detail.page_background]
-# display_mode = "page-background" 时生效
-# 可选值: "transparent" | "glass"
-content_style = "transparent"

@@ -1,24 +1,31 @@
 # 配置目录说明
 
-根目录保留日常最常改的基础配置。
+配置遵循“只写需要改的值”。未填字段使用框架默认值，无需把所有选项复制到 TOML。
 
-- `site.toml`：站点信息、导航、页面、路由、分页、首页文章和页脚
-- `profile.toml`：侧边栏个人资料卡
-- `theme.toml`：主题资源和主题预设
-- `background.toml`：站点背景
-- `cover.toml`：文章封面、列表封面和详情页背景
-- `comment.toml`：文章评论系统
-- `links.toml`：友情链接
+## 建议修改顺序
 
-`optional/` 存放低频或高级细节配置。默认会被项目自动读取，不需要额外启用目录。
+1. `site.toml`：站点名称、域名、首页模式和自定义页面。
+2. `profile.toml`：个人信息和社交链接。
+3. `comment.toml`：选择评论服务并填写必要凭据。
+4. `links.toml`：友情链接。
 
-- `optional/analytics.toml`：统计脚本
-- `optional/announcement.toml`：站点公告
-- `optional/code_block.toml`：代码块增强
-- `optional/font.toml`：字体栈、本地字体和 preload
-- `optional/guestbook.toml`：留言板
-- `optional/license.toml`：文章默认协议
-- `optional/markdown.toml`：Markdown 增强
-- `optional/sponsor.toml`：赞助区和赞助页
+`theme.toml`、`background.toml` 和 `cover.toml` 用于外观。`optional/` 里的功能用到时再开：
 
-同一个配置只保留一份。不要同时创建 `cover.toml` 和 `optional/cover.toml` 这类同名配置。
+- `analytics.toml`：统计，只选一个 `provider`。
+- `announcement.toml`：全站公告。
+- `code_block.toml`：代码块语言级覆盖。
+- `font.toml`：字体预设或自托管字体。
+- `guestbook.toml`：留言板，`enabled = true` 会自动注册菜单和页面。
+- `license.toml`：文章默认协议。
+- `markdown.toml`：Callout、Mermaid 和 KaTeX。
+- `sponsor.toml`：赞助区，用 `show = ["articles", "page"]` 选择位置。
+
+## 修改后检查
+
+```bash
+pnpm build:config
+```
+
+这个命令会报出错误枚举、缺失凭据、非法路由和常见字段拼写问题。完整说明见 `docs/configuration.md`。
+
+同一配置只保留一份，不要同时创建 `cover.toml` 和 `optional/cover.toml` 这类同名配置。

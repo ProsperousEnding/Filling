@@ -10,7 +10,7 @@
       <button
         v-if="showMobileSidebar"
         type="button"
-        class="theme-sidebar-overlay fixed inset-0 z-[1300] backdrop-blur-sm md:hidden"
+        class="theme-sidebar-overlay fixed inset-0 z-[1300] backdrop-blur-sm lg:hidden"
         aria-label="关闭侧边栏"
         @click="closeMobileSidebar"
       ></button>
@@ -19,8 +19,14 @@
     <Transition :name="sidebarDrawerTransition">
       <div
         v-if="showMobileSidebar"
-        class="theme-sidebar-drawer fixed inset-y-0 z-[1400] w-full max-w-full p-0 sm:w-[min(24rem,calc(100vw-1rem))] sm:p-2 md:hidden"
+        ref="mobileSidebarDrawer"
+        class="theme-sidebar-drawer fixed inset-y-0 z-[1400] w-full max-w-full p-0 sm:w-[min(24rem,calc(100vw-1rem))] sm:p-2 lg:hidden"
         :class="mobileSidebarPositionClass"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sidebar-mobile-title"
+        tabindex="-1"
+        @keydown.tab="trapMobileSidebarFocus"
       >
         <div class="theme-sidebar-drawer-shell h-full overflow-hidden rounded-none sm:rounded-[1.6rem]">
           <Sidebar mobile />
@@ -28,36 +34,40 @@
       </div>
     </Transition>
 
-    <!-- 鍗氬涓诲鍣?-->
-    <div class="theme-app flex flex-col h-full">
-      <!-- 澶撮儴 -->
+    <!-- 博客主容器 -->
+    <div
+      class="theme-app flex flex-col h-full"
+      :inert="showMobileSidebar || undefined"
+      :aria-hidden="showMobileSidebar ? 'true' : undefined"
+    >
+      <!-- 头部 -->
       <Header />
       <AnnouncementBar />
       <AnalyticsScripts />
       <FontAssets />
       <CodeBlockEnhancer />
 
-      <!-- 涓讳綋閮ㄥ垎 -->
+      <!-- 主体部分 -->
       <div class="theme-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col">
         <main class="blog-container theme-main-container py-4">
-          <div class="theme-layout flex flex-col md:flex-row gap-8 min-h-0">
-            <!-- 涓诲唴瀹瑰尯鍩?-->
-            <div class="theme-content-column flex-1 order-2 min-w-0" :class="[isSidebarLeft ? 'md:order-2' : 'md:order-1']">
+          <div class="theme-layout flex flex-col lg:flex-row gap-8 min-h-0">
+            <!-- 主内容区域 -->
+            <div class="theme-content-column flex-1 order-2 min-w-0" :class="[isSidebarLeft ? 'lg:order-2' : 'lg:order-1']">
               <slot></slot>
             </div>
             
-            <!-- 渚ц竟鏍?-->
+            <!-- 侧边栏 -->
             <div 
-              class="theme-sidebar-column hidden md:block md:w-80 order-1 scrollbar-hide"
-              :class="[isSidebarLeft ? 'md:order-1' : 'md:order-2']"
-              v-show="showDesktopSidebar"
+              class="theme-sidebar-column hidden lg:sticky lg:top-4 lg:self-start lg:block lg:w-80 order-1"
+              :class="[isSidebarLeft ? 'lg:order-1' : 'lg:order-2']"
+              v-if="showDesktopSidebar"
             >
               <Sidebar />
             </div>
           </div>
         </main>
       
-        <!-- 搴曢儴 -->
+        <!-- 底部 -->
         <Footer />
       </div>
     </div>
@@ -65,7 +75,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AnalyticsScripts from './AnalyticsScripts.vue'
 import CodeBlockEnhancer from './CodeBlockEnhancer.vue'
@@ -75,8 +85,10 @@ import AnnouncementBar from '../layout/AnnouncementBar.vue'
 import Footer from '../layout/Footer.vue'
 import Sidebar from '../layout/Sidebar.vue'
 import { useConfigStore } from '../../stores/config'
+import { useBlogBaseUrl } from '../../runtime/runtimeContext'
 import { buildBackgroundCssVars } from '../../utils/backgroundConfig'
 import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
+import { usesSidebarDrawer } from '../../utils/sidebarViewport'
 
 const props = defineProps({
   config: {
@@ -86,9 +98,16 @@ const props = defineProps({
 })
 
 const configStore = useConfigStore()
+const baseUrl = useBlogBaseUrl()
 const configState = configStore
 const route = useRoute()
-const isMobileViewport = ref(false)
+const mobileSidebarDrawer = ref(null)
+const isMobileViewport = ref(
+  typeof window !== 'undefined' && usesSidebarDrawer(window.innerWidth)
+)
+let mobileSidebarReturnFocus = null
+let previousBodyOverflow = ''
+let mobileSidebarFocusRequestId = 0
 const hasBackgroundLayer = computed(() => (
   configState.backgroundConfig?.enabled === true
   && configState.backgroundConfig?.mode !== 'none'
@@ -96,7 +115,7 @@ const hasBackgroundLayer = computed(() => (
 const backgroundShellStyle = computed(() => (
   buildBackgroundCssVars(
     configState.backgroundConfig,
-    import.meta.env.BASE_URL || '/'
+    baseUrl
   )
 ))
 const shellClass = computed(() => ({
@@ -122,13 +141,46 @@ const closeMobileSidebar = () => {
   configStore.closeMobileSidebar()
 }
 
+const getMobileSidebarFocusableElements = () => {
+  if (!mobileSidebarDrawer.value) return []
+
+  return Array.from(mobileSidebarDrawer.value.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )).filter(element => element.getAttribute('aria-hidden') !== 'true')
+}
+
+const trapMobileSidebarFocus = (event) => {
+  const focusableElements = getMobileSidebarFocusableElements()
+
+  if (focusableElements.length === 0) {
+    event.preventDefault()
+    mobileSidebarDrawer.value?.focus()
+    return
+  }
+
+  const firstElement = focusableElements[0]
+  const lastElement = focusableElements[focusableElements.length - 1]
+  const activeElement = document.activeElement
+
+  if (event.shiftKey && (activeElement === firstElement || !mobileSidebarDrawer.value?.contains(activeElement))) {
+    event.preventDefault()
+    lastElement.focus()
+    return
+  }
+
+  if (!event.shiftKey && activeElement === lastElement) {
+    event.preventDefault()
+    firstElement.focus()
+  }
+}
+
 const handleViewportChange = () => {
   if (typeof window === 'undefined') {
     isMobileViewport.value = false
     return
   }
 
-  isMobileViewport.value = window.innerWidth < 768
+  isMobileViewport.value = usesSidebarDrawer(window.innerWidth)
 
   if (!isMobileViewport.value) {
     configStore.closeMobileSidebar()
@@ -142,10 +194,6 @@ const handleEscape = (event) => {
 }
 
 onMounted(() => {
-  if (props.config && Object.keys(props.config).length > 0) {
-    configStore.initConfig(props.config)
-  }
-
   configStore.loadThemeFromStorage()
   configStore.loadCoverStyleFromStorage()
 
@@ -157,41 +205,67 @@ onMounted(() => {
   }
 })
 
+watch(() => props.config, (config) => {
+  if (config && Object.keys(config).length > 0) {
+    configStore.initConfig(config)
+  }
+}, { deep: true, immediate: true })
+
 watch(() => route.fullPath, () => {
   closeMobileSidebar()
 })
 
-watch(showMobileSidebar, (visible) => {
+watch(showMobileSidebar, async (visible) => {
   if (typeof document === 'undefined') {
     return
   }
 
-  document.body.style.overflow = visible ? 'hidden' : ''
+  const focusRequestId = mobileSidebarFocusRequestId + 1
+  mobileSidebarFocusRequestId = focusRequestId
+
+  if (visible) {
+    mobileSidebarReturnFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    await nextTick()
+
+    if (focusRequestId !== mobileSidebarFocusRequestId) return
+
+    const [firstFocusableElement] = getMobileSidebarFocusableElements()
+    const focusTarget = firstFocusableElement || mobileSidebarDrawer.value
+    focusTarget?.focus()
+    return
+  }
+
+  document.body.style.overflow = previousBodyOverflow
+  const returnFocusTarget = mobileSidebarReturnFocus
+  mobileSidebarReturnFocus = null
+  await nextTick()
+
+  if (focusRequestId !== mobileSidebarFocusRequestId) return
+
+  if (returnFocusTarget?.isConnected) {
+    returnFocusTarget.focus()
+  }
 })
 
 onBeforeUnmount(() => {
+  mobileSidebarFocusRequestId += 1
+
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', handleViewportChange)
     window.removeEventListener('keydown', handleEscape)
   }
 
   if (typeof document !== 'undefined') {
-    document.body.style.overflow = ''
+    document.body.style.overflow = previousBodyOverflow
   }
 })
 </script>
 
 <style scoped>
-/* 闅愯棌婊氬姩鏉′絾淇濈暀婊氬姩鍔熻兘 */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
-}
-
 .sidebar-overlay-enter-active,
 .sidebar-overlay-leave-active {
   transition: opacity 0.24s ease;
@@ -236,7 +310,7 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: none;
 }
 
-:global(.dark) .theme-sidebar-drawer-shell {
+:global(.dark .theme-sidebar-drawer-shell) {
   background:
     radial-gradient(circle at 16% 0%, rgba(30, 64, 175, 0.28), transparent 32%),
     linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98));

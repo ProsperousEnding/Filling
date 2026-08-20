@@ -50,11 +50,11 @@ usePageMetadata({
   description: () => pageDescription.value
 })
 
-fetchCategories()
+fetchCategories().catch(() => {})
 
-function fetchCategories() {
+async function fetchCategories() {
   try {
-    const result = categoryStore.fetchCategories()
+    const result = await categoryStore.fetchCategories()
     categories.value = result || []
   } catch (error) {
     console.error('获取分类列表失败:', error)

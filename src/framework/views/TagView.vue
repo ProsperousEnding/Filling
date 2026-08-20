@@ -1,16 +1,13 @@
 <template>
   <div class="built-in-menu-page tag-view">
-    <div v-if="loading && ready" class="py-12 flex justify-center">
-      <div class="theme-loading-inline inline-flex items-center">
-        <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        加载中...
-      </div>
-    </div>
+    <CollectionStatus
+      :loading="loading"
+      :ready="ready"
+      :error="error"
+      @retry="refresh"
+    />
     
-    <div v-else-if="ready">
+    <div v-if="ready">
       <!-- 标签标题 -->
       <div class="theme-page-header mb-8">
         <h1 class="theme-page-title tag-view-title text-3xl font-bold mb-2">
@@ -51,6 +48,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTagStore } from '../stores/tag'
 import { useConfigStore } from '../stores/config'
+import CollectionStatus from '../components/core/CollectionStatus.vue'
 import CollectionLayoutSwitcher from '../components/core/CollectionLayoutSwitcher.vue'
 import Pagination from '../components/core/Pagination.vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
@@ -104,9 +102,11 @@ const {
   total,
   loading,
   ready,
+  error,
   currentPage,
   totalPages,
-  handlePageChange
+  handlePageChange,
+  refresh
 } = usePaginatedCollection({
   pageSize: defaultPageSize,
   watchSources: [tagId],

@@ -17,8 +17,10 @@ const DEFAULT_COVER_STYLE_LABELS = Object.freeze({
   cataas: 'Cataas',
   'mwm-anime': 'MWM 二次元',
   'mwm-scenery': 'MWM 风景',
-  'xjh-acg': 'XJH ACG',
-  'bing-rand': 'Bing 随机'
+  'paugram-anime': '保罗二次元',
+  'dmoe-anime': 'DMOE 二次元',
+  loremflickr: 'LoremFlickr 风景',
+  'paugram-bing': 'Bing 每日壁纸'
 })
 
 export const DEFAULT_COVER_CONFIG = Object.freeze({
@@ -30,13 +32,13 @@ export const DEFAULT_COVER_CONFIG = Object.freeze({
   seeded_format: 'webp',
   seeded_style: DEFAULT_SEEDED_COVER_STYLE,
   style_switch: {
-    enabled: true,
+    enabled: false,
     storage_key: 'vue-blog-cover-source',
     styles: [...SEEDED_COVER_STYLES],
     labels: DEFAULT_COVER_STYLE_LABELS
   },
   source_switch: {
-    enabled: true,
+    enabled: false,
     storage_key: 'vue-blog-cover-source',
     sources: [...SEEDED_COVER_STYLES],
     labels: DEFAULT_COVER_STYLE_LABELS
@@ -154,11 +156,16 @@ function normalizeWatermarkPosition(value, fallback = DEFAULT_COVER_CONFIG.detai
   return COVER_WATERMARK_POSITION_VALUES.has(normalized) ? normalized : fallback
 }
 
-function normalizeStyleList(values = [], fallback = DEFAULT_COVER_CONFIG.style_switch.styles) {
+function normalizeStyleList(
+  values = [],
+  fallback = DEFAULT_COVER_CONFIG.style_switch.styles,
+  availableStyles = SEEDED_COVER_STYLES
+) {
   const source = Array.isArray(values) ? values : fallback
   const styles = source
     .map(value => normalizeSeededCoverStyle(value, ''))
     .filter(Boolean)
+    .filter(style => availableStyles.includes(style))
     .filter((style, index, list) => list.indexOf(style) === index)
 
   return styles.length > 0 ? styles : [...fallback]
@@ -196,12 +203,17 @@ function normalizeStyleUrls(styleUrls = {}, seededAnimeUrl = DEFAULT_COVER_CONFI
   }, {})
 }
 
-function normalizeStyleSwitchConfig(styleSwitch = {}, defaultStyle = DEFAULT_SEEDED_COVER_STYLE) {
+function normalizeStyleSwitchConfig(
+  styleSwitch = {},
+  defaultStyle = DEFAULT_SEEDED_COVER_STYLE,
+  availableStyles = SEEDED_COVER_STYLES
+) {
   const normalizedStyleSwitch = isPlainObject(styleSwitch) ? toCamelCase(styleSwitch) : {}
   const defaults = DEFAULT_COVER_CONFIG.style_switch
   const styles = normalizeStyleList(
     normalizedStyleSwitch.sources || normalizedStyleSwitch.styles || normalizedStyleSwitch.available || normalizedStyleSwitch.availableStyles,
-    defaults.styles
+    defaults.styles,
+    availableStyles
   )
   const normalizedDefaultStyle = styles.includes(defaultStyle) ? defaultStyle : styles[0]
 
@@ -269,10 +281,21 @@ function normalizeDetailConfig(detail = {}) {
 
 export function normalizeCoverConfig(config = {}) {
   const normalizedConfig = isPlainObject(config) ? toCamelCase(config) : {}
-  const seededStyle = normalizeSeededCoverStyle(normalizedConfig.seededStyle, DEFAULT_COVER_CONFIG.seeded_style)
+  const requestedSeededStyle = normalizeSeededCoverStyle(
+    normalizedConfig.seededStyle,
+    DEFAULT_COVER_CONFIG.seeded_style
+  )
   const seededAnimeUrl = normalizeString(normalizedConfig.seededAnimeUrl)
   const styleUrls = normalizeStyleUrls(normalizedConfig.sourceUrls || normalizedConfig.styleUrls, seededAnimeUrl)
-  const styleSwitch = normalizeStyleSwitchConfig(normalizedConfig.sourceSwitch || normalizedConfig.styleSwitch, seededStyle)
+  const availableStyles = Object.keys(styleUrls)
+  const seededStyle = availableStyles.includes(requestedSeededStyle)
+    ? requestedSeededStyle
+    : DEFAULT_COVER_CONFIG.seeded_style
+  const styleSwitch = normalizeStyleSwitchConfig(
+    normalizedConfig.sourceSwitch || normalizedConfig.styleSwitch,
+    seededStyle,
+    availableStyles
+  )
 
   return {
     enabled: normalizeBoolean(normalizedConfig.enabled, DEFAULT_COVER_CONFIG.enabled),

@@ -20,13 +20,12 @@ import {
 import { normalizeCoverConfig } from '../src/framework/utils/coverConfig.js'
 import { normalizeMarkdownConfig } from '../src/framework/utils/markdownConfig.js'
 import { resolveMenuPages } from '../src/framework/utils/menuConfig.js'
-import { parseToml } from '../src/framework/utils/tomlParser.js'
+import { readFirstTomlConfig } from './read-toml-config.mjs'
 
 const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url))
 const CONTENT_DIR = path.join(ROOT_DIR, 'blog', 'content')
 const ARTICLES_DIR = path.join(CONTENT_DIR, 'articles')
 const CONFIG_DIR = path.join(ROOT_DIR, 'blog', 'config')
-const CONTENT_INDEX_SITE_CONFIG_FILE = path.join(CONFIG_DIR, 'site.toml')
 const CONTENT_INDEX_OUTPUT_FILE = path.join(ROOT_DIR, 'src', 'framework', 'generated', 'contentIndex.generated.js')
 const SEARCH_INDEX_OUTPUT_FILE = path.join(ROOT_DIR, 'src', 'framework', 'generated', 'searchIndex.generated.js')
 const CONTENT_ROOT_PREFIX = '/blog/content/'
@@ -89,11 +88,8 @@ export default ${variableName}
 }
 
 function createContentIndexArticle(article) {
-  const {
-    plainText,
-    ...contentIndexArticle
-  } = article
-
+  const contentIndexArticle = { ...article }
+  delete contentIndexArticle.plainText
   return contentIndexArticle
 }
 
@@ -211,8 +207,7 @@ function createSearchIndexRecord(contentRecord, plainText, kindOverride = '') {
       normalizedSectionTitle
     ]
       .filter(Boolean)
-      .join(' ')),
-    contentHaystack: normalizeSearchField(normalizedPlainText)
+      .join(' '))
   }
 }
 
@@ -346,52 +341,26 @@ async function collectMarkdownFiles(directory) {
 }
 
 async function readConfigFile(name) {
-  const candidatePaths = [
+  return readFirstTomlConfig([
     path.join(CONFIG_DIR, `${name}.toml`),
     path.join(CONFIG_DIR, 'optional', `${name}.toml`)
-  ]
-
-  for (const candidatePath of candidatePaths) {
-    try {
-      return parseToml(await readFile(candidatePath, 'utf8'))
-    } catch {
-      // Try the next supported config location.
-    }
-  }
-
-  return {}
+  ])
 }
 
 async function loadSiteConfig() {
-  try {
-    return await readConfigFile('site')
-  } catch {
-    return {}
-  }
+  return readConfigFile('site')
 }
 
 async function loadLicenseConfig() {
-  try {
-    return await readConfigFile('license')
-  } catch {
-    return {}
-  }
+  return readConfigFile('license')
 }
 
 async function loadCoverConfig() {
-  try {
-    return normalizeCoverConfig(await readConfigFile('cover'))
-  } catch {
-    return normalizeCoverConfig({})
-  }
+  return normalizeCoverConfig(await readConfigFile('cover'))
 }
 
 async function loadMarkdownConfig() {
-  try {
-    return normalizeMarkdownConfig(await readConfigFile('markdown'))
-  } catch {
-    return normalizeMarkdownConfig({})
-  }
+  return normalizeMarkdownConfig(await readConfigFile('markdown'))
 }
 
 function createSearchContext(siteConfig = {}) {
@@ -578,7 +547,7 @@ export async function generateContentIndex() {
 export {
   ARTICLES_DIR as CONTENT_INDEX_ARTICLES_DIR,
   CONTENT_DIR as CONTENT_INDEX_CONTENT_DIR,
-  CONTENT_INDEX_SITE_CONFIG_FILE,
+  CONFIG_DIR as CONTENT_INDEX_CONFIG_DIR,
   CONTENT_INDEX_OUTPUT_FILE,
   SEARCH_INDEX_OUTPUT_FILE
 }

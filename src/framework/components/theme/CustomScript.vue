@@ -5,9 +5,11 @@
 <script setup>
 import { computed, watch, onMounted, onUnmounted } from 'vue'
 import { useConfigStore } from '../../stores/config'
+import { useBlogBaseUrl } from '../../runtime/runtimeContext'
 import { isThemeAssetPathAllowed, resolveThemeAssetUrl } from '../../utils/themeAsset'
 
 const configStore = useConfigStore()
+const baseUrl = useBlogBaseUrl()
 const themeJSFile = computed(() => configStore.themeJSFile)
 
 let scriptElement = null
@@ -26,7 +28,7 @@ const updateCustomScript = () => {
     warnedThemeScriptPath = rawThemeFile
   }
 
-  const src = resolveThemeAssetUrl(rawThemeFile, import.meta.env.BASE_URL || '/')
+  const src = resolveThemeAssetUrl(rawThemeFile, baseUrl)
 
   if (!src) {
     return

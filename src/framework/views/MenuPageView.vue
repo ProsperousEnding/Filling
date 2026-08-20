@@ -32,12 +32,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useBlogRuntimeContext } from '../runtime/runtimeContext'
 import {
-  loadMenuPageSource,
   menuPageUsesExternalSource,
   menuPageUsesFileSource,
   menuPageUsesFolderSource
-} from '../adapters/markdown/menuPageSourceService'
+} from '../utils/menuPageSource'
 import { useConfigStore } from '../stores/config'
 import { resolveMenuPage } from '../utils/menuConfig'
 import { usePageMetadata } from '../composables/usePageMetadata'
@@ -45,6 +45,7 @@ import { resolveMenuPageComponent, resolveMenuPageComponentKey } from './pageCom
 
 const route = useRoute()
 const configStore = useConfigStore()
+const { contentAdapter } = useBlogRuntimeContext()
 
 const page = computed(() => {
   const menuPageKey = String(route.meta?.menuPageKey || '').trim()
@@ -95,7 +96,7 @@ watch([page, resolvedComponentKey], async ([nextPage, nextComponentKey]) => {
   sourceLoading.value = true
 
   try {
-    const resolvedSource = await loadMenuPageSource(nextPage, nextComponentKey)
+    const resolvedSource = await contentAdapter.loadMenuPageSource(nextPage, nextComponentKey)
 
     if (currentSequence !== sourceLoadSequence) {
       return

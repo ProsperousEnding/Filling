@@ -2,7 +2,11 @@
   <div class="sidebar-section">
     <div class="sidebar-section-header">
       <h4 class="sidebar-section-title">{{ title }}</h4>
-      <span v-if="items && showItemCount" class="sidebar-section-count">
+      <span
+        v-if="items && showItemCount"
+        class="sidebar-section-count"
+        :aria-label="`共 ${items} 项`"
+      >
         {{ items }}
       </span>
     </div>
@@ -12,10 +16,20 @@
         <slot></slot>
       </div>
     </div>
+
+    <RouterLink
+      v-if="viewAllTo"
+      :to="viewAllTo"
+      class="sidebar-section-view-all"
+    >
+      {{ viewAllLabel }}
+    </RouterLink>
   </div>
 </template>
 
 <script setup>
+import { RouterLink } from 'vue-router'
+
 defineProps({
   title: {
     type: String,
@@ -28,6 +42,14 @@ defineProps({
   showItemCount: {
     type: Boolean,
     default: false
+  },
+  viewAllTo: {
+    type: String,
+    default: ''
+  },
+  viewAllLabel: {
+    type: String,
+    default: '查看全部'
   }
 })
 </script>
@@ -38,7 +60,7 @@ defineProps({
 }
 
 .sidebar-section + .sidebar-section {
-  margin-top: 0.95rem;
+  margin-top: 0;
 }
 
 .sidebar-section::before {
@@ -60,7 +82,7 @@ defineProps({
   font-weight: 700;
   letter-spacing: 0;
   text-transform: none;
-  color: rgb(30 41 59);
+  color: var(--theme-heading-color);
   white-space: nowrap;
 }
 
@@ -68,16 +90,15 @@ defineProps({
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.38rem;
-  border-radius: 9999px;
-  background: rgb(248 250 252);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  color: rgb(148 163 184);
-  font-size: 0.7rem;
+  min-width: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--theme-text-faint);
+  font-size: 0.72rem;
   line-height: 1;
-  font-weight: 500;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .sidebar-section-content {
@@ -92,13 +113,19 @@ defineProps({
   box-shadow: none;
 }
 
-:global(.dark) .sidebar-section-title {
-  color: rgb(226 232 240);
+.sidebar-section-view-all {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  margin-top: 0.55rem;
+  color: var(--theme-link);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.16s ease;
 }
 
-:global(.dark) .sidebar-section-count {
-  background: rgba(30, 41, 59, 0.88);
-  border-color: rgba(71, 85, 105, 0.82);
-  color: rgb(156 163 175);
+.sidebar-section-view-all:hover {
+  color: var(--theme-link-hover);
 }
 </style>

@@ -49,6 +49,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useConfigStore } from '../../stores/config'
+import { readLocalStorage, writeLocalStorage } from '../../utils/localStorage'
 
 const configStore = useConfigStore()
 const dismissed = ref(false)
@@ -88,21 +89,18 @@ const visibleAnnouncement = computed(() => (
 
 function syncDismissedState() {
   if (
-    typeof window === 'undefined'
-    || !announcement.value?.dismissible
+    !announcement.value?.dismissible
     || !announcementStorageKey.value
   ) {
     dismissed.value = false
     return
   }
 
-  dismissed.value = window.localStorage.getItem(announcementStorageKey.value) === '1'
+  dismissed.value = readLocalStorage(announcementStorageKey.value) === '1'
 }
 
 function dismissAnnouncement() {
-  if (typeof window !== 'undefined' && announcementStorageKey.value) {
-    window.localStorage.setItem(announcementStorageKey.value, '1')
-  }
+  writeLocalStorage(announcementStorageKey.value, '1')
 
   dismissed.value = true
 }

@@ -42,13 +42,14 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { loadMenuPageItemDetail } from '../adapters/markdown/menuPageSourceService'
+import { useBlogRuntimeContext } from '../runtime/runtimeContext'
 import { usePageMetadata } from '../composables/usePageMetadata'
 import { useConfigStore } from '../stores/config'
 import { resolveMenuPage } from '../utils/menuConfig'
 
 const route = useRoute()
 const configStore = useConfigStore()
+const { contentAdapter } = useBlogRuntimeContext()
 
 const itemId = computed(() => String(route.params.itemId || '').trim())
 const page = computed(() => {
@@ -78,7 +79,7 @@ watch([page, itemId], async ([nextPage, nextItemId], [previousPage, previousItem
   loading.value = true
 
   try {
-    const resolvedItem = await loadMenuPageItemDetail(nextPage, nextItemId)
+    const resolvedItem = await contentAdapter.loadMenuPageItemDetail(nextPage, nextItemId)
 
     if (requestId !== activeRequestId) {
       return

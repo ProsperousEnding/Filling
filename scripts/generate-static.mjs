@@ -31,6 +31,7 @@ import {
   parseMenuContextSource,
   sortMenuCollectionItems
 } from '../src/framework/adapters/markdown/menuPageSourceParser.js'
+import { stripMenuCollectionDetail } from '../src/framework/utils/menuPageSource.js'
 import {
   resolveMenuPageComponentKey
 } from '../src/framework/utils/pageComponentConfig.js'
@@ -38,17 +39,24 @@ import { buildBackgroundCssText, normalizeBackgroundConfig } from '../src/framew
 import { normalizeCodeBlockConfig } from '../src/framework/utils/codeBlockConfig.js'
 import { normalizeCoverConfig } from '../src/framework/utils/coverConfig.js'
 import { createSeededArticleCover } from '../src/framework/utils/articleCover.js'
+import { normalizeAnalyticsConfig } from '../src/framework/utils/analyticsConfig.js'
+import { resolveFeatureMenuConfig } from '../src/framework/utils/featurePageConfig.js'
 import { buildFontConfigCss, normalizeFontConfig, resolveFontPreloadLinks } from '../src/framework/utils/fontConfig.js'
 import { normalizeMarkdownConfig } from '../src/framework/utils/markdownConfig.js'
+import {
+  buildAbsoluteUrl,
+  normalizeSiteUrl,
+  resolveShareImageUrl as resolveMetadataShareImageUrl
+} from '../src/framework/utils/pageMetadataModel.js'
 import { applyConfigEnvOverrides } from '../src/framework/config/configEnvOverrides.js'
-import { parseToml } from '../src/framework/utils/tomlParser.js'
 import contentIndexData from '../src/framework/generated/contentIndex.generated.js'
+import { readFirstTomlConfig } from './read-toml-config.mjs'
+import { resolveStaticRouteOutputFile } from './static-route-output.mjs'
 
 const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url))
 const DIST_DIR = path.join(ROOT_DIR, 'dist')
 const CONFIG_DIR = path.join(ROOT_DIR, 'blog', 'config')
 const ARTICLES_DIR = path.join(ROOT_DIR, 'blog', 'content', 'articles')
-const STATIC_HOME_ARTICLE_MODES = new Set(['latest', 'featured', 'sticky', 'mixed'])
 
 function toTrimmedString(value) {
   return value === null || value === undefined ? '' : String(value).trim()
@@ -70,22 +78,6 @@ function escapeAttribute(value) {
 function normalizePositiveInteger(value, fallback = 1) {
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-}
-
-function toSlugId(input) {
-  return toTrimmedString(input)
-    .toLowerCase()
-    .replace(/['"]/g, '')
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-function toArticleLookupId(input) {
-  return toSlugId(input)
-}
-
-function normalizeSiteUrl(value) {
-  return toTrimmedString(value).replace(/\/+$/g, '')
 }
 
 function resolveBasePath() {
@@ -113,27 +105,6 @@ function withBasePath(basePath, value) {
   const normalizedPath = normalizedValue.replace(/^\.?\//, '').replace(/^\/+/, '')
 
   return `${normalizedBase}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
-}
-
-function normalizeStaticBoolean(value, fallback = false) {
-  return typeof value === 'boolean' ? value : fallback
-}
-
-function buildAbsoluteUrl(siteUrl, basePath, routePath) {
-  const normalizedSiteUrl = normalizeSiteUrl(siteUrl)
-
-  if (!normalizedSiteUrl) {
-    return ''
-  }
-
-  const normalizedRoutePath = routePath === '/' ? '' : String(routePath || '').replace(/^\/+/, '')
-  const normalizedBase = basePath === '/' ? '' : basePath.replace(/\/+$/, '')
-  const pathWithBase = [normalizedBase, normalizedRoutePath]
-    .filter(Boolean)
-    .join('/')
-    .replace(/^\/+/, '')
-
-  return pathWithBase ? `${normalizedSiteUrl}/${pathWithBase}` : normalizedSiteUrl
 }
 
 function formatDateIso(value) {
@@ -171,25 +142,26 @@ function resolveArticleHref(article) {
 }
 
 async function loadTomlConfig(name) {
-  const candidatePaths = [
+  return readFirstTomlConfig([
     path.join(CONFIG_DIR, `${name}.toml`),
     path.join(CONFIG_DIR, 'optional', `${name}.toml`)
-  ]
-
-  for (const filePath of candidatePaths) {
-    try {
-      const raw = await readFile(filePath, 'utf8')
-      return parseToml(raw)
-    } catch {
-      // Try the next supported config location.
-    }
-  }
-
-  return {}
+  ])
 }
 
 async function loadConfigs() {
-  const [site, profile, license, analytics, font, code_block, markdown, background, cover] = await Promise.all([
+  const [
+    site,
+    profile,
+    license,
+    analytics,
+    font,
+    code_block,
+    markdown,
+    background,
+    cover,
+    guestbook,
+    sponsor
+  ] = await Promise.all([
     loadTomlConfig('site'),
     loadTomlConfig('profile'),
     loadTomlConfig('license'),
@@ -199,6 +171,8 @@ async function loadConfigs() {
     loadTomlConfig('markdown'),
     loadTomlConfig('background'),
     loadTomlConfig('cover'),
+    loadTomlConfig('guestbook'),
+    loadTomlConfig('sponsor')
   ])
 
   return applyConfigEnvOverrides({
@@ -211,6 +185,8 @@ async function loadConfigs() {
     markdown,
     background,
     cover,
+    guestbook,
+    sponsor
   }, process.env)
 }
 
@@ -386,16 +362,6 @@ function normalizeStaticUrl(value) {
   return normalizedValue
 }
 
-function normalizeStringList(values = []) {
-  if (!Array.isArray(values)) {
-    return []
-  }
-
-  return values
-    .map(value => toTrimmedString(value))
-    .filter(Boolean)
-}
-
 function normalizeSeoShareImageFallback(value, fallback = 'site') {
   const normalizedValue = toTrimmedString(value).toLowerCase()
   return ['none', 'site', 'seeded'].includes(normalizedValue) ? normalizedValue : fallback
@@ -540,86 +506,6 @@ function mergeMetaKeywords(...groups) {
   return Array.from(uniqueKeywords)
 }
 
-function normalizeAnalyticsScriptUrl(value, fallback = '') {
-  const normalizedValue = toTrimmedString(value)
-
-  if (!normalizedValue) {
-    return fallback
-  }
-
-  if (/^(https?:)?\/\//i.test(normalizedValue)) {
-    return normalizedValue
-  }
-
-  return ''
-}
-
-function normalizeAnalyticsConfig(config = {}) {
-  const normalizedConfig = config && typeof config === 'object' ? config : {}
-  const globalEnabled = normalizedConfig.enabled === true
-  const umamiSource = normalizedConfig.umami && typeof normalizedConfig.umami === 'object' ? normalizedConfig.umami : {}
-  const plausibleSource = normalizedConfig.plausible && typeof normalizedConfig.plausible === 'object' ? normalizedConfig.plausible : {}
-  const googleAnalyticsSource = normalizedConfig.google_analytics && typeof normalizedConfig.google_analytics === 'object'
-    ? normalizedConfig.google_analytics
-    : normalizedConfig.googleAnalytics && typeof normalizedConfig.googleAnalytics === 'object'
-      ? normalizedConfig.googleAnalytics
-      : {}
-  const claritySource = normalizedConfig.clarity && typeof normalizedConfig.clarity === 'object' ? normalizedConfig.clarity : {}
-
-  const umami = {
-    enabled: globalEnabled && umamiSource.enabled === true,
-    scriptUrl: normalizeAnalyticsScriptUrl(umamiSource.script_url || umamiSource.scriptUrl, 'https://cloud.umami.is/script.js'),
-    websiteId: toTrimmedString(umamiSource.website_id || umamiSource.websiteId),
-    hostUrl: normalizeAnalyticsScriptUrl(umamiSource.host_url || umamiSource.hostUrl),
-    domains: normalizeStringList(umamiSource.domains),
-    autoTrack: typeof umamiSource.auto_track === 'boolean' ? umamiSource.auto_track : true,
-    doNotTrack: typeof umamiSource.do_not_track === 'boolean' ? umamiSource.do_not_track : true,
-    excludeSearch: umamiSource.exclude_search === true,
-    excludeHash: umamiSource.exclude_hash === true,
-    performance: umamiSource.performance === true,
-    tag: toTrimmedString(umamiSource.tag)
-  }
-  umami.ready = umami.enabled && Boolean(umami.scriptUrl && umami.websiteId)
-
-  const plausible = {
-    enabled: globalEnabled && plausibleSource.enabled === true,
-    scriptUrl: normalizeAnalyticsScriptUrl(plausibleSource.script_url || plausibleSource.scriptUrl, 'https://plausible.io/js/script.js'),
-    domain: toTrimmedString(plausibleSource.domain),
-    endpoint: normalizeAnalyticsScriptUrl(plausibleSource.endpoint || plausibleSource.api_host || plausibleSource.apiHost),
-    autoCapturePageviews: typeof plausibleSource.auto_capture_pageviews === 'boolean' ? plausibleSource.auto_capture_pageviews : true,
-    captureOnLocalhost: typeof plausibleSource.capture_on_localhost === 'boolean' ? plausibleSource.capture_on_localhost : false,
-    hashBasedRouting: plausibleSource.hash_based_routing === true,
-    outboundLinks: plausibleSource.outbound_links === true,
-    fileDownloads: plausibleSource.file_downloads === true,
-    taggedEvents: plausibleSource.tagged_events === true
-  }
-  plausible.ready = plausible.enabled && Boolean(plausible.scriptUrl)
-
-  const googleAnalytics = {
-    enabled: globalEnabled && googleAnalyticsSource.enabled === true,
-    measurementId: toTrimmedString(googleAnalyticsSource.measurement_id || googleAnalyticsSource.measurementId),
-    manualPageviews: typeof googleAnalyticsSource.manual_pageviews === 'boolean' ? googleAnalyticsSource.manual_pageviews : true,
-    debugMode: typeof googleAnalyticsSource.debug_mode === 'boolean' ? googleAnalyticsSource.debug_mode : false
-  }
-  googleAnalytics.ready = googleAnalytics.enabled && Boolean(googleAnalytics.measurementId)
-
-  const clarity = {
-    enabled: globalEnabled && claritySource.enabled === true,
-    projectId: toTrimmedString(claritySource.project_id || claritySource.projectId)
-  }
-  clarity.ready = clarity.enabled && Boolean(clarity.projectId)
-
-  return {
-    enabled: globalEnabled && (umami.ready || plausible.ready || googleAnalytics.ready || clarity.ready),
-    respectDnt: normalizedConfig.respect_dnt === true,
-    trackLocalhost: normalizedConfig.track_localhost === true,
-    umami,
-    plausible,
-    googleAnalytics,
-    clarity
-  }
-}
-
 function renderAnalyticsHeadTags(analytics) {
   if (!analytics?.enabled) {
     return ''
@@ -660,147 +546,14 @@ function splitMenuPageContent(content = '') {
     .filter(Boolean)
 }
 
-function createStaticLookupSet(values = [], normalize = toSlugId) {
-  return new Set((Array.isArray(values) ? values : [])
-    .map(value => normalize(value))
-    .filter(Boolean))
-}
-
-function normalizeStaticHomeArticlesConfig(source = {}, fallbackPageSize = 10) {
-  const rawMode = toTrimmedString(source.mode).toLowerCase()
-
-  return {
-    mode: STATIC_HOME_ARTICLE_MODES.has(rawMode) ? rawMode : 'latest',
-    pageSize: normalizePositiveInteger(source.page_size ?? source.pageSize, fallbackPageSize || 8),
-    paginate: normalizeStaticBoolean(source.paginate, true),
-    includeSticky: normalizeStaticBoolean(source.include_sticky ?? source.includeSticky, true),
-    stickyFirst: normalizeStaticBoolean(source.sticky_first ?? source.stickyFirst, true),
-    categories: Array.isArray(source.categories) ? source.categories : [],
-    tags: Array.isArray(source.tags) ? source.tags : [],
-    excludeCategories: Array.isArray(source.exclude_categories ?? source.excludeCategories)
-      ? (source.exclude_categories ?? source.excludeCategories)
-      : [],
-    excludeTags: Array.isArray(source.exclude_tags ?? source.excludeTags)
-      ? (source.exclude_tags ?? source.excludeTags)
-      : [],
-    includeIds: Array.isArray(source.include_ids ?? source.includeIds)
-      ? (source.include_ids ?? source.includeIds)
-      : [],
-    excludeIds: Array.isArray(source.exclude_ids ?? source.excludeIds)
-      ? (source.exclude_ids ?? source.excludeIds)
-      : [],
-    fallbackToLatest: normalizeStaticBoolean(source.fallback_to_latest ?? source.fallbackToLatest, true)
-  }
-}
-
-function getStaticArticleIdentityValues(article = {}) {
-  return [
-    article.id,
-    article.slug,
-    article.title,
-    article.sourcePath
-  ]
-    .map(toArticleLookupId)
-    .filter(Boolean)
-}
-
-function staticArticleMatchesAnyIdentity(article, lookupSet) {
-  if (!(lookupSet instanceof Set) || lookupSet.size === 0) {
-    return false
-  }
-
-  return getStaticArticleIdentityValues(article).some(value => lookupSet.has(value))
-}
-
-function staticArticleMatchesCategory(article, categorySet) {
-  if (!(categorySet instanceof Set) || categorySet.size === 0) {
-    return true
-  }
-
-  return categorySet.has(toSlugId(article?.category?.id || article?.category?.name || article?.category))
-}
-
-function staticArticleMatchesTags(article, tagSet) {
-  if (!(tagSet instanceof Set) || tagSet.size === 0) {
-    return true
-  }
-
-  return Array.isArray(article?.tags) && article.tags.some(tag => (
-    tagSet.has(toSlugId(tag?.id || tag?.name || tag))
-  ))
-}
-
-function sortStaticHomeArticles(left, right, stickyFirst = true) {
-  if (stickyFirst && Boolean(left?.sticky) !== Boolean(right?.sticky)) {
-    return left?.sticky ? -1 : 1
-  }
-
-  const weightDiff = (Number(right?.weight) || 0) - (Number(left?.weight) || 0)
-
-  if (weightDiff !== 0) {
-    return weightDiff
-  }
-
-  return new Date(right?.date || 0) - new Date(left?.date || 0)
-}
-
-function resolveStaticHomeArticles(articles = [], config = {}) {
-  const normalizedArticles = Array.isArray(articles) ? articles : []
-  const mode = toTrimmedString(config.mode || 'latest').toLowerCase()
-  const includeIds = createStaticLookupSet(config.includeIds, toArticleLookupId)
-  const excludeIds = createStaticLookupSet(config.excludeIds, toArticleLookupId)
-  const categories = createStaticLookupSet(config.categories, toSlugId)
-  const tags = createStaticLookupSet(config.tags, toSlugId)
-  const excludeCategories = createStaticLookupSet(config.excludeCategories, toSlugId)
-  const excludeTags = createStaticLookupSet(config.excludeTags, toSlugId)
-  const includeSticky = config.includeSticky !== false
-  const stickyFirst = config.stickyFirst !== false
-  const fallbackToLatest = config.fallbackToLatest !== false
-
-  const baseArticles = normalizedArticles.filter((article) => {
-    if (article.homeHidden || staticArticleMatchesAnyIdentity(article, excludeIds)) {
-      return false
-    }
-
-    if (excludeCategories.size > 0 && staticArticleMatchesCategory(article, excludeCategories)) {
-      return false
-    }
-
-    if (excludeTags.size > 0 && staticArticleMatchesTags(article, excludeTags)) {
-      return false
-    }
-
-    const explicitlyIncluded = staticArticleMatchesAnyIdentity(article, includeIds)
-
-    return explicitlyIncluded
-      || (staticArticleMatchesCategory(article, categories) && staticArticleMatchesTags(article, tags))
-  })
-
-  let selectedArticles = baseArticles
-
-  if (mode === 'featured') {
-    selectedArticles = baseArticles.filter(article => article.featured || staticArticleMatchesAnyIdentity(article, includeIds))
-  } else if (mode === 'sticky') {
-    selectedArticles = baseArticles.filter(article => article.sticky || staticArticleMatchesAnyIdentity(article, includeIds))
-  } else if (mode === 'mixed') {
-    selectedArticles = baseArticles.filter(article => (
-      article.featured
-      || article.sticky
-      || staticArticleMatchesAnyIdentity(article, includeIds)
-    ))
-  }
-
-  if (selectedArticles.length === 0 && fallbackToLatest) {
-    selectedArticles = baseArticles
-  }
-
-  return selectedArticles
-    .filter(article => includeSticky || !article.sticky || staticArticleMatchesAnyIdentity(article, includeIds))
-    .slice()
-    .sort((left, right) => sortStaticHomeArticles(left, right, stickyFirst))
-}
-
-async function loadStaticMenuPageSource(page, componentKey, codeBlockConfig = null, markdownConfig = null, coverConfig = null) {
+export async function loadStaticMenuPageSource(
+  page,
+  componentKey,
+  codeBlockConfig = null,
+  markdownConfig = null,
+  coverConfig = null,
+  contentDirectory = path.join(ROOT_DIR, 'blog', 'content')
+) {
   const normalizedComponentKey = resolveMenuPageComponentKey(componentKey)
 
   if (normalizedComponentKey === 'friends' || normalizedComponentKey === 'guestbook' || normalizedComponentKey === 'sponsor') {
@@ -822,7 +575,7 @@ async function loadStaticMenuPageSource(page, componentKey, codeBlockConfig = nu
       }
     }
 
-    const absoluteFilePath = path.join(ROOT_DIR, 'blog', 'content', relativeFilePath)
+    const absoluteFilePath = path.join(contentDirectory, relativeFilePath)
 
     try {
       const rawContent = await readFile(absoluteFilePath, 'utf8')
@@ -831,13 +584,11 @@ async function loadStaticMenuPageSource(page, componentKey, codeBlockConfig = nu
         markdownConfig,
         coverConfig
       })
-    } catch {
-      return {
-        title: '',
-        description: '',
-        content: '',
-        contentHtml: ''
-      }
+    } catch (error) {
+      throw new Error(
+        `Failed to load menu page "${page?.key || 'unknown'}" from blog/content/${relativeFilePath}.`,
+        { cause: error }
+      )
     }
   }
 
@@ -850,7 +601,7 @@ async function loadStaticMenuPageSource(page, componentKey, codeBlockConfig = nu
     }
   }
 
-  const absoluteFolderPath = path.join(ROOT_DIR, 'blog', 'content', relativeFolderPath)
+  const absoluteFolderPath = path.join(contentDirectory, relativeFolderPath)
 
   try {
     const entries = await readdir(absoluteFolderPath, { withFileTypes: true })
@@ -872,23 +623,14 @@ async function loadStaticMenuPageSource(page, componentKey, codeBlockConfig = nu
     const sortedItems = sortMenuCollectionItems(items)
 
     return {
-      items: sortedItems.map(({
-        order,
-        date,
-        content,
-        contentHtml,
-        plainText,
-        detailDescription,
-        sourcePath,
-        ...item
-      }) => item),
+      items: sortedItems.map(stripMenuCollectionDetail),
       records: sortedItems
     }
-  } catch {
-    return {
-      items: [],
-      records: []
-    }
+  } catch (error) {
+    throw new Error(
+      `Failed to load menu page "${page?.key || 'unknown'}" from blog/content/${relativeFolderPath}.`,
+      { cause: error }
+    )
   }
 }
 
@@ -991,54 +733,25 @@ function buildSeededShareImage(seed, shareImageConfig = {}) {
   })
 }
 
-function resolveAbsoluteShareImageUrl(site = {}, basePath = '/', value = '') {
-  const normalizedValue = toTrimmedString(value)
-
-  if (!normalizedValue) {
-    return ''
-  }
-
-  if (/^(https?:)?\/\//i.test(normalizedValue) || normalizedValue.startsWith('data:')) {
-    return normalizedValue
-  }
-
-  return buildAbsoluteUrl(site.site_url || site.url, basePath, normalizedValue)
-}
-
 function resolveShareImageUrl({ route = {}, seo = {}, site = {}, basePath = '/', twitter = false } = {}) {
   const shareImage = seo.shareImage || {}
-
-  if (shareImage.enabled === false) {
-    return ''
-  }
-
-  if (shareImage.preferPageImage !== false && route.imageUrl) {
-    return resolveAbsoluteShareImageUrl(site, basePath, route.imageUrl)
-  }
-
-  const configuredImage = twitter
-    ? (shareImage.twitterImage || shareImage.defaultImage || seo.twitterImage || seo.ogImage)
-    : (shareImage.defaultImage || seo.ogImage)
-
-  if (configuredImage) {
-    return resolveAbsoluteShareImageUrl(site, basePath, configuredImage)
-  }
-
-  if (shareImage.fallback === 'seeded') {
-    return buildSeededShareImage(
-      route.imageSeed || route.pageTitle || route.path || 'site-share-image',
-      shareImage
-    )
-  }
-
-  return ''
+  return resolveMetadataShareImageUrl({
+    pageImage: route.imageUrl,
+    seed: route.imageSeed || route.pageTitle || route.path || 'site-share-image',
+    shareImageConfig: {
+      ...shareImage,
+      defaultImage: shareImage.defaultImage || seo.ogImage,
+      twitterImage: shareImage.twitterImage || seo.twitterImage || seo.ogImage
+    },
+    siteUrl: site.site_url || site.url,
+    basePath,
+    twitter,
+    createSeededImage: buildSeededShareImage
+  })
 }
 
 async function writeRouteFile(routePath, html) {
-  const normalized = routePath === '/' ? '' : decodeURIComponent(String(routePath).replace(/^\/+|\/+$/g, ''))
-  const filePath = normalized
-    ? path.join(DIST_DIR, normalized, 'index.html')
-    : path.join(DIST_DIR, 'index.html')
+  const filePath = resolveStaticRouteOutputFile(DIST_DIR, routePath)
 
   await mkdir(path.dirname(filePath), { recursive: true })
   await writeFile(filePath, html, 'utf8')
@@ -1097,14 +810,9 @@ function renderPage(route, context) {
 }
 
 async function createPageRoutes(context) {
-  const { site, articles, categories, tags, archive, pageSize, routePatterns, menus } = context
+  const { articles, categories, tags, archive, pageSize, routePatterns, menus } = context
   const routes = []
   const articlePages = paginateItems(articles, pageSize)
-  const homeArticleConfig = normalizeStaticHomeArticlesConfig(site.home_articles || site.homeArticles, pageSize || 8)
-  const homeArticles = resolveStaticHomeArticles(articles, homeArticleConfig)
-  const homeArticlePages = homeArticleConfig.paginate === false
-    ? [{ page: 1, totalPages: 1, items: homeArticles.slice(0, homeArticleConfig.pageSize) }]
-    : paginateItems(homeArticles, homeArticleConfig.pageSize)
   const homePage = resolveMenuPage('home', menus, routePatterns)
   const articlesPageConfig = resolveMenuPage('articles', menus, routePatterns)
   const categoriesPage = resolveMenuPage('categories', menus, routePatterns)
@@ -1225,6 +933,14 @@ async function createPageRoutes(context) {
       sitemap: false
     })
   }
+
+  routes.push({
+    path: '/admin/config',
+    pageTitle: '站点管理',
+    description: 'Filling 站点配置管理入口。',
+    robots: 'noindex,nofollow',
+    sitemap: false
+  })
 
   articles.forEach((article) => {
     routes.push({
@@ -1413,7 +1129,7 @@ async function main() {
   configureBlogRoutePatterns(configs?.site?.routing)
   const routePatterns = getBlogPathPatterns()
   const collections = buildCollections(contentEntries)
-  const menus = normalizeMenuConfig(configs.site.menus)
+  const menus = normalizeMenuConfig(resolveFeatureMenuConfig(configs.site.menus, configs))
   const siteUrl = normalizeSiteUrl(configs.site.site_url || configs.site.url)
   const font = normalizeFontConfig(configs.font)
   const context = {
@@ -1451,7 +1167,9 @@ async function main() {
   await writeRobots(siteUrl, basePath)
 }
 
-main().catch((error) => {
-  console.error('静态页面生成失败:', error)
-  process.exitCode = 1
-})
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error('静态页面生成失败:', error)
+    process.exitCode = 1
+  })
+}

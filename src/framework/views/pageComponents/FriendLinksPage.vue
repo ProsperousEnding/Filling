@@ -181,6 +181,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useConfigStore } from '../../stores/config'
+import { useBlogBaseUrl } from '../../runtime/runtimeContext'
 
 const props = defineProps({
   page: {
@@ -194,6 +195,7 @@ const props = defineProps({
 })
 
 const configStore = useConfigStore()
+const baseUrl = useBlogBaseUrl()
 
 const pageConfig = computed(() => ({
   columns: normalizeColumnCount(configStore.friendLinksPageConfig?.columns, 2, 1, 4),
@@ -282,7 +284,6 @@ function resolveAssetUrl(value) {
     return value
   }
 
-  const baseUrl = import.meta.env.BASE_URL || '/'
   const normalizedPath = value.replace(/^\.?\//, '').replace(/^\/+/, '')
   return `${baseUrl}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
 }

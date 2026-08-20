@@ -6,6 +6,7 @@ import {
 } from './routeManifest.js'
 import { resolveMenuPageComponentKey } from '../utils/pageComponentConfig.js'
 import { getCustomMenuPages, resolveMenuPageRegistry } from '../utils/menuConfig.js'
+import { normalizeBlogBaseUrl } from '../runtime/runtimeContext.js'
 
 const Home = () => import('../views/Home.vue')
 const ArticlesView = () => import('../views/ArticlesView.vue')
@@ -190,11 +191,14 @@ export function createBlogRoutes(routePatterns = getBlogPathPatterns(), menuConf
   return routes
 }
 
-export const blogRoutes = createBlogRoutes()
+export function createBlogHistory(base = '/', historyFactory = createWebHistory) {
+  return historyFactory(normalizeBlogBaseUrl(base))
+}
 
 export function createBlogRouter(options = {}) {
   const {
-    history = createWebHistory(import.meta.env.BASE_URL),
+    history,
+    base = '/',
     routes,
     routePatterns,
     menuConfig = {},
@@ -206,7 +210,7 @@ export function createBlogRouter(options = {}) {
     : getBlogPathPatterns()
   const resolvedRoutes = Array.isArray(routes) ? routes : createBlogRoutes(resolvedRoutePatterns, menuConfig)
   const router = createRouter({
-    history,
+    history: history || createBlogHistory(base),
     routes: resolvedRoutes
   })
 

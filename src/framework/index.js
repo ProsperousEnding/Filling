@@ -25,6 +25,7 @@ import {
   getCustomMenuPages,
   getDefaultMenuConfig,
   getDefaultMenuPages,
+  getMenuConfigDiagnostics,
   getMaxMenuSourceLimit,
   getRegisteredMenuSources,
   getMenuPagePath,
@@ -40,11 +41,16 @@ import {
   resolveSidebarMenuSections
 } from './utils/menuConfig'
 import {
-  BLOG_NAV_ITEMS,
+  getSidebarLayoutDiagnostics,
+  getSidebarMenuLayoutDiagnostics,
+  normalizeSidebarLayout,
+  resolveSidebarComponents
+} from './utils/sidebarLayout'
+import {
   BLOG_PATH_PATTERNS,
   BLOG_ROUTE_NAMES,
-  blogRoutes,
   configureBlogRoutePatterns,
+  createBlogHistory,
   createBlogRouter,
   createBlogRoutes,
   getArchivePath,
@@ -83,10 +89,38 @@ import { useCategoryStore } from './stores/category'
 import { useTagStore } from './stores/tag'
 import { useConfigStore } from './stores/config'
 import { useSearchStore } from './stores/search'
+import {
+  configureContentAdapter,
+  getContentAdapter,
+  resetContentAdapter
+} from './adapters/contentAdapter'
+import {
+  configureConfigProvider,
+  resetConfigProvider
+} from './config/configProvider'
+import {
+  BLOG_RUNTIME_CONTEXT_KEY,
+  createBlogRuntimeContext,
+  installBlogRuntimeContext,
+  normalizeBlogBaseUrl,
+  useBlogBaseUrl,
+  useBlogRuntimeContext
+} from './runtime/runtimeContext'
 
 import './style.css'
 
+const BLOG_READY_KEY = Symbol('vue-blog-ready')
+
 const install = (app, options = {}) => {
+  const {
+    contentAdapter,
+    configProvider,
+    base,
+    baseUrl,
+    config,
+    ...legacyConfig
+  } = options && typeof options === 'object' ? options : {}
+
   app.component('BlogContainer', BlogContainer)
   app.component('ArticleCard', ArticleCard)
   app.component('TagCloud', TagCloud)
@@ -105,14 +139,50 @@ const install = (app, options = {}) => {
     app.use(pinia)
   }
 
+  installBlogRuntimeContext(app, pinia, {
+    contentAdapter,
+    configProvider,
+    baseUrl: baseUrl ?? base
+  })
+
   const configStore = useConfigStore(pinia)
-  if (Object.keys(options).length > 0) {
-    configStore.initConfig(options)
+  const configInput = config && typeof config === 'object'
+    ? config
+    : legacyConfig
+  let ready
+
+  if (Object.keys(configInput).length > 0) {
+    configStore.initConfig(configInput)
+    ready = Promise.resolve(configStore)
+  } else if (configProvider) {
+    ready = configStore.bootstrapConfig().then(() => configStore)
+  } else {
+    ready = Promise.resolve(configStore)
+  }
+
+  app.config.globalProperties.$blogReady = ready
+  app.provide(BLOG_READY_KEY, ready)
+}
+
+function getBlogReady(app) {
+  return app?.config?.globalProperties?.$blogReady || Promise.resolve(null)
+}
+
+async function setupBlogFramework(app, options = {}) {
+  install(app, options)
+  const configStore = await getBlogReady(app)
+
+  return {
+    configStore,
+    pinia: app.config.globalProperties.$pinia
   }
 }
 
 export {
   install,
+  BLOG_READY_KEY,
+  getBlogReady,
+  setupBlogFramework,
   BlogContainer,
   ArticleCard,
   TagCloud,
@@ -125,11 +195,10 @@ export {
   HeaderStackMenu,
   SidebarLinkMenu,
   SidebarArticleMenu,
-  BLOG_NAV_ITEMS,
   BLOG_PATH_PATTERNS,
   BLOG_ROUTE_NAMES,
-  blogRoutes,
   configureBlogRoutePatterns,
+  createBlogHistory,
   createBlogRouter,
   createBlogRoutes,
   getArchivePath,
@@ -167,6 +236,9 @@ export {
   normalizeMenuConfig,
   getDefaultMenuConfig,
   getDefaultMenuPages,
+  getMenuConfigDiagnostics,
+  getSidebarLayoutDiagnostics,
+  getSidebarMenuLayoutDiagnostics,
   getBuiltInMenuPages,
   getPrimaryMenuPage,
   getPrimaryMenuPagePath,
@@ -182,6 +254,8 @@ export {
   resolveMenuSource,
   menuUsesSource,
   getMaxMenuSourceLimit,
+  normalizeSidebarLayout,
+  resolveSidebarComponents,
   resolveArticleId,
   resolveCategoryId,
   resolveTagId,
@@ -189,7 +263,18 @@ export {
   useCategoryStore,
   useTagStore,
   useConfigStore,
-  useSearchStore
+  useSearchStore,
+  configureContentAdapter,
+  getContentAdapter,
+  resetContentAdapter,
+  configureConfigProvider,
+  resetConfigProvider,
+  BLOG_RUNTIME_CONTEXT_KEY,
+  createBlogRuntimeContext,
+  installBlogRuntimeContext,
+  normalizeBlogBaseUrl,
+  useBlogBaseUrl,
+  useBlogRuntimeContext
 }
 
 export default {

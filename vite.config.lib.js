@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
-import { contentIndexPlugin } from './scripts/vite-plugin-content-index.mjs'
 
 export default defineConfig({
   resolve: {
@@ -12,12 +11,16 @@ export default defineConfig({
       '@framework': resolve(__dirname, 'src/framework')
     }
   },
-  plugins: [contentIndexPlugin(), vue()],
+  plugins: [vue()],
   build: {
+    outDir: 'dist-lib',
+    copyPublicDir: false,
     lib: {
       entry: resolve(__dirname, 'src/framework/index.js'),
       name: 'VueBlogFramework',
-      fileName: (format) => `vue-blog-framework.${format}.js`,
+      fileName: format => format === 'umd'
+        ? 'vue-blog-framework.umd.cjs'
+        : 'vue-blog-framework.es.js',
       cssFileName: 'style'
     },
     rollupOptions: {

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import contentService from '../adapters/markdown/contentService'
+
+import { getStoreContentAdapter } from '../runtime/runtimeContext.js'
 
 function normalizeCategory(entity) {
   if (!entity || typeof entity !== 'object') {
@@ -16,71 +17,18 @@ function normalizeCategory(entity) {
 }
 
 export const useCategoryStore = defineStore('category', {
-  state: () => ({
-    categories: [],
-    currentCategory: null,
-    categoryArticles: [],
-    totalArticles: 0,
-    loading: false,
-    error: null
-  }),
-
   actions: {
-    fetchCategories() {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = contentService.getCategories()
-        const list = (Array.isArray(response) ? response : []).map(normalizeCategory)
-        this.categories = list
-        return list
-      } catch (error) {
-        this.error = error.message || '获取分类列表失败'
-        throw error
-      } finally {
-        this.loading = false
-      }
+    async fetchCategories() {
+      const response = await getStoreContentAdapter(this).getCategories()
+      return (Array.isArray(response) ? response : []).map(normalizeCategory)
     },
 
-    fetchCategoryDetail(id) {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = contentService.getCategoryDetail(id)
-        const category = normalizeCategory(response)
-        this.currentCategory = category
-        return category
-      } catch (error) {
-        this.error = error.message || '获取分类详情失败'
-        throw error
-      } finally {
-        this.loading = false
-      }
+    async fetchCategoryDetail(id) {
+      return normalizeCategory(await getStoreContentAdapter(this).getCategoryDetail(id))
     },
 
-    fetchCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = contentService.getCategoryArticles(id, params)
-        this.categoryArticles = response.data
-        this.totalArticles = response.total
-        return response
-      } catch (error) {
-        this.error = error.message || '获取分类文章失败'
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    clearCurrentCategory() {
-      this.currentCategory = null
-      this.categoryArticles = []
-      this.totalArticles = 0
+    async fetchCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
+      return getStoreContentAdapter(this).getCategoryArticles(id, params)
     }
   }
 })

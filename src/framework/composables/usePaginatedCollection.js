@@ -60,6 +60,17 @@ export function usePaginatedCollection(options) {
   const resolvedPageSize = computed(() => normalizePageSize(unref(pageSize)))
   const currentPage = computed(() => normalizePage(route.params.page ?? route.query.page))
   const totalPages = computed(() => calculateTotalPages(total.value, resolvedPageSize.value))
+  const status = computed(() => {
+    if (loading.value) {
+      return ready.value ? 'refreshing' : 'loading'
+    }
+
+    if (error.value) {
+      return 'error'
+    }
+
+    return ready.value ? 'success' : 'idle'
+  })
 
   function resolvePageLocation(page) {
     const normalizedPage = normalizePage(page)
@@ -129,15 +140,13 @@ export function usePaginatedCollection(options) {
     }
 
     error.value = fetchError
-    items.value = []
-    total.value = 0
-    ready.value = true
   }
 
   function refresh() {
     const requestId = activeRequestId + 1
     activeRequestId = requestId
     error.value = null
+    loading.value = true
 
     try {
       const result = fetchPage({
@@ -156,8 +165,6 @@ export function usePaginatedCollection(options) {
 
         return normalizeCurrentPage().then(() => result)
       }
-
-      loading.value = ready.value
 
       return result
         .then(async (resolvedResult) => {
@@ -210,6 +217,7 @@ export function usePaginatedCollection(options) {
     loading,
     ready,
     error,
+    status,
     currentPage,
     pageSize: resolvedPageSize,
     totalPages,

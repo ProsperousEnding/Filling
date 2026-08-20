@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 
 const props = defineProps({
   html: {
@@ -17,11 +17,7 @@ const containerRef = ref(null)
 watch(() => props.html, async () => {
   await nextTick()
   renderTrustedHtml()
-}, { immediate: true })
-
-onMounted(() => {
-  renderTrustedHtml()
-})
+}, { immediate: true, flush: 'post' })
 
 function renderTrustedHtml() {
   if (!containerRef.value) {

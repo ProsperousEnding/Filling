@@ -5,9 +5,11 @@
 <script setup>
 import { computed, watch, onMounted, onUnmounted } from 'vue'
 import { useConfigStore } from '../../stores/config'
+import { useBlogBaseUrl } from '../../runtime/runtimeContext'
 import { isThemeAssetPathAllowed, resolveThemeAssetUrl } from '../../utils/themeAsset'
 
 const configStore = useConfigStore()
+const baseUrl = useBlogBaseUrl()
 const themeCSSFile = computed(() => configStore.themeCSSFile)
 const currentThemePreset = computed(() => String(configStore.currentThemePreset || '').trim())
 
@@ -16,7 +18,7 @@ let warnedThemeStylePath = ''
 
 const updateCustomStyle = () => {
   const rawThemeFile = String(themeCSSFile.value || '').trim()
-  const href = resolveThemeAssetUrl(rawThemeFile, import.meta.env.BASE_URL || '/')
+  const href = resolveThemeAssetUrl(rawThemeFile, baseUrl)
   const root = typeof document !== 'undefined' ? document.documentElement : null
 
   if (root) {
