@@ -17,7 +17,62 @@ const siteConfig = {
     }
   },
   "cover": {
-    "seeded_style": "mwm-anime"
+    "enabled": true,
+    "fallback": "seeded",
+    "fallback_image": "",
+    "seeded_width": 1200,
+    "seeded_height": 630,
+    "seeded_format": "webp",
+    "seeded_style": "mwm-anime",
+    "source_switch": {
+      "enabled": false,
+      "storage_key": "vue-blog-cover-source",
+      "sources": [
+        "picsum",
+        "cataas",
+        "mwm-anime",
+        "mwm-scenery",
+        "paugram-anime",
+        "dmoe-anime",
+        "loremflickr",
+        "paugram-bing"
+      ],
+      "labels": {
+        "picsum": "Picsum",
+        "cataas": "Cataas",
+        "mwm-anime": "MWM 二次元",
+        "mwm-scenery": "MWM 风景",
+        "paugram-anime": "保罗二次元",
+        "dmoe-anime": "DMOE 二次元",
+        "loremflickr": "LoremFlickr 风景",
+        "paugram-bing": "Bing 每日壁纸"
+      }
+    },
+    "list": {
+      "show_cover": true,
+      "loading": "lazy",
+      "aspect_ratio": "",
+      "object_fit": "cover",
+      "placeholder": "gradient"
+    },
+    "detail": {
+      "show_cover": true,
+      "show_related_cover": true,
+      "display_mode": "image",
+      "loading": "eager",
+      "aspect_ratio": "",
+      "object_fit": "cover",
+      "placeholder": "gradient",
+      "page_background": {
+        "content_style": "transparent"
+      },
+      "watermark": {
+        "enabled": false,
+        "text": "",
+        "position": "bottom-right",
+        "opacity": 0.72
+      }
+    }
   },
   "links": {
     "friend_links": [
@@ -71,6 +126,24 @@ const siteConfig = {
     "variant": "info"
   },
   "code_block": {
+    "enabled": true,
+    "show_language": true,
+    "show_filename": true,
+    "show_copy_button": true,
+    "show_line_numbers": true,
+    "line_number_start": 1,
+    "theme": "github",
+    "dark_theme": "default",
+    "copy_label": "复制代码",
+    "copied_label": "已复制",
+    "wrap_long_lines": false,
+    "max_height": "",
+    "collapsible": true,
+    "collapse_threshold_lines": 18,
+    "preview_lines": 18,
+    "expand_label": "展开代码",
+    "collapse_label": "收起代码",
+    "mark_diff_lines": true,
     "languages": {
       "javascript": {
         "collapse_threshold_lines": 28,
@@ -159,22 +232,64 @@ const siteConfig = {
     "description": "一个基于 Vue 3 的静态博客与内容系统。",
     "site_url": "https://filling.initzo.com",
     "seo": {
-      "og_image": "icons/points.png"
+      "lang": "zh-CN",
+      "author": "prosperousending",
+      "keywords": [],
+      "theme_color": "#f8fafc",
+      "favicon": "",
+      "og_image": "icons/points.png",
+      "robots": "index,follow"
     },
     "header": {
       "leading_visual": {
+        "visible": true,
+        "type": "dots",
         "title": "Filling",
-        "title_size": "18"
+        "title_size": "18",
+        "src": "",
+        "alt": ""
       },
       "navbar": {
-        "show_title": false
+        "sticky": true,
+        "blur": true,
+        "show_brand": true,
+        "show_title": false,
+        "show_description": true,
+        "show_desktop_menu": true,
+        "show_mobile_menu": true,
+        "show_search": true,
+        "show_theme_toggle": true,
+        "show_sidebar_toggle": true,
+        "show_mobile_menu_toggle": true
       }
     },
     "features": {
-      "show_sidebar_on_articles": false
+      "sidebar_visible": true,
+      "sidebar_position": "right",
+      "show_sidebar_on_articles": false,
+      "show_category_count": true,
+      "show_tag_count": true,
+      "show_read_time": true,
+      "show_profile_in_sidebar": true,
+      "show_outdated_notice": false,
+      "outdated_threshold_days": 365
+    },
+    "pagination": {
+      "page_size": 10
     },
     "home_articles": {
-      "mode": "mixed"
+      "mode": "mixed",
+      "page_size": 8,
+      "paginate": true,
+      "include_sticky": true,
+      "sticky_first": true,
+      "categories": [],
+      "tags": [],
+      "exclude_categories": [],
+      "exclude_tags": [],
+      "include_ids": [],
+      "exclude_ids": [],
+      "fallback_to_latest": false
     },
     "menus": {
       "pages": [

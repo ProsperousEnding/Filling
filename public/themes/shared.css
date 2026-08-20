@@ -629,7 +629,7 @@ a {
   padding: 1rem 1.2rem;
 }
 
-:root .article-detail-content :where(pre) {
+:root .article-detail-content :where(pre:not(.markdown-code-block__pre)) {
   background: rgba(15, 23, 42, 0.92) !important;
   border-radius: 1rem;
   box-shadow: var(--theme-shadow-sm);

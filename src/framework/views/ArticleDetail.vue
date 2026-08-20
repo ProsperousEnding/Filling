@@ -118,7 +118,7 @@
                         class="article-detail-meta flex flex-wrap items-center text-sm"
                     >
                         <div
-                            class="article-detail-meta-item flex items-center mr-6"
+                            class="article-detail-meta-item flex items-center"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -138,7 +138,7 @@
                         </div>
                         <div
                             v-if="displayUpdatedAt"
-                            class="article-detail-meta-item flex items-center mr-6"
+                            class="article-detail-meta-item flex items-center"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -160,7 +160,7 @@
                         </div>
                         <div
                             v-if="config.showReadTime && article.readTime"
-                            class="article-detail-meta-item flex items-center mr-6"
+                            class="article-detail-meta-item flex items-center"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -830,6 +830,49 @@ function normalizeCoverWatermark(watermark = {}) {
 </script>
 
 <style scoped>
+.article-detail-view,
+.article-detail-shell,
+.article-detail-header,
+.article-detail-cover,
+.article-detail-content,
+.article-detail-tags-wrap,
+.article-detail-outdated,
+.article-detail-license {
+    min-width: 0;
+}
+
+.article-detail-title {
+    line-height: 1.18;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+.article-detail-category {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.article-detail-meta {
+    gap: 0.55rem 1.35rem;
+}
+
+.article-detail-meta-item {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.article-detail-meta-item svg {
+    flex: 0 0 auto;
+}
+
+.article-detail-content :deep(iframe),
+.article-detail-content :deep(embed),
+.article-detail-content :deep(object) {
+    width: 100%;
+    max-width: 100%;
+}
+
 .article-detail-cover-probe {
     position: absolute;
     width: 1px;
@@ -1204,6 +1247,31 @@ function normalizeCoverWatermark(watermark = {}) {
 }
 
 @media (max-width: 640px) {
+    .article-detail-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .article-detail-title {
+        margin-bottom: 0.85rem;
+        font-size: 1.75rem;
+        line-height: 1.2;
+    }
+
+    .article-detail-meta {
+        gap: 0.45rem 1rem;
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
+
+    .article-detail-page-background::after {
+        background: linear-gradient(
+            180deg,
+            rgba(15, 23, 42, 0.62) 0%,
+            rgba(15, 23, 42, 0.52) 18rem,
+            rgba(15, 23, 42, 0.48) 100%
+        );
+    }
+
     .article-detail-view-with-page-background {
         margin: -0.75rem;
         padding: 0.75rem;
@@ -1211,7 +1279,7 @@ function normalizeCoverWatermark(watermark = {}) {
     }
 
     .article-detail-view-with-page-background .article-detail-header {
-        padding-top: 4rem;
+        padding-top: 2.75rem;
     }
 
     .article-detail-view-with-page-background .article-detail-content {
@@ -1219,48 +1287,53 @@ function normalizeCoverWatermark(watermark = {}) {
         border-radius: 1rem;
     }
 
+    .article-detail-view-page-background-glass .article-detail-content {
+        backdrop-filter: blur(14px) saturate(1.1);
+        -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    }
+
     .article-detail-header-with-background {
-        min-height: 16rem;
+        min-height: 15rem;
         border-radius: 1rem;
-        padding: 1.25rem;
+        padding: 1.1rem;
     }
 
-    .article-detail-related {
-        padding: 0.85rem;
+    .article-detail-cover,
+    .article-detail-cover-placeholder,
+    .article-detail-outdated,
+    .article-detail-content,
+    .article-detail-tags-wrap {
+        margin-bottom: 1.5rem;
+    }
+
+    .article-detail-cover-placeholder {
+        min-height: 12rem;
+    }
+
+    .article-detail-outdated,
+    .article-detail-license {
+        padding: 1rem;
+        border-radius: 1rem;
+    }
+
+    .article-detail-license {
+        margin-bottom: 2rem;
+        overflow-wrap: anywhere;
+    }
+
+    .article-detail-content :deep(blockquote) {
+        margin-inline: 0;
+    }
+
+    .article-detail-content :deep(iframe) {
+        min-height: 12rem;
+    }
+
+    .article-detail-shell :deep(.article-sponsor-section),
+    .article-detail-shell :deep(.article-comment-section) {
+        margin-bottom: 2.5rem;
+        padding: 1rem;
         border-radius: 1.2rem;
-    }
-
-    .article-detail-related-grid {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 0.75rem;
-    }
-
-    .article-detail-related-card {
-        border-radius: 1rem;
-    }
-
-    .article-detail-related-link {
-        display: grid;
-        grid-template-columns: minmax(6rem, 0.42fr) minmax(0, 1fr);
-    }
-
-    .article-detail-related-image,
-    .article-detail-related-placeholder {
-        height: 100%;
-        min-height: 8.2rem;
-        aspect-ratio: auto;
-    }
-
-    .article-detail-related-body {
-        padding: 0.8rem;
-    }
-
-    .article-detail-related-title {
-        font-size: 0.95rem;
-    }
-
-    .article-detail-related-tags {
-        display: none;
     }
 }
 

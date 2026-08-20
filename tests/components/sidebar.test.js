@@ -299,6 +299,10 @@ describe('Sidebar data loading', () => {
     })
     await flushPromises()
 
+    await vi.waitFor(() => {
+      expect(sidebar.findAll('.sidebar-section-view-all')).toHaveLength(2)
+    })
+
     const viewAllLinks = sidebar.findAll('.sidebar-section-view-all')
     expect(viewAllLinks.map(link => link.text())).toEqual(['全部分类', '全部标签'])
     expect(viewAllLinks.map(link => link.attributes('href'))).toEqual(['/category', '/tag'])

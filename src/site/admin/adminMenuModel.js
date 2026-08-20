@@ -38,6 +38,20 @@ function normalizeString(value) {
   return String(value || '').trim()
 }
 
+function normalizeKeyCandidate(value) {
+  const source = normalizeString(value)
+    .replace(/\\/gu, '/')
+    .split('/')
+    .filter(Boolean)
+    .at(-1)
+    ?.replace(/\.md$/iu, '') || ''
+
+  return source
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/gu, '-')
+    .replace(/^[-_]+|[-_]+$/gu, '')
+}
+
 function getConfiguredValue(configured, snakeKey, camelKey, fallback) {
   if (Object.prototype.hasOwnProperty.call(configured, snakeKey)) return configured[snakeKey]
   if (camelKey && Object.prototype.hasOwnProperty.call(configured, camelKey)) return configured[camelKey]
@@ -166,15 +180,46 @@ export function serializeAdminMenuRows(rows = []) {
 }
 
 export function createAdminMenuPage(rows = []) {
-  const highestOrder = rows.reduce((highest, row) => (
+  const customRows = rows.filter(row => !row.builtIn)
+  const defaultMenuOrder = 1000 + customRows.length
+  const highestOrder = customRows.reduce((highest, row) => (
     Math.max(highest, Number(row.menu_order) || 0)
-  ), 990)
+  ), defaultMenuOrder - 1)
 
   return createCustomRow({
     component: 'context',
     menu_group: 'more',
-    menu_order: highestOrder + 10
-  }, rows.filter(row => !row.builtIn).length)
+    menu_order: Math.max(defaultMenuOrder, highestOrder + 1)
+  }, customRows.length)
+}
+
+export function deriveAdminMenuPageKey(page = {}, rows = [], excludedKey = '') {
+  const component = normalizeString(page.component)
+  const candidates = [
+    component === 'context' ? page.file : '',
+    ['list', 'card', 'grid', 'timeline'].includes(component) ? page.folder : '',
+    component === 'friends' ? 'friends' : '',
+    page.title,
+    page.label,
+    'page'
+  ]
+  const baseKey = candidates
+    .map(normalizeKeyCandidate)
+    .find(Boolean) || 'page'
+  const usedKeys = new Set(
+    rows
+      .map(row => normalizeString(row.key).toLowerCase())
+      .filter(key => key && key !== normalizeString(excludedKey).toLowerCase())
+  )
+
+  let key = baseKey
+  let suffix = 2
+  while (usedKeys.has(key)) {
+    key = `${baseKey}-${suffix}`
+    suffix += 1
+  }
+
+  return key
 }
 
 export function moveAdminMenuRow(rows = [], index, direction) {

@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  createAdminMenuPage,
   createAdminMenuRows,
+  deriveAdminMenuPageKey,
   getAdminMenuPreview,
   moveAdminMenuRow,
   serializeAdminMenuRows
@@ -79,4 +81,40 @@ test('admin menu preview keeps pinned pages in their configured order', () => {
     'projects'
   ])
   assert.deepEqual(preview.overflow.map(row => row.key), ['archive'])
+})
+
+test('admin menu page keys derive from content sources and avoid reserved keys', () => {
+  const rows = createAdminMenuRows(configuredPages)
+
+  assert.equal(deriveAdminMenuPageKey({
+    component: 'context',
+    file: 'pages/projects.md',
+    title: '项目'
+  }, rows), 'projects')
+  assert.equal(deriveAdminMenuPageKey({
+    component: 'context',
+    file: 'about.md',
+    title: '关于我们'
+  }, rows), 'about-2')
+  assert.equal(deriveAdminMenuPageKey({
+    component: 'friends',
+    title: '友情链接'
+  }, rows), 'friends-2')
+  assert.equal(deriveAdminMenuPageKey({
+    component: 'context',
+    file: '关于.md',
+    title: '关于'
+  }, rows), 'page')
+})
+
+test('new admin menu pages use the implicit custom page order until manually moved', () => {
+  const emptyRows = createAdminMenuRows([])
+  const firstPage = createAdminMenuPage(emptyRows)
+  const nextRows = [...emptyRows, firstPage]
+  const secondPage = createAdminMenuPage(nextRows)
+
+  assert.equal(firstPage.menu_order, 1000)
+  assert.equal(firstPage._defaultMenuOrder, 1000)
+  assert.equal(secondPage.menu_order, 1001)
+  assert.equal(secondPage._defaultMenuOrder, 1001)
 })
