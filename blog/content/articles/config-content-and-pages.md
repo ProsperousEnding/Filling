@@ -1,8 +1,8 @@
 ---
 title: 内容页面与写作
-description: 从文章 frontmatter 到自定义页面，快速了解 Filling 的内容组织方式。
+description: 从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。
 date: 2026-05-13
-updated: 2026-08-20
+updated: 2026-08-21
 category: 配置
 cover_display_mode: page-background
 featured: true
@@ -21,10 +21,10 @@ Filling 的内容统一放在 `blog/content/`，文章、单页和自定义目�
 blog/content/
   articles/       # 博客文章
   about.md        # 单文件页面
-  projects/       # 自定义内容目录
+  projects/       # 按需创建的自定义内容目录
 ```
 
-`articles/` 中的内容会进入首页、文章列表、分类、标签、归档和搜索索引。自定义目录只有注册成页面后才会显示。
+`articles/` 中的 Markdown 会自动进入文章列表、分类、标签、归档和搜索索引，并根据首页规则决定是否显示在首页。其他文件或目录只有注册成页面后才会生成路由。
 
 ## 写一篇文章
 
@@ -38,7 +38,8 @@ category: 前端
 tags:
   - Vue
   - Vite
-cover: images/demo-cover.webp
+cover: images/articles/demo-cover.webp
+cover_display_mode: image
 ---
 
 从这里开始写正文。
@@ -48,11 +49,11 @@ cover: images/demo-cover.webp
 
 - `title`、`date`、`updated`、`description`：文章基本信息。
 - `category`、`tags`：分类和标签。
-- `cover`：本地资源路径或完整图片地址。
+- `cover`：`public/` 下的相对路径或完整图片地址。
 - `cover_display_mode`：`image`、`header-background` 或 `page-background`。
 - `sticky`、`featured`、`home_hidden`、`weight`：首页筛选和排序。
 
-没有填写 `cover` 时，框架会按 `cover.toml` 自动生成封面。
+本地图片示例对应 `public/images/articles/demo-cover.webp`。没有填写 `cover` 时，框架会按唯一的 `cover.toml` 配置自动生成封面。
 
 ## 首页展示
 
@@ -68,7 +69,11 @@ page_size = 8
 
 需要精确控制时使用 `include_ids`、`exclude_ids`、`categories`、`tags` 等字段。精选或置顶模式没有结果时默认保持空状态；只有明确需要时才开启 `fallback_to_latest = true`。
 
+`home_hidden: true` 只会让文章离开首页，不会影响 `/articles`、分类、标签、归档和搜索。
+
 ## 注册内容页面
+
+首页、文章、分类、标签、归档和搜索属于内置页面，不要在 `site.toml` 重复注册。
 
 单文件页面：
 
@@ -96,7 +101,14 @@ folder = "projects"
 - `list`、`card`、`grid`、`timeline`：目录内容。
 - `friends`：友情链接。
 
-页面会自动进入导航。`key` 必须唯一，目录页面只读取第一层 `.md` 文件；非法路径、重复路由或内容解析失败会在构建时直接报错。
+启用且可见的页面会自动进入桌面和移动导航，自定义页面默认进入桌面端“更多”。`key` 必须唯一，目录页面只读取第一层 `.md` 文件；非法路径、重复路由或内容解析失败会在构建时直接报错。
+
+只有需要覆盖默认行为时才添加高级字段：
+
+- `visible = false`：保留路由，但不显示菜单。
+- `enabled = false`：关闭路由与静态生成。
+- `menu_group = "primary" | "more"`：指定桌面菜单分组。
+- `menu_order`：数值越小越靠前。
 
 ## 友情链接
 
@@ -110,15 +122,17 @@ description = "The Progressive JavaScript Framework"
 tags = ["Vue", "Framework"]
 ```
 
-使用 `weight` 排序，使用 `enabled = false` 临时隐藏。友链页面通过 `component = "friends"` 注册。
+使用 `weight` 排序，使用 `enabled = false` 临时隐藏。友链页面通过 `component = "friends"` 注册，但友链数据仍只维护在 `links.toml`。
 
 ## 留言板、赞助与协议
 
 这些功能位于 `blog/config/optional/`：
 
-- `guestbook.toml`：`enabled = true` 时自动注册留言板和菜单。
-- `sponsor.toml`：通过 `show = ["articles", "page"]` 选择显示位置。
+- `guestbook.toml`：`enabled = true` 时自动注册留言板路由和菜单。
+- `sponsor.toml`：通过 `show = ["articles", "page"]` 选择文章区或独立页面。
 - `license.toml`：设置默认文章协议。
+
+留言板与赞助页由各自配置负责，不要再在 `site.toml` 写一份同名菜单。
 
 单篇文章可通过 `license` 覆盖默认协议，也可设置 `license: false` 关闭。
 
@@ -129,4 +143,4 @@ pnpm build:config
 pnpm build:content-index
 ```
 
-完整配置字段见仓库中的 `docs/configuration.md`。
+第一条检查配置与路由，第二条重新生成文章、页面和搜索索引。发布前可运行 `pnpm check` 完整验证。

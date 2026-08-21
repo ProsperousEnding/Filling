@@ -1,8 +1,8 @@
 ---
-title: 站点基础与外观配置
-description: 用最少的 TOML 完成站点信息、个人资料、主题和文章封面配置。
+title: 站点、外观与封面配置
+description: 从站点信息到 MWM 自动封面，理清主题、背景和文章封面的配置边界。
 date: 2026-05-13
-updated: 2026-08-20
+updated: 2026-08-21
 category: 配置
 cover_display_mode: page-background
 sticky: true
@@ -13,7 +13,27 @@ tags:
   - 外观
 ---
 
-Filling 的配置遵循一个原则：只写需要修改的值。日常配置放在 `blog/config/`，低频功能放在 `blog/config/optional/`。
+Filling 的配置遵循一个原则：只写需要修改的值，其余交给框架默认配置。常用配置放在 `blog/config/`，低频功能放在 `blog/config/optional/`。
+
+先分清三个容易混淆的概念：
+
+- `theme.toml` 选择界面主题预设。
+- `background.toml` 控制整个站点背后的渐变或壁纸。
+- `cover.toml` 只负责文章列表和文章详情页的封面。
+
+站点背景与文章封面互不覆盖，也不需要选择两种封面模式。
+
+## 配置文件分工
+
+| 文件 | 主要职责 |
+| --- | --- |
+| `site.toml` | 站点信息、SEO、页头、首页文章、菜单、侧边栏和页脚 |
+| `profile.toml` | 侧边栏个人资料与社交链接 |
+| `theme.toml` | 当前主题和主题资源预设 |
+| `background.toml` | 全站渐变或图片背景 |
+| `cover.toml` | 自动封面图源、列表封面和详情页封面 |
+
+完整文件说明可以直接查看 `blog/config/README.md`。
 
 ## 先配置站点
 
@@ -37,27 +57,6 @@ mode = "mixed"
 
 `page_size`、`categories`、`tags`、`include_ids` 和 `exclude_ids` 可进一步控制结果。`/articles` 始终是全部文章页，不受首页筛选影响。
 
-## 新增页面
-
-内置页面无需重复注册。新增 Markdown 页面时，在 `site.toml` 添加：
-
-```toml
-[[menus.pages]]
-key = "about"
-title = "关于"
-component = "context"
-file = "about.md"
-```
-
-目录页面使用 `folder`，并可选择 `list`、`card`、`grid` 或 `timeline`。启用且可见的页面会自动进入菜单；自定义页面默认收进桌面端“更多”。
-
-只有需要覆盖默认行为时才配置：
-
-- `visible = false`：保留路由，但不显示菜单。
-- `enabled = false`：同时关闭路由和静态生成。
-- `menu_group = "primary" | "more"`：指定桌面菜单分组。
-- `menu_order`：数值越小越靠前。
-
 ## 个人资料
 
 `profile.toml` 控制侧边栏资料：
@@ -78,7 +77,7 @@ show_name = false
 
 本地资源路径相对于 `public/`，因此写 `icons/points.png`，不要写 `public/icons/points.png`。
 
-## 主题与背景
+## 选择主题
 
 `theme.toml` 选择主题预设：
 
@@ -86,7 +85,18 @@ show_name = false
 current_preset = "default"
 ```
 
-`background.toml` 默认使用渐变。使用壁纸时只需：
+预设中的 CSS 和 JS 资源位于 `public/themes/`。只切换现有主题时修改 `current_preset` 即可。
+
+## 配置站点背景
+
+当前站点使用渐变背景：
+
+```toml
+enabled = true
+mode = "gradient"
+```
+
+需要全站壁纸时，将 `background.toml` 改为图片模式：
 
 ```toml
 enabled = true
@@ -95,30 +105,47 @@ image = "backgrounds/site-light.webp"
 dark_image = "backgrounds/site-dark.webp"
 ```
 
+图片放在 `public/backgrounds/`，配置中不写 `public/` 前缀。没有单独的暗色图片时可以省略 `dark_image`。
+
 ## 文章封面
 
-`cover.toml` 已默认启用自动封面，当前站点使用 MWM 二次元图源：
+`cover.toml` 是封面的唯一配置入口。当前站点使用 MWM 二次元图源，并在文章列表与详情页显示封面：
 
 ```toml
+enabled = true
+fallback = "seeded"
 seeded_style = "mwm-anime"
+
+[list]
+show_cover = true
+
+[detail]
+show_cover = true
+display_mode = "image"
 ```
 
 可选图源：
 
-- `picsum`、`loremflickr`：摄影与风景。
 - `mwm-anime`、`paugram-anime`、`dmoe-anime`：二次元图片。
-- `mwm-scenery`：随机风景。
-- `cataas`：随机猫咪。
-- `paugram-bing`：Bing 每日壁纸。
+- `mwm-scenery`、`picsum`、`loremflickr`、`paugram-bing`：摄影或风景图片。
+- `cataas`：猫咪图片。
 
-站点中的所有自动封面统一使用 `seeded_style`，不会被访客浏览器中的本地选择覆盖。
+所有自动封面统一使用 `seeded_style`。站点不存在第二套浏览器本地选择，访客也不会覆盖站点配置。
 
-详情页默认显示独立封面，也可设置为 `header-background` 或 `page-background`：
+详情页支持三种展示方式：
+
+- `image`：在正文上方显示独立封面，也是当前默认配置。
+- `header-background`：封面延伸为文章头部背景。
+- `page-background`：封面作为文章详情页背景。
+
+例如需要沉浸式页面背景时：
 
 ```toml
 [detail]
 display_mode = "page-background"
 ```
+
+单篇文章可以通过 frontmatter 的 `cover` 指定图片，也可以用 `cover_display_mode` 单独覆盖详情页展示方式。没有写 `cover` 时才使用自动封面。
 
 ## 修改后检查
 
@@ -126,4 +153,4 @@ display_mode = "page-background"
 pnpm build:config
 ```
 
-该命令会检查 TOML 语法、字段值和页面路由。完整字段见仓库中的 `docs/configuration.md`。
+该命令会检查 TOML 语法、未知字段、无效枚举和页面路由。完整字段见仓库中的 `docs/configuration.md`。

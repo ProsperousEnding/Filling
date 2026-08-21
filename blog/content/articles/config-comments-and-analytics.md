@@ -1,8 +1,8 @@
 ---
 title: 评论、统计与内容增强
-description: 配置评论和访问统计，并按需开启 Mermaid、KaTeX 与代码块增强。
+description: 用单一 provider 配置评论和统计，并按需开启 Markdown 与代码块增强。
 date: 2026-05-13
-updated: 2026-08-20
+updated: 2026-08-21
 category: 配置
 cover_display_mode: page-background
 weight: 100
@@ -12,7 +12,7 @@ tags:
   - 统计
 ---
 
-评论是常用配置，放在 `blog/config/comment.toml`。统计、Markdown 和代码块增强放在 `blog/config/optional/`，用到时再修改。
+评论是常用配置，放在 `blog/config/comment.toml`。统计、Markdown 和代码块增强位于 `blog/config/optional/`。这些配置文件可以保留，关闭功能时修改开关或移除 provider，不需要删除文件。
 
 ## 使用 giscus
 
@@ -30,7 +30,7 @@ category_id = "DIC_xxx"
 input_position = "bottom"
 ```
 
-`repo`、`repo_id`、`category` 和 `category_id` 必填。需要临时关闭评论时才添加 `enabled = false`。
+`repo`、`repo_id`、`category` 和 `category_id` 都是 giscus 生成的公开标识，缺少任意一项都会导致评论区无法连接。需要临时关闭全站评论时添加 `enabled = false`。
 
 默认使用页面路径映射 Discussion。需要让某个页面固定使用同一主题时：
 
@@ -50,7 +50,7 @@ repo = "owner/repo"
 issue_term = "pathname"
 ```
 
-`repo` 必填，`issue_term` 和 `issue_number` 选择一个即可。
+`repo` 必填。通常保留 `issue_term = "pathname"`；只有需要固定绑定到某个 Issue 时才填写 `issue_number`。
 
 ## 留言板评论
 
@@ -82,7 +82,7 @@ website_id = "your-website-id"
 - `google_analytics`：填写 `[google_analytics].measurement_id`。
 - `clarity`：填写 `[clarity].project_id`。
 
-选中 provider 后自动启用，不需要再维护子级开关。
+选中 provider 后自动启用，不需要再维护子级开关。需要关闭统计时，删除或注释顶层 `provider`；不要同时选择多个服务。
 
 ## Markdown 增强
 
@@ -93,7 +93,7 @@ Callout 默认开启：
 > 这是一条提示。
 ```
 
-Mermaid 和 KaTeX 按需开启：
+在 `optional/markdown.toml` 中按需开启 Mermaid 和 KaTeX：
 
 ```toml
 [mermaid]
@@ -107,16 +107,18 @@ enabled = true
 
 ## 代码块增强
 
-复制按钮、语言标签和长代码折叠默认启用。`optional/code_block.toml` 只需保留特殊语言的覆盖：
+`optional/code_block.toml` 统一控制语言标签、文件名、复制按钮、行号、自动折叠与长行换行。全局行为写在顶层，特殊语言写在 `[languages.*]`：
 
 ```toml
+enabled = true
+show_copy_button = true
+show_line_numbers = true
+collapsible = true
+collapse_threshold_lines = 18
+
 [languages.bash]
 show_line_numbers = false
 wrap_long_lines = true
-
-[languages.diff]
-show_copy_button = false
-show_line_numbers = false
 ```
 
 Markdown 代码块可通过 `title` 指定文件名：
@@ -133,4 +135,4 @@ console.log('hello')
 pnpm build:config
 ```
 
-该命令会指出 provider 拼写、缺失凭据和无效字段。完整字段见仓库中的 `docs/configuration.md`。
+该命令会指出 provider 拼写、缺失凭据和无效字段。文章内容有变化时再运行 `pnpm build:content-index`，发布前运行 `pnpm check`。

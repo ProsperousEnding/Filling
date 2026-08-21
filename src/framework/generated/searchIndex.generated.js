@@ -29,10 +29,10 @@ const searchIndex = {
       "kind": "article",
       "iconKind": "article",
       "title": "评论、统计与内容增强",
-      "description": "配置评论和访问统计，并按需开启 Mermaid、KaTeX 与代码块增强。",
-      "excerpt": "配置评论和访问统计，并按需开启 Mermaid、KaTeX 与代码块增强。",
+      "description": "用单一 provider 配置评论和统计，并按需开启 Markdown 与代码块增强。",
+      "excerpt": "用单一 provider 配置评论和统计，并按需开启 Markdown 与代码块增强。",
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": "2026-08-20T00:00:00.000Z",
+      "updatedAt": "2026-08-21T00:00:00.000Z",
       "category": {
         "id": "配置",
         "name": "配置"
@@ -61,19 +61,19 @@ const searchIndex = {
       "sectionTitle": "",
       "sectionPath": "",
       "sourcePath": "/blog/content/articles/config-comments-and-analytics.md",
-      "plainText": "评论是常用配置，放在 blog/config/comment.toml 。统计、Markdown 和代码块增强放在 blog/config/optional/ ，用到时再修改。 使用 giscus 选择 provider 即启用评论，不需要重复添加总开关： provider = \"giscus\" description = \"欢迎通过 GitHub Discussions 留下你的看法。\" [giscus] repo = \"owner/repo\" repo_id = \"R_xxx\" category = \"Announcements\" category_id = \"DIC_xxx\" input_position = \"bottom\" repo 、 repo_id 、 category 和 category_id 必填。需要临时关闭评论时才添加 enabled = false 。 默认使用页面路径映射 Discussion。需要让某个页面固定使用同一主题时： [giscus] mapping = \"specific\" term = \"guestbook\" 使用 utterances provider = \"utterances\" [utterances] repo = \"owner/repo\" issue_term = \"pathname\" repo 必填， issue_term 和 issue_number 选择一个即可。 留言板评论 留言板默认继承 comment.toml 。需要独立 Discussion 时，在 optional/guestbook.toml 中只覆盖映射： [comment.giscus] mapping = \"specific\" term = \"guestbook\" 仓库和分类信息会继续继承全站评论配置。 访问统计 optional/analytics.toml 一次选择一个服务： provider = \"umami\" respect_dnt = true [umami] website_id = \"your-website-id\" 其他可选值： plausible ：填写 [plausible].domain 。 google_analytics ：填写 [google_analytics].measurement_id 。 clarity ：填写 [clarity].project_id 。 选中 provider 后自动启用，不需要再维护子级开关。 Markdown 增强 Callout 默认开启： > [!NOTE] > 这是一条提示。 Mermaid 和 KaTeX 按需开启： [mermaid] enabled = true [math] enabled = true 然后可在文章中使用 mermaid 代码块、 $E = mc^2$ 行内公式或 $$...$$ 块级公式。 代码块增强 复制按钮、语言标签和长代码折叠默认启用。 optional/code_block.toml 只需保留特殊语言的覆盖： [languages.bash] show_line_numbers = false wrap_long_lines = true [languages.diff] show_copy_button = false show_line_numbers = false Markdown 代码块可通过 title 指定文件名： ```js title=\"main.js\" console.log('hello') ``` 修改后检查 pnpm build:config 该命令会指出 provider 拼写、缺失凭据和无效字段。完整字段见仓库中的 docs/configuration.md 。",
+      "plainText": "评论是常用配置，放在 blog/config/comment.toml 。统计、Markdown 和代码块增强位于 blog/config/optional/ 。这些配置文件可以保留，关闭功能时修改开关或移除 provider，不需要删除文件。 使用 giscus 选择 provider 即启用评论，不需要重复添加总开关： provider = \"giscus\" description = \"欢迎通过 GitHub Discussions 留下你的看法。\" [giscus] repo = \"owner/repo\" repo_id = \"R_xxx\" category = \"Announcements\" category_id = \"DIC_xxx\" input_position = \"bottom\" repo 、 repo_id 、 category 和 category_id 都是 giscus 生成的公开标识，缺少任意一项都会导致评论区无法连接。需要临时关闭全站评论时添加 enabled = false 。 默认使用页面路径映射 Discussion。需要让某个页面固定使用同一主题时： [giscus] mapping = \"specific\" term = \"guestbook\" 使用 utterances provider = \"utterances\" [utterances] repo = \"owner/repo\" issue_term = \"pathname\" repo 必填。通常保留 issue_term = \"pathname\" ；只有需要固定绑定到某个 Issue 时才填写 issue_number 。 留言板评论 留言板默认继承 comment.toml 。需要独立 Discussion 时，在 optional/guestbook.toml 中只覆盖映射： [comment.giscus] mapping = \"specific\" term = \"guestbook\" 仓库和分类信息会继续继承全站评论配置。 访问统计 optional/analytics.toml 一次选择一个服务： provider = \"umami\" respect_dnt = true [umami] website_id = \"your-website-id\" 其他可选值： plausible ：填写 [plausible].domain 。 google_analytics ：填写 [google_analytics].measurement_id 。 clarity ：填写 [clarity].project_id 。 选中 provider 后自动启用，不需要再维护子级开关。需要关闭统计时，删除或注释顶层 provider ；不要同时选择多个服务。 Markdown 增强 Callout 默认开启： > [!NOTE] > 这是一条提示。 在 optional/markdown.toml 中按需开启 Mermaid 和 KaTeX： [mermaid] enabled = true [math] enabled = true 然后可在文章中使用 mermaid 代码块、 $E = mc^2$ 行内公式或 $$...$$ 块级公式。 代码块增强 optional/code_block.toml 统一控制语言标签、文件名、复制按钮、行号、自动折叠与长行换行。全局行为写在顶层，特殊语言写在 [languages.*] ： enabled = true show_copy_button = true show_line_numbers = true collapsible = true collapse_threshold_lines = 18 [languages.bash] show_line_numbers = false wrap_long_lines = true Markdown 代码块可通过 title 指定文件名： ```js title=\"main.js\" console.log('hello') ``` 修改后检查 pnpm build:config 该命令会指出 provider 拼写、缺失凭据和无效字段。文章内容有变化时再运行 pnpm build:content-index ，发布前运行 pnpm check 。",
       "titleHaystack": "评论、统计与内容增强",
-      "metaHaystack": "配置评论和访问统计，并按需开启 mermaid、katex 与代码块增强。 配置评论和访问统计，并按需开启 mermaid、katex 与代码块增强。 配置 cc by-nc-sa 4.0 配置 评论 统计"
+      "metaHaystack": "用单一 provider 配置评论和统计，并按需开启 markdown 与代码块增强。 用单一 provider 配置评论和统计，并按需开启 markdown 与代码块增强。 配置 cc by-nc-sa 4.0 配置 评论 统计"
     },
     {
       "id": "article:config-content-and-pages",
       "kind": "article",
       "iconKind": "article",
       "title": "内容页面与写作",
-      "description": "从文章 frontmatter 到自定义页面，快速了解 Filling 的内容组织方式。",
-      "excerpt": "从文章 frontmatter 到自定义页面，快速了解 Filling 的内容组织方式。",
+      "description": "从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。",
+      "excerpt": "从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。",
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": "2026-08-20T00:00:00.000Z",
+      "updatedAt": "2026-08-21T00:00:00.000Z",
       "category": {
         "id": "配置",
         "name": "配置"
@@ -102,19 +102,60 @@ const searchIndex = {
       "sectionTitle": "",
       "sectionPath": "",
       "sourcePath": "/blog/content/articles/config-content-and-pages.md",
-      "plainText": "Filling 的内容统一放在 blog/content/ ，文章、单页和自定义目录都使用 Markdown。 内容目录 blog/content/ articles/ # 博客文章 about.md # 单文件页面 projects/ # 自定义内容目录 articles/ 中的内容会进入首页、文章列表、分类、标签、归档和搜索索引。自定义目录只有注册成页面后才会显示。 写一篇文章 --- title: 示例文章 date: 2026-08-20 updated: 2026-08-20 description: 用一句话说明文章解决的问题。 category: 前端 tags: - Vue - Vite cover: images/demo-cover.webp --- 从这里开始写正文。 常用 frontmatter： title 、 date 、 updated 、 description ：文章基本信息。 category 、 tags ：分类和标签。 cover ：本地资源路径或完整图片地址。 cover_display_mode ： image 、 header-background 或 page-background 。 sticky 、 featured 、 home_hidden 、 weight ：首页筛选和排序。 没有填写 cover 时，框架会按 cover.toml 自动生成封面。 首页展示 首页由 site.toml 的 [home_articles] 控制： [home_articles] mode = \"mixed\" page_size = 8 latest 显示全部可见文章， featured 和 sticky 只显示对应文章， mixed 会把手动指定、置顶、精选和最新内容合并为完整信息流。 需要精确控制时使用 include_ids 、 exclude_ids 、 categories 、 tags 等字段。精选或置顶模式没有结果时默认保持空状态；只有明确需要时才开启 fallback_to_latest = true 。 注册内容页面 单文件页面： [[menus.pages]] key = \"about\" title = \"关于\" component = \"context\" file = \"about.md\" 目录页面： [[menus.pages]] key = \"projects\" title = \"项目\" component = \"grid\" folder = \"projects\" 可用组件： context ：单个 Markdown 文件。 list 、 card 、 grid 、 timeline ：目录内容。 friends ：友情链接。 页面会自动进入导航。 key 必须唯一，目录页面只读取第一层 .md 文件；非法路径、重复路由或内容解析失败会在构建时直接报错。 友情链接 友链数据写在 blog/config/links.toml ： [[friend_links]] name = \"Vue.js\" url = \"https://vuejs.org/\" description = \"The Progressive JavaScript Framework\" tags = [\"Vue\", \"Framework\"] 使用 weight 排序，使用 enabled = false 临时隐藏。友链页面通过 component = \"friends\" 注册。 留言板、赞助与协议 这些功能位于 blog/config/optional/ ： guestbook.toml ： enabled = true 时自动注册留言板和菜单。 sponsor.toml ：通过 show = [\"articles\", \"page\"] 选择显示位置。 license.toml ：设置默认文章协议。 单篇文章可通过 license 覆盖默认协议，也可设置 license: false 关闭。 修改后检查 pnpm build:config pnpm build:content-index 完整配置字段见仓库中的 docs/configuration.md 。",
+      "plainText": "Filling 的内容统一放在 blog/content/ ，文章、单页和自定义目录都使用 Markdown。 内容目录 blog/content/ articles/ # 博客文章 about.md # 单文件页面 projects/ # 按需创建的自定义内容目录 articles/ 中的 Markdown 会自动进入文章列表、分类、标签、归档和搜索索引，并根据首页规则决定是否显示在首页。其他文件或目录只有注册成页面后才会生成路由。 写一篇文章 --- title: 示例文章 date: 2026-08-20 updated: 2026-08-20 description: 用一句话说明文章解决的问题。 category: 前端 tags: - Vue - Vite cover: images/articles/demo-cover.webp cover_display_mode: image --- 从这里开始写正文。 常用 frontmatter： title 、 date 、 updated 、 description ：文章基本信息。 category 、 tags ：分类和标签。 cover ： public/ 下的相对路径或完整图片地址。 cover_display_mode ： image 、 header-background 或 page-background 。 sticky 、 featured 、 home_hidden 、 weight ：首页筛选和排序。 本地图片示例对应 public/images/articles/demo-cover.webp 。没有填写 cover 时，框架会按唯一的 cover.toml 配置自动生成封面。 首页展示 首页由 site.toml 的 [home_articles] 控制： [home_articles] mode = \"mixed\" page_size = 8 latest 显示全部可见文章， featured 和 sticky 只显示对应文章， mixed 会把手动指定、置顶、精选和最新内容合并为完整信息流。 需要精确控制时使用 include_ids 、 exclude_ids 、 categories 、 tags 等字段。精选或置顶模式没有结果时默认保持空状态；只有明确需要时才开启 fallback_to_latest = true 。 home_hidden: true 只会让文章离开首页，不会影响 /articles 、分类、标签、归档和搜索。 注册内容页面 首页、文章、分类、标签、归档和搜索属于内置页面，不要在 site.toml 重复注册。 单文件页面： [[menus.pages]] key = \"about\" title = \"关于\" component = \"context\" file = \"about.md\" 目录页面： [[menus.pages]] key = \"projects\" title = \"项目\" component = \"grid\" folder = \"projects\" 可用组件： context ：单个 Markdown 文件。 list 、 card 、 grid 、 timeline ：目录内容。 friends ：友情链接。 启用且可见的页面会自动进入桌面和移动导航，自定义页面默认进入桌面端“更多”。 key 必须唯一，目录页面只读取第一层 .md 文件；非法路径、重复路由或内容解析失败会在构建时直接报错。 只有需要覆盖默认行为时才添加高级字段： visible = false ：保留路由，但不显示菜单。 enabled = false ：关闭路由与静态生成。 menu_group = \"primary\" | \"more\" ：指定桌面菜单分组。 menu_order ：数值越小越靠前。 友情链接 友链数据写在 blog/config/links.toml ： [[friend_links]] name = \"Vue.js\" url = \"https://vuejs.org/\" description = \"The Progressive JavaScript Framework\" tags = [\"Vue\", \"Framework\"] 使用 weight 排序，使用 enabled = false 临时隐藏。友链页面通过 component = \"friends\" 注册，但友链数据仍只维护在 links.toml 。 留言板、赞助与协议 这些功能位于 blog/config/optional/ ： guestbook.toml ： enabled = true 时自动注册留言板路由和菜单。 sponsor.toml ：通过 show = [\"articles\", \"page\"] 选择文章区或独立页面。 license.toml ：设置默认文章协议。 留言板与赞助页由各自配置负责，不要再在 site.toml 写一份同名菜单。 单篇文章可通过 license 覆盖默认协议，也可设置 license: false 关闭。 修改后检查 pnpm build:config pnpm build:content-index 第一条检查配置与路由，第二条重新生成文章、页面和搜索索引。发布前可运行 pnpm check 完整验证。",
       "titleHaystack": "内容页面与写作",
-      "metaHaystack": "从文章 frontmatter 到自定义页面，快速了解 filling 的内容组织方式。 从文章 frontmatter 到自定义页面，快速了解 filling 的内容组织方式。 配置 cc by-nc-sa 4.0 配置 页面 内容"
+      "metaHaystack": "从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。 从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。 配置 cc by-nc-sa 4.0 配置 页面 内容"
+    },
+    {
+      "id": "article:config-optional-features",
+      "kind": "article",
+      "iconKind": "article",
+      "title": "公告、字体、赞助与许可配置",
+      "description": "配置 Filling 的低频功能，并理解每个功能真正的启用条件与页面注册方式。",
+      "excerpt": "配置 Filling 的低频功能，并理解每个功能真正的启用条件与页面注册方式。",
+      "createdAt": "2026-08-21T00:00:00.000Z",
+      "updatedAt": "2026-08-21T00:00:00.000Z",
+      "category": {
+        "id": "配置",
+        "name": "配置"
+      },
+      "tags": [
+        {
+          "id": "配置",
+          "name": "配置"
+        },
+        {
+          "id": "功能",
+          "name": "功能"
+        },
+        {
+          "id": "外观",
+          "name": "外观"
+        }
+      ],
+      "license": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "cover": "https://t.mwm.moe/pc?seed=143679937",
+      "coverSource": "",
+      "to": "/article/config-optional-features",
+      "sectionTitle": "",
+      "sectionPath": "",
+      "sourcePath": "/blog/content/articles/config-optional-features.md",
+      "plainText": "Filling 将低频功能集中在 blog/config/optional/ 。这些文件属于受管理配置，即使暂时关闭也应保留，线上配置后台会按固定白名单读取它们。 不同功能的启用方式并不完全相同：公告、字体和赞助使用 enabled ，许可协议通过有效的名称与链接生效。 全站公告 optional/announcement.toml 控制页头下方的公告栏： enabled = true id = \"release-2026-08\" title = \"站点配置已经更新\" content = \"新的封面和菜单配置已经上线。\" link_text = \"查看说明\" link_url = \"/article/config-site-and-theme\" dismissible = true variant = \"info\" variant 支持 info 、 success 和 warning 。用户关闭公告后，浏览器会记住当前 id ；发布新公告时修改 id ，公告才会再次出现。 link_url 可以是以 / 开头的站内路径，也可以是明确的 https:// 、 mailto: 或 tel: 地址。 字体预设 optional/font.toml 最简单的配置只有两项： enabled = true preset = \"sans\" 内置预设包括： system ：跟随操作系统界面字体。 sans ：适合正文和常规界面。 serif ：更偏向长文阅读。 mono ：全站使用等宽字体，通常只适合特殊站点。 需要自托管字体时，将文件放入 public/fonts/ ，再配置字体栈、 [[faces]] 和预加载。普通站点优先使用预设，可以减少字体下载和首屏布局变化。 默认许可协议 optional/license.toml 不需要额外开关。填写名称和链接后，它会成为文章的默认协议： name = \"CC BY-NC-SA 4.0\" url = \"https://creativecommons.org/licenses/by-nc-sa/4.0/\" 单篇文章可以在 frontmatter 中覆盖： license: name: CC BY 4.0 url: https://creativecommons.org/licenses/by/4.0/ 不希望某篇文章显示协议时使用： license: false 赞助功能 optional/sponsor.toml 用一个开关控制功能，用 show 决定显示位置： enabled = true show = [\"articles\", \"page\"] title = \"支持作者\" description = \"如果内容对你有帮助，欢迎支持继续更新。\" page_title = \"支持本站持续更新\" page_description = \"感谢你对内容维护的支持。\" show 的组合含义： [\"articles\"] ：只显示在文章底部。 [\"page\"] ：只创建独立赞助页与菜单。 [\"articles\", \"page\"] ：两处同时显示。 当 show 包含 page 时，赞助页会自动注册，不要再在 site.toml 添加同名页面。 支付方式使用 [[methods]] ： [[methods]] name = \"微信赞赏\" account_name = \"微信扫码\" image_url = \"images/sponsor/wechat-pay.png\" note = \"感谢支持\" weight = 100 图片对应 public/images/sponsor/wechat-pay.png 。赞助者列表使用 [[supporters]] ，可以填写名称、档位、日期、头像和个人主页。 留言板的边界 留言板也位于 optional/ ，但它同时依赖全站评论配置： enabled = true title = \"欢迎留下你的来访足迹\" description = \"简单介绍自己，或者留下一句想说的话。\" 启用后会自动生成留言板页面与菜单，评论仓库和分类默认继承 comment.toml 。只有需要独立 Discussion 时，才在留言板配置中覆盖 [comment.giscus] 。 修改后检查 pnpm build:config pnpm build:content-index 如果启用了独立页面，第二条命令会同步更新静态路由和搜索索引。发布前运行 pnpm check 可以完成整套验证。",
+      "titleHaystack": "公告、字体、赞助与许可配置",
+      "metaHaystack": "配置 filling 的低频功能，并理解每个功能真正的启用条件与页面注册方式。 配置 filling 的低频功能，并理解每个功能真正的启用条件与页面注册方式。 配置 cc by-nc-sa 4.0 配置 功能 外观"
     },
     {
       "id": "article:config-site-and-theme",
       "kind": "article",
       "iconKind": "article",
-      "title": "站点基础与外观配置",
-      "description": "用最少的 TOML 完成站点信息、个人资料、主题和文章封面配置。",
-      "excerpt": "用最少的 TOML 完成站点信息、个人资料、主题和文章封面配置。",
+      "title": "站点、外观与封面配置",
+      "description": "从站点信息到 MWM 自动封面，理清主题、背景和文章封面的配置边界。",
+      "excerpt": "从站点信息到 MWM 自动封面，理清主题、背景和文章封面的配置边界。",
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": "2026-08-20T00:00:00.000Z",
+      "updatedAt": "2026-08-21T00:00:00.000Z",
       "category": {
         "id": "配置",
         "name": "配置"
@@ -143,9 +184,50 @@ const searchIndex = {
       "sectionTitle": "",
       "sectionPath": "",
       "sourcePath": "/blog/content/articles/config-site-and-theme.md",
-      "plainText": "Filling 的配置遵循一个原则：只写需要修改的值。日常配置放在 blog/config/ ，低频功能放在 blog/config/optional/ 。 先配置站点 site.toml 是站点入口。一个可用的最小配置如下： title = \"Filling\" description = \"一个基于 Vue 3 的静态博客与内容系统。\" site_url = \"https://filling.initzo.com\" [home_articles] mode = \"mixed\" 首页模式支持： latest ：显示全部可见文章。 featured ：只显示精选或手动指定的文章。 sticky ：只显示置顶或手动指定的文章。 mixed ：依次合并手动指定、置顶、精选和最新文章。 page_size 、 categories 、 tags 、 include_ids 和 exclude_ids 可进一步控制结果。 /articles 始终是全部文章页，不受首页筛选影响。 新增页面 内置页面无需重复注册。新增 Markdown 页面时，在 site.toml 添加： [[menus.pages]] key = \"about\" title = \"关于\" component = \"context\" file = \"about.md\" 目录页面使用 folder ，并可选择 list 、 card 、 grid 或 timeline 。启用且可见的页面会自动进入菜单；自定义页面默认收进桌面端“更多”。 只有需要覆盖默认行为时才配置： visible = false ：保留路由，但不显示菜单。 enabled = false ：同时关闭路由和静态生成。 menu_group = \"primary\" | \"more\" ：指定桌面菜单分组。 menu_order ：数值越小越靠前。 个人资料 profile.toml 控制侧边栏资料： display_name = \"Filling\" username = \"prosperousEnding\" tagline = \"记录前端工程化、静态博客和内容系统。\" avatar_url = \"icons/points.png\" website = \"https://filling.initzo.com\" [[social_links]] name = \"GitHub\" url = \"https://github.com/ProsperousEnding/Filling\" icon = \"github\" show_name = false 本地资源路径相对于 public/ ，因此写 icons/points.png ，不要写 public/icons/points.png 。 主题与背景 theme.toml 选择主题预设： current_preset = \"default\" background.toml 默认使用渐变。使用壁纸时只需： enabled = true mode = \"image\" image = \"backgrounds/site-light.webp\" dark_image = \"backgrounds/site-dark.webp\" 文章封面 cover.toml 已默认启用自动封面，当前站点使用 MWM 二次元图源： seeded_style = \"mwm-anime\" 可选图源： picsum 、 loremflickr ：摄影与风景。 mwm-anime 、 paugram-anime 、 dmoe-anime ：二次元图片。 mwm-scenery ：随机风景。 cataas ：随机猫咪。 paugram-bing ：Bing 每日壁纸。 站点中的所有自动封面统一使用 seeded_style ，不会被访客浏览器中的本地选择覆盖。 详情页默认显示独立封面，也可设置为 header-background 或 page-background ： [detail] display_mode = \"page-background\" 修改后检查 pnpm build:config 该命令会检查 TOML 语法、字段值和页面路由。完整字段见仓库中的 docs/configuration.md 。",
-      "titleHaystack": "站点基础与外观配置",
-      "metaHaystack": "用最少的 toml 完成站点信息、个人资料、主题和文章封面配置。 用最少的 toml 完成站点信息、个人资料、主题和文章封面配置。 配置 cc by-nc-sa 4.0 配置 站点 外观"
+      "plainText": "Filling 的配置遵循一个原则：只写需要修改的值，其余交给框架默认配置。常用配置放在 blog/config/ ，低频功能放在 blog/config/optional/ 。 先分清三个容易混淆的概念： theme.toml 选择界面主题预设。 background.toml 控制整个站点背后的渐变或壁纸。 cover.toml 只负责文章列表和文章详情页的封面。 站点背景与文章封面互不覆盖，也不需要选择两种封面模式。 配置文件分工 文件 主要职责 site.toml 站点信息、SEO、页头、首页文章、菜单、侧边栏和页脚 profile.toml 侧边栏个人资料与社交链接 theme.toml 当前主题和主题资源预设 background.toml 全站渐变或图片背景 cover.toml 自动封面图源、列表封面和详情页封面 完整文件说明可以直接查看 blog/config/README.md 。 先配置站点 site.toml 是站点入口。一个可用的最小配置如下： title = \"Filling\" description = \"一个基于 Vue 3 的静态博客与内容系统。\" site_url = \"https://filling.initzo.com\" [home_articles] mode = \"mixed\" 首页模式支持： latest ：显示全部可见文章。 featured ：只显示精选或手动指定的文章。 sticky ：只显示置顶或手动指定的文章。 mixed ：依次合并手动指定、置顶、精选和最新文章。 page_size 、 categories 、 tags 、 include_ids 和 exclude_ids 可进一步控制结果。 /articles 始终是全部文章页，不受首页筛选影响。 个人资料 profile.toml 控制侧边栏资料： display_name = \"Filling\" username = \"prosperousEnding\" tagline = \"记录前端工程化、静态博客和内容系统。\" avatar_url = \"icons/points.png\" website = \"https://filling.initzo.com\" [[social_links]] name = \"GitHub\" url = \"https://github.com/ProsperousEnding/Filling\" icon = \"github\" show_name = false 本地资源路径相对于 public/ ，因此写 icons/points.png ，不要写 public/icons/points.png 。 选择主题 theme.toml 选择主题预设： current_preset = \"default\" 预设中的 CSS 和 JS 资源位于 public/themes/ 。只切换现有主题时修改 current_preset 即可。 配置站点背景 当前站点使用渐变背景： enabled = true mode = \"gradient\" 需要全站壁纸时，将 background.toml 改为图片模式： enabled = true mode = \"image\" image = \"backgrounds/site-light.webp\" dark_image = \"backgrounds/site-dark.webp\" 图片放在 public/backgrounds/ ，配置中不写 public/ 前缀。没有单独的暗色图片时可以省略 dark_image 。 文章封面 cover.toml 是封面的唯一配置入口。当前站点使用 MWM 二次元图源，并在文章列表与详情页显示封面： enabled = true fallback = \"seeded\" seeded_style = \"mwm-anime\" [list] show_cover = true [detail] show_cover = true display_mode = \"image\" 可选图源： mwm-anime 、 paugram-anime 、 dmoe-anime ：二次元图片。 mwm-scenery 、 picsum 、 loremflickr 、 paugram-bing ：摄影或风景图片。 cataas ：猫咪图片。 所有自动封面统一使用 seeded_style 。站点不存在第二套浏览器本地选择，访客也不会覆盖站点配置。 详情页支持三种展示方式： image ：在正文上方显示独立封面，也是当前默认配置。 header-background ：封面延伸为文章头部背景。 page-background ：封面作为文章详情页背景。 例如需要沉浸式页面背景时： [detail] display_mode = \"page-background\" 单篇文章可以通过 frontmatter 的 cover 指定图片，也可以用 cover_display_mode 单独覆盖详情页展示方式。没有写 cover 时才使用自动封面。 修改后检查 pnpm build:config 该命令会检查 TOML 语法、未知字段、无效枚举和页面路由。完整字段见仓库中的 docs/configuration.md 。",
+      "titleHaystack": "站点、外观与封面配置",
+      "metaHaystack": "从站点信息到 mwm 自动封面，理清主题、背景和文章封面的配置边界。 从站点信息到 mwm 自动封面，理清主题、背景和文章封面的配置边界。 配置 cc by-nc-sa 4.0 配置 站点 外观"
+    },
+    {
+      "id": "article:deploy-config-worker",
+      "kind": "article",
+      "iconKind": "article",
+      "title": "部署配置后台与 Cloudflare Worker",
+      "description": "配置 GitHub App、Cloudflare Worker 和管理端 API，安全地在线修改并发布 TOML。",
+      "excerpt": "配置 GitHub App、Cloudflare Worker 和管理端 API，安全地在线修改并发布 TOML。",
+      "createdAt": "2026-08-21T00:00:00.000Z",
+      "updatedAt": "2026-08-21T00:00:00.000Z",
+      "category": {
+        "id": "部署",
+        "name": "部署"
+      },
+      "tags": [
+        {
+          "id": "cloudflare",
+          "name": "Cloudflare"
+        },
+        {
+          "id": "worker",
+          "name": "Worker"
+        },
+        {
+          "id": "github",
+          "name": "GitHub"
+        }
+      ],
+      "license": {
+        "name": "CC BY-NC-SA 4.0",
+        "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+      },
+      "cover": "https://t.mwm.moe/pc?seed=1033711107",
+      "coverSource": "",
+      "to": "/article/deploy-config-worker",
+      "sectionTitle": "",
+      "sectionPath": "",
+      "sourcePath": "/blog/content/articles/deploy-config-worker.md",
+      "plainText": "Filling 已包含 /admin/config 管理页面和 worker/ 中的 Cloudflare Worker API。管理员通过 GitHub 登录，Worker 校验身份和配置内容，再将多个 TOML 修改合并为一次仓库提交。 整个链路由四部分组成： GitHub Pages 托管博客与管理页面。 GitHub App 提供 OAuth 登录和仓库授权。 Cloudflare Worker 保存服务端密钥并调用 GitHub API。 配置提交触发 GitHub Actions，重新构建并发布站点。 博客域名和 Worker 域名必须分开。例如博客使用 https://blog.example.com ，Worker 可以使用 https://filling-config-api.example.com 。 准备 GitHub App 在 GitHub 的 Developer settings 中创建 GitHub App，设置： Homepage URL: https://blog.example.com Callback URL: https://filling-config-api.example.com/auth/github/callback Webhook: Disabled 仓库权限只授予： Contents: Read and write ：读取并提交允许修改的配置文件。 Actions: Read-only ：在管理页显示最近的部署状态。 Metadata: Read-only ：GitHub App 的基础权限。 安装 App 时只选择博客所在仓库，不要授权全部仓库。记录 App 的 Client ID 和安装地址末尾的 Installation ID。 当前 Worker 使用管理员授权后的 GitHub user access token，不使用 installation token，因此不需要生成或保存 GitHub App 私钥。 配置 Worker 名称与域名 先修改 worker/wrangler.jsonc ： { \"name\": \"filling-config-api\", \"main\": \"src/index.js\", \"keep_vars\": true, \"routes\": [ { \"pattern\": \"filling-config-api.example.com\", \"custom_domain\": true } ] } 没有自定义域名时可以先使用 Cloudflare 提供的 workers.dev 地址，但 GitHub App Callback URL 和 GITHUB_CALLBACK_URL 必须同时使用该地址。 设置环境变量 在 Cloudflare Worker 的 Variables and Secrets 中添加普通变量： 变量 示例 用途 ADMIN_GITHUB_USER_ID 12345678 唯一允许登录的 GitHub 数字用户 ID ADMIN_ORIGIN https://blog.example.com 管理页面来源，只写协议和域名 GITHUB_BRANCH main 配置提交目标分支 GITHUB_CALLBACK_URL https://filling-config-api.example.com/auth/github/callback OAuth 回调完整地址 GITHUB_CLIENT_ID GitHub App Client ID OAuth 公开客户端标识 GITHUB_INSTALLATION_ID App 安装 ID 校验 App 是否安装到目标仓库 GITHUB_OWNER your-name 仓库所有者 GITHUB_REPO Filling 仓库名称 ADMIN_ORIGIN 不能包含路径或末尾 / 。 GITHUB_CALLBACK_URL 必须以 /auth/github/callback 结尾，并与 GitHub App 中的值完全一致。 以下两项必须使用 Secret 类型： Secret 用途 GITHUB_CLIENT_SECRET GitHub App OAuth Client Secret SESSION_SECRET 加密和签名管理会话 生成会话密钥： openssl rand -base64 32 Secret 只能写入 Cloudflare，不能放进 TOML、源码、截图或 Git 仓库。GitHub App 页面显示的 SHA-256 指纹也不是可用的私钥或 Secret。 部署 Worker 在项目根目录执行： pnpm install pnpm worker:check pnpm exec wrangler login pnpm worker:deploy worker:check 先执行 Wrangler dry run，确认入口、配置和打包结果有效。 keep_vars = true 会保留 Cloudflare Dashboard 中已经设置的变量和 Secret。 部署后检查健康接口： curl https://filling-config-api.example.com/health 正确响应应包含： { \"ok\": true, \"service\": \"filling-config-api\", \"configured\": true, \"missing\": [] } configured: false 表示仍有必填变量缺失， missing 会列出变量名，但不会暴露真实值。 连接管理页面 管理端默认 API 地址位于 src/site/admin/adminApi.js ，也可以在构建时通过环境变量覆盖： VITE_ADMIN_API_URL=https://filling-config-api.example.com pnpm build 使用 GitHub Pages 工作流时，需要把同一个变量传入构建步骤。完成站点发布后访问： https://blog.example.com/admin/config 登录后可以编辑受管理的 TOML、查看差异和校验结果，并将本次修改作为一个提交发布。远端分支已经变化时，Worker 会返回冲突而不是覆盖新提交。 本地联调 复制本地变量模板： cp worker/.dev.vars.example worker/.dev.vars 将其中的来源和回调改为本地地址，再分别启动 Worker 与站点： pnpm worker:dev VITE_ADMIN_API_URL=http://localhost:8787 pnpm dev worker/.dev.vars 已被 Git 忽略，但仍然不要把真实 Secret 粘贴到日志或截图中。本地 OAuth 回调也必须在用于测试的 GitHub App 中登记。 常见问题 /health 显示缺少变量：检查 Cloudflare 当前部署版本是否已经绑定最新变量。 登录后返回来源错误：确认 ADMIN_ORIGIN 与浏览器地址的协议、域名和端口完全一致。 OAuth 回调失败：同时核对 GitHub App Callback URL 与 GITHUB_CALLBACK_URL 。 登录后提示无权访问：检查 ADMIN_GITHUB_USER_ID 是否为数字 ID，以及 App 是否安装到目标仓库。 管理页请求了错误的域名：重新设置 VITE_ADMIN_API_URL 并构建站点。 发布时提示配置冲突：刷新管理页，基于最新提交重新修改。 Worker 只允许读写配置清单中的 TOML，不接受任意仓库路径，也不会修改源码和工作流。更完整的生产环境清单见仓库中的 docs/online-admin-setup.md 。",
+      "titleHaystack": "部署配置后台与 cloudflare worker",
+      "metaHaystack": "配置 github app、cloudflare worker 和管理端 api，安全地在线修改并发布 toml。 配置 github app、cloudflare worker 和管理端 api，安全地在线修改并发布 toml。 部署 cc by-nc-sa 4.0 cloudflare worker github"
     }
   ]
 }
