@@ -9,7 +9,7 @@ og_image = "icons/points.png"
 lang = "zh-CN"
 keywords = []
 theme_color = "#f8fafc"
-favicon = ""
+favicon = "icons/points.png"
 robots = "index,follow"
 
 [header.leading_visual]

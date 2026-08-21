@@ -232,28 +232,28 @@ const siteConfig = {
     "description": "一个基于 Vue 3 的静态博客与内容系统。",
     "site_url": "https://filling.initzo.com",
     "seo": {
-      "lang": "zh-CN",
       "author": "prosperousending",
+      "og_image": "icons/points.png",
+      "lang": "zh-CN",
       "keywords": [],
       "theme_color": "#f8fafc",
-      "favicon": "",
-      "og_image": "icons/points.png",
+      "favicon": "icons/points.png",
       "robots": "index,follow"
     },
     "header": {
       "leading_visual": {
+        "title": "Filling",
         "visible": true,
         "type": "dots",
-        "title": "Filling",
         "title_size": "18",
         "src": "",
         "alt": ""
       },
       "navbar": {
+        "show_title": false,
         "sticky": true,
         "blur": true,
         "show_brand": true,
-        "show_title": false,
         "show_description": true,
         "show_desktop_menu": true,
         "show_mobile_menu": true,
@@ -264,18 +264,15 @@ const siteConfig = {
       }
     },
     "features": {
+      "show_sidebar_on_articles": false,
       "sidebar_visible": true,
       "sidebar_position": "right",
-      "show_sidebar_on_articles": false,
       "show_category_count": true,
       "show_tag_count": true,
       "show_read_time": true,
       "show_profile_in_sidebar": true,
       "show_outdated_notice": false,
       "outdated_threshold_days": 365
-    },
-    "pagination": {
-      "page_size": 10
     },
     "home_articles": {
       "mode": "mixed",
@@ -292,6 +289,7 @@ const siteConfig = {
       "fallback_to_latest": false
     },
     "menus": {
+      "links": [],
       "pages": [
         {
           "key": "about",
@@ -302,14 +300,17 @@ const siteConfig = {
         {
           "key": "friends",
           "title": "友链",
-          "description": "一些会定期访问，也愿意推荐给别人的站点。",
-          "component": "friends"
+          "component": "friends",
+          "description": "一些会定期访问，也愿意推荐给别人的站点。"
         }
       ]
     },
     "footer": {
       "text": "版权所有 © Filling",
       "note": "基于 Vue3 + Pinia + Tailwind CSS 构建"
+    },
+    "pagination": {
+      "page_size": 10
     }
   },
   "theme": {

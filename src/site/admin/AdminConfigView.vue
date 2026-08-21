@@ -161,6 +161,15 @@
             :primary-limit="getHeaderPrimaryLimit(selectedFile.model.menus)"
             @update:pages="updateSiteMenuPages"
             @update:links="updateSiteMenuLinks"
+            @update:primary-limit="updateSiteMenuPrimaryLimit"
+          />
+
+          <AdminSiteStructureEditor
+            v-if="selectedFile.key === 'site' && editorMode === 'form'"
+            :sidebar="selectedFile.model.sidebar"
+            :page-layouts="selectedFile.model.page_layouts"
+            @update:sidebar="updateSiteSidebar"
+            @update:page-layouts="updateSitePageLayouts"
           />
 
           <AdminConfigFields
@@ -168,7 +177,9 @@
             :model-value="selectedFile.model"
             :root-model="selectedFile.model"
             :path="selectedFile.key"
-            :excluded-keys="selectedFile.key === 'site' ? ['menus'] : []"
+            :excluded-keys="selectedFile.key === 'site'
+              ? ['menus', 'sidebar', 'page_layouts']
+              : []"
             @update:model-value="updateSelectedModel"
           />
 
@@ -196,7 +207,7 @@
               type="button"
               class="admin-command admin-command-primary"
               :disabled="dirtyFiles.length === 0 || validationState !== 'valid' || publishing"
-              @click="showPublishReview = true"
+              @click="openPublishReview"
             >
               <LoaderCircle v-if="publishing" class="admin-spin" aria-hidden="true" />
               <Save v-else aria-hidden="true" />
@@ -240,11 +251,19 @@
           <h2>配置检查</h2>
           <ul>
             <li v-for="(diagnostic, index) in diagnostics" :key="`${diagnostic.code}-${index}`">
-              <TriangleAlert aria-hidden="true" />
-              <div>
-                <strong>{{ diagnostic.path }}</strong>
-                <span>{{ diagnostic.message }}</span>
-              </div>
+              <button
+                type="button"
+                class="admin-diagnostic-command"
+                :title="`前往 ${diagnostic.path || '相关配置'}`"
+                @click="openDiagnostic(diagnostic)"
+              >
+                <TriangleAlert aria-hidden="true" />
+                <div>
+                  <strong>{{ diagnostic.path || '配置内容' }}</strong>
+                  <span>{{ formatDiagnosticMessage(diagnostic) }}</span>
+                </div>
+                <ChevronRight aria-hidden="true" />
+              </button>
             </li>
           </ul>
         </section>
@@ -276,7 +295,7 @@
               <strong>{{ review.file.title }}</strong>
               <code>{{ review.file.path }}</code>
               <ul class="admin-review-diff">
-                <li v-for="change in review.changes.slice(0, 8)" :key="change.path">
+                <li v-for="change in getVisibleReviewChanges(review)" :key="change.path">
                   <code>{{ change.path }}</code>
                   <span>
                     <del>{{ formatAdminDiffValue(change.before) }}</del>
@@ -285,9 +304,18 @@
                   </span>
                 </li>
               </ul>
-              <p v-if="review.changes.length > 8" class="admin-review-more">
-                另有 {{ review.changes.length - 8 }} 项修改
-              </p>
+              <button
+                v-if="review.changes.length > 8"
+                type="button"
+                class="admin-review-more"
+                @click="toggleReviewExpanded(review.file.key)"
+              >
+                <ChevronUp v-if="expandedReviewKeys.has(review.file.key)" aria-hidden="true" />
+                <ChevronDown v-else aria-hidden="true" />
+                {{ expandedReviewKeys.has(review.file.key)
+                  ? '收起修改'
+                  : `查看另外 ${review.changes.length - 8} 项修改` }}
+              </button>
             </div>
           </li>
         </ul>
@@ -321,6 +349,9 @@
 <script setup>
 import {
   Check,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
   CircleAlert,
   CircleCheck,
   CircleX,
@@ -335,13 +366,14 @@ import {
   TriangleAlert,
   X
 } from '@lucide/vue'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { parse, stringify } from 'smol-toml'
 
 import { createSeededArticleCover } from '../../framework/utils/articleCover.js'
 import AdminConfigFields from './components/AdminConfigFields.vue'
 import AdminMenuEditor from './components/AdminMenuEditor.vue'
+import AdminSiteStructureEditor from './components/AdminSiteStructureEditor.vue'
 import GitHubMark from './components/GitHubMark.vue'
 import { createAdminConfigDiff, formatAdminDiffValue } from './adminConfigDiff.js'
 import { createAdminConfigModel, createAdminConfigOverrides } from './adminConfigModel.js'
@@ -372,6 +404,7 @@ const diagnostics = ref([])
 const validationState = ref('idle')
 const publishing = ref(false)
 const showPublishReview = ref(false)
+const expandedReviewKeys = ref(new Set())
 const deployments = ref([])
 const deploymentsLoading = ref(false)
 const toast = ref(null)
@@ -381,6 +414,46 @@ let validationSequence = 0
 let deploymentTimer = null
 let pendingDeploymentHeadOid = ''
 let toastTimer = null
+
+const ADMIN_DRAFT_STORAGE_KEY = 'filling-admin-config-draft-v1'
+
+const DIAGNOSTIC_MESSAGES = Object.freeze({
+  'unknown-config-field': '无法识别这个配置项，请检查字段名或删除它。',
+  'invalid-config-value': '当前值不在允许范围内，请重新选择。',
+  'invalid-positive-integer': '这里需要填写大于 0 的整数。',
+  'missing-required-config-field': '启用当前功能后必须填写这个字段。',
+  'missing-theme-preset': '当前主题预设不存在，请选择已有预设或补充预设配置。',
+  'missing-font-preset': '当前字体预设不存在，请选择内置预设或补充字体配置。',
+  'missing-analytics-provider': '统计功能已开启，请选择一个统计服务。',
+  'unknown-cover-style': '当前封面图源不存在，请选择已有图源。',
+  'invalid-sponsor-targets': '赞助展示位置格式无效，请重新选择展示页面。',
+  'duplicate-menu-page-key': '页面标识重复，每个页面都需要唯一标识。',
+  'missing-menu-page-key': '请填写页面标识。',
+  'invalid-menu-page-key': '页面标识只能包含字母、数字、下划线和连字符。',
+  'invalid-menu-page-path': '页面路径格式无效，请使用安全的站内路径。',
+  'unknown-menu-page-component': '当前页面类型不受支持，请重新选择。',
+  'unknown-menu-group': '菜单位置无效，请选择自动、一级菜单或更多菜单。',
+  'invalid-menu-order': '菜单顺序需要填写大于 0 的整数。',
+  'invalid-menu-link-key': '链接标识只能包含字母、数字、下划线和连字符。',
+  'duplicate-menu-link-key': '链接标识已被使用，请换一个标识。',
+  'missing-menu-link-label': '请填写链接名称。',
+  'invalid-menu-link-target': '链接地址无效，请填写站内路径或 HTTP、邮箱、电话链接。',
+  'duplicate-menu-page-path': '页面路径已被占用，请换一个路径。',
+  'conflicting-menu-page-route': '页面路径与现有路由冲突，请换一个路径。',
+  'too-many-primary-menu-pages': '一级菜单数量超过上限，请调整菜单位置或提高上限。',
+  'missing-menu-page-file': '单篇内容页面需要选择 Markdown 文件或填写页面内容。',
+  'missing-menu-page-folder': '内容列表页面需要选择目录或添加内容项。',
+  'duplicate-menu-entry-key': '菜单入口标识重复，请使用唯一标识。',
+  'unknown-menu-source': '菜单数据源未注册，请检查高级菜单配置。',
+  'unknown-menu-renderer': '菜单展示方式未注册，请检查高级菜单配置。',
+  'unknown-menu-page': '菜单引用了不存在或已停用的页面。',
+  'unreferenced-visible-page': '有一个已显示页面没有加入当前菜单。',
+  'invalid-sidebar-component-list': '侧边栏组件列表格式无效。',
+  'unknown-sidebar-component': '侧边栏包含不受支持的组件。',
+  'duplicate-sidebar-component': '同一个侧边栏组件被重复添加。',
+  'unreachable-sidebar-menu': '已配置的侧边栏菜单没有对应的显示位置。',
+  'missing-sidebar-menu': '侧边栏组件缺少对应的菜单配置。'
+})
 
 const GROUPS = Object.freeze([
   { key: 'site', label: '站点' },
@@ -479,12 +552,91 @@ function selectFile(key) {
   editorMode.value = 'form'
 }
 
+function getDiagnosticFileKey(diagnostic) {
+  const path = String(diagnostic?.path || '').trim()
+  const exactFile = files.value.find(file => file.path === path)
+  if (exactFile) return exactFile.key
+
+  const namespace = path.split(/[.[\]]/u).find(Boolean) || ''
+  if (['menus', 'sidebar', 'routing', 'page_layouts'].includes(namespace)) return 'site'
+  return files.value.some(file => file.key === namespace) ? namespace : selectedKey.value
+}
+
+function getDiagnosticTargetId(pathValue) {
+  const path = String(pathValue || '').trim()
+  const normalizedPath = path.startsWith('site.') ? path.slice(5) : path
+  if (normalizedPath === 'menus' || normalizedPath.startsWith('menus.')) return 'admin-site-menus'
+  if (normalizedPath === 'sidebar' || normalizedPath.startsWith('sidebar.')) return 'admin-site-sidebar'
+  if (normalizedPath === 'page_layouts' || normalizedPath.startsWith('page_layouts.')) {
+    return 'admin-site-page-layouts'
+  }
+  if (!path || path.startsWith('blog/config/')) return ''
+  return `admin-field-${path.replace(/[^a-zA-Z0-9_-]+/gu, '-')}`
+}
+
+async function openDiagnostic(diagnostic) {
+  selectFile(getDiagnosticFileKey(diagnostic))
+  await nextTick()
+  const targetId = getDiagnosticTargetId(diagnostic?.path)
+  const target = targetId ? document.getElementById(targetId) : null
+  const fallback = document.querySelector('.admin-editor-header')
+  ;(target || fallback)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+function formatDiagnosticMessage(diagnostic) {
+  return DIAGNOSTIC_MESSAGES[diagnostic?.code] || diagnostic?.message || '请检查这项配置。'
+}
+
 function showToast(kind, message) {
   toast.value = { kind, message }
   clearTimeout(toastTimer)
   toastTimer = setTimeout(() => {
     toast.value = null
   }, 5000)
+}
+
+function readStoredDraft() {
+  try {
+    return JSON.parse(localStorage.getItem(ADMIN_DRAFT_STORAGE_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
+function persistDraft() {
+  try {
+    if (dirtyFiles.value.length === 0) {
+      localStorage.removeItem(ADMIN_DRAFT_STORAGE_KEY)
+      return
+    }
+    localStorage.setItem(ADMIN_DRAFT_STORAGE_KEY, JSON.stringify({
+      headOid: headOid.value,
+      updatedAt: new Date().toISOString(),
+      files: dirtyFiles.value.map(file => ({ key: file.key, content: file.content }))
+    }))
+  } catch {
+    // Browser storage is optional; publishing remains available without it.
+  }
+}
+
+function restoreStoredDraft() {
+  const draft = readStoredDraft()
+  if (!draft || draft.headOid !== headOid.value || !Array.isArray(draft.files)) return false
+  const contentByKey = new Map(draft.files.map(file => [file?.key, file?.content]))
+  let restored = false
+
+  files.value.forEach((file) => {
+    const content = contentByKey.get(file.key)
+    if (typeof content !== 'string' || normalizeToml(content) === file.originalContent) return
+    try {
+      file.content = normalizeToml(content)
+      file.model = createAdminConfigModel(file.key, parse(file.content))
+      restored = true
+    } catch {
+      // Ignore an invalid stale draft instead of blocking the management page.
+    }
+  })
+  return restored
 }
 
 async function bootstrap() {
@@ -509,6 +661,10 @@ async function bootstrap() {
     selectedKey.value = files.value[0]?.key || ''
     validationState.value = 'idle'
     initialState.value = 'ready'
+    if (restoreStoredDraft()) {
+      scheduleValidation()
+      showToast('success', '已恢复上次未发布的配置草稿。')
+    }
     await loadDeployments()
 
     if (route.query.auth || route.query.error) {
@@ -629,6 +785,52 @@ function updateSiteMenuLinks(links) {
   })
 }
 
+function updateSiteMenuPrimaryLimit(primaryLimit) {
+  if (!selectedFile.value || selectedFile.value.key !== 'site') return
+  const menus = selectedFile.value.model.menus || {}
+  const header = Array.isArray(menus.header)
+    ? menus.header.map(entry => ({ ...entry }))
+    : []
+  const index = header.findIndex(entry => (
+    String(entry?.source || '').trim().replaceAll('_', '-') === 'blog-nav'
+  ))
+  const entry = index >= 0
+    ? header[index]
+    : {
+        key: 'primary',
+        renderer: 'header-pill',
+        source: 'blog-nav',
+        overflow_label: '更多'
+      }
+  entry.primary_limit = primaryLimit
+  if (index >= 0) header[index] = entry
+  else header.push(entry)
+
+  updateSelectedModel({
+    ...selectedFile.value.model,
+    menus: {
+      ...menus,
+      header
+    }
+  })
+}
+
+function updateSiteSidebar(sidebar) {
+  if (!selectedFile.value || selectedFile.value.key !== 'site') return
+  updateSelectedModel({
+    ...selectedFile.value.model,
+    sidebar
+  })
+}
+
+function updateSitePageLayouts(pageLayouts) {
+  if (!selectedFile.value || selectedFile.value.key !== 'site') return
+  updateSelectedModel({
+    ...selectedFile.value.model,
+    page_layouts: pageLayouts
+  })
+}
+
 function getHeaderPrimaryLimit(menus = {}) {
   const entries = Array.isArray(menus?.header) ? menus.header : []
   const blogNavigation = entries.find(entry => (
@@ -641,6 +843,7 @@ function getHeaderPrimaryLimit(menus = {}) {
 function scheduleValidation() {
   clearTimeout(validationTimer)
   validationSequence += 1
+  persistDraft()
   if (dirtyFiles.value.length === 0) {
     validationState.value = 'idle'
     diagnostics.value = baselineDiagnostics.value
@@ -649,6 +852,56 @@ function scheduleValidation() {
 
   validationState.value = 'checking'
   validationTimer = setTimeout(runValidation, 500)
+}
+
+function openPublishReview() {
+  expandedReviewKeys.value = new Set()
+  showPublishReview.value = true
+}
+
+function toggleReviewExpanded(key) {
+  const nextKeys = new Set(expandedReviewKeys.value)
+  if (nextKeys.has(key)) nextKeys.delete(key)
+  else nextKeys.add(key)
+  expandedReviewKeys.value = nextKeys
+}
+
+function getVisibleReviewChanges(review) {
+  return expandedReviewKeys.value.has(review.file.key)
+    ? review.changes
+    : review.changes.slice(0, 8)
+}
+
+async function rebaseRemoteConfiguration() {
+  const configuration = await getAdminConfigs()
+  const remoteByKey = new Map(configuration.files.map(file => [file.key, file]))
+  const conflicts = dirtyFiles.value.filter(file => {
+    const remote = remoteByKey.get(file.key)
+    return !remote || normalizeToml(remote.content) !== file.originalContent
+  })
+
+  if (conflicts.length > 0) {
+    showToast('error', `远端同时修改了：${conflicts.map(file => file.title).join('、')}。当前草稿已保留。`)
+    return false
+  }
+
+  files.value = files.value.map((file) => {
+    const remote = remoteByKey.get(file.key)
+    if (!remote) return file
+    if (isFileDirty(file)) {
+      return {
+        ...file,
+        originalContent: normalizeToml(remote.content),
+        sha: remote.sha
+      }
+    }
+    return buildEditableFile(remote)
+  })
+  headOid.value = configuration.headOid
+  contentSources.value = configuration.contentSources || contentSources.value
+  baselineDiagnostics.value = configuration.diagnostics || []
+  scheduleValidation()
+  return true
 }
 
 async function runValidation() {
@@ -688,6 +941,7 @@ async function publishChanges() {
     changedFiles.forEach((file) => {
       file.originalContent = file.content
     })
+    persistDraft()
     baselineDiagnostics.value = result.diagnostics || []
     diagnostics.value = baselineDiagnostics.value
     validationState.value = 'idle'
@@ -699,7 +953,15 @@ async function publishChanges() {
   } catch (error) {
     diagnostics.value = error.diagnostics || diagnostics.value
     if (error.status === 409) {
-      showToast('error', '远端配置已更新，请刷新页面后重新修改。')
+      try {
+        const rebased = await rebaseRemoteConfiguration()
+        if (rebased) {
+          showPublishReview.value = false
+          showToast('success', '远端版本已更新，当前修改已保留，请重新确认发布。')
+        }
+      } catch (rebaseError) {
+        showToast('error', `刷新远端版本失败：${rebaseError.message}`)
+      }
     } else {
       showToast('error', error.message)
     }

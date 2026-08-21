@@ -4,8 +4,11 @@ import test from 'node:test'
 import {
   createAdminConfigModel,
   createAdminConfigOverrides,
+  getAdminNumberBounds,
   getArrayItemTemplate,
+  getFieldHint,
   getFieldOptions,
+  isAdminFieldVisible,
   normalizeFieldPath
 } from '../src/site/admin/adminConfigModel.js'
 import { createAdminConfigDiff } from '../src/site/admin/adminConfigDiff.js'
@@ -121,6 +124,79 @@ test('admin form serialization keeps an explicit field when it is reset to its d
 
   assert.deepEqual(createAdminConfigOverrides('cover', model, configured), {
     seeded_style: 'picsum'
+  })
+})
+
+test('admin form activation fields serialize values required by the runtime', () => {
+  const fontModel = createAdminConfigModel('font', {})
+  fontModel.enabled = true
+  fontModel.preset = 'sans'
+
+  assert.deepEqual(createAdminConfigOverrides('font', fontModel, {}), {
+    enabled: true,
+    preset: 'sans'
+  })
+
+  const commentModel = createAdminConfigModel('comment', {})
+  commentModel.provider = 'giscus'
+  Object.assign(commentModel.giscus, {
+    repo: 'owner/repo',
+    repo_id: 'R_example',
+    category: 'General',
+    category_id: 'D_example'
+  })
+
+  assert.deepEqual(createAdminConfigOverrides('comment', commentModel, {}), {
+    provider: 'giscus',
+    giscus: {
+      repo: 'owner/repo',
+      repo_id: 'R_example',
+      category: 'General',
+      category_id: 'D_example'
+    }
+  })
+})
+
+test('guided site structure only serializes sidebar and layout changes', () => {
+  const model = createAdminConfigModel('site', {})
+  model.sidebar.desktop_components = ['profile', 'search']
+  model.page_layouts.home.allow_switch = true
+
+  assert.deepEqual(createAdminConfigOverrides('site', model, {}), {
+    sidebar: {
+      desktop_components: ['profile', 'search']
+    },
+    page_layouts: {
+      home: {
+        allow_switch: true
+      }
+    }
+  })
+})
+
+test('admin select options only expose values accepted by runtime validation', () => {
+  assert.deepEqual(getFieldOptions('site.header.leading_visual.type'), ['dots', 'image'])
+  assert.deepEqual(getFieldOptions('font.preload'), ['none', 'marked', 'all'])
+  assert.deepEqual(getFieldOptions('comment.provider'), ['', 'giscus', 'utterances'])
+})
+
+test('admin field metadata follows active configuration branches', () => {
+  assert.equal(isAdminFieldVisible('background.image', {
+    enabled: true,
+    mode: 'gradient'
+  }), false)
+  assert.equal(isAdminFieldVisible('background.gradient_light', {
+    enabled: true,
+    mode: 'gradient'
+  }), true)
+  assert.equal(isAdminFieldVisible('comment.giscus', { provider: 'utterances' }), false)
+  assert.equal(isAdminFieldVisible('comment.utterances', { provider: 'utterances' }), true)
+  assert.equal(isAdminFieldVisible('analytics.umami', { provider: '' }), false)
+  assert.equal(getFieldHint('site.seo.favicon').includes('public/'), true)
+  assert.deepEqual(getAdminNumberBounds('cover.detail.watermark.opacity'), {
+    min: 0,
+    max: 1,
+    step: 0.05
   })
 })
 

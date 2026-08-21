@@ -67,6 +67,45 @@ const CONFIG_DEFAULTS = Object.freeze({
     menus: {
       pages: []
     },
+    sidebar: {
+      desktop_components: ['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags'],
+      article_desktop_components: ['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags'],
+      mobile_components: ['profile', 'search', 'latest-articles', 'categories', 'tags'],
+      article_mobile_components: ['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags']
+    },
+    page_layouts: {
+      persist: true,
+      home: {
+        default: 'list',
+        allow_switch: false,
+        columns: 2,
+        wide_columns: 3
+      },
+      articles: {
+        default: 'card',
+        allow_switch: false,
+        columns: 2,
+        wide_columns: 2
+      },
+      categories: {
+        default: 'grid',
+        allow_switch: false,
+        columns: 2,
+        wide_columns: 3
+      },
+      tags: {
+        default: 'list',
+        allow_switch: false,
+        columns: 2,
+        wide_columns: 3
+      },
+      archive: {
+        default: 'timeline',
+        allow_switch: false,
+        columns: 2,
+        wide_columns: 3
+      }
+    },
     footer: {
       text: '',
       note: ''
@@ -179,15 +218,14 @@ const CONFIG_DEFAULTS = Object.freeze({
     }
   },
   font: {
-    enabled: true,
+    enabled: false,
     preset: 'system',
-    preload: true,
+    preload: 'marked',
     base_size: '16px',
     faces: []
   },
   comment: {
-    enabled: true,
-    provider: 'giscus',
+    provider: '',
     title: '评论',
     description: '',
     not_ready_text: '评论系统尚未完成配置。',
@@ -290,7 +328,6 @@ const CONFIG_DEFAULTS = Object.freeze({
     languages: {}
   },
   license: {
-    enabled: true,
     name: '',
     url: ''
   }
@@ -563,7 +600,7 @@ const FIELD_LABELS = Object.freeze({
 })
 
 const SELECT_OPTIONS = Object.freeze({
-  'site.header.leading_visual.type': ['dots', 'text', 'image'],
+  'site.header.leading_visual.type': ['dots', 'image'],
   'site.features.sidebar_position': ['left', 'right', 'hidden'],
   'site.home_articles.mode': ['latest', 'featured', 'sticky', 'mixed'],
   'site.menus.pages.*.component': ['context', 'list', 'card', 'grid', 'timeline', 'friends'],
@@ -593,7 +630,8 @@ const SELECT_OPTIONS = Object.freeze({
   'cover.detail.page_background.content_style': ['transparent', 'glass'],
   'cover.detail.watermark.position': ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
   'font.preset': ['system', 'sans', 'serif', 'mono'],
-  'comment.provider': ['giscus', 'utterances'],
+  'font.preload': ['none', 'marked', 'all'],
+  'comment.provider': ['', 'giscus', 'utterances'],
   'comment.giscus.mapping': ['pathname', 'url', 'title', 'og:title', 'specific'],
   'comment.giscus.input_position': ['top', 'bottom'],
   'comment.giscus.loading': ['lazy', 'eager'],
@@ -604,6 +642,49 @@ const SELECT_OPTIONS = Object.freeze({
   'code_block.theme': ['default', 'github', 'dracula'],
   'code_block.dark_theme': ['default', 'github', 'dracula']
 })
+
+const FIELD_HINTS = Object.freeze({
+  'site.site_url': '填写站点正式地址，不要以斜杠结尾。',
+  'site.seo.favicon': '填写 public/ 下的相对路径，例如 icons/points.png。',
+  'site.seo.og_image': '用于没有独立封面时的默认分享图片。',
+  'site.header.leading_visual.title_size': '支持数字、px 或 rem，例如 18、18px、1rem。',
+  'site.home_articles.include_ids': '每行填写一个文章 ID；留空时由模式自动选择。',
+  'site.home_articles.exclude_ids': '这里的文章始终不会出现在首页。',
+  'profile.avatar_url': '填写 public/ 下的相对路径或完整 HTTPS 地址。',
+  'profile.social_links.*.icon': '推荐使用 github、link、mail 等 Lucide 图标名称。',
+  'background.gradient_light': '填写完整 CSS background 值；留空使用内置浅色渐变。',
+  'background.gradient_dark': '填写完整 CSS background 值；留空沿用浅色或内置深色渐变。',
+  'background.image': '填写 public/ 下的相对路径或完整图片地址。',
+  'background.dark_image': '留空时深色模式继续使用浅色背景图。',
+  'cover.fallback_image': '填写 public/ 下的相对路径或完整图片地址。',
+  'cover.source_switch.enabled': '开启后访客可以在网页上切换自动封面图源。',
+  'cover.list.aspect_ratio': '可选，例如 16 / 9；留空使用主题默认比例。',
+  'cover.detail.aspect_ratio': '可选，例如 16 / 9；留空使用主题默认比例。',
+  'comment.provider': '选择服务商即启用评论；选择关闭会保留已填写参数。',
+  'comment.giscus.repo': '格式为 owner/repo，并确保仓库已启用 Discussions。',
+  'comment.giscus.repo_id': '从 giscus.app 生成配置后复制 Repository ID。',
+  'comment.giscus.category_id': '从 giscus.app 生成配置后复制 Category ID。',
+  'comment.utterances.repo': '格式为 owner/repo，并确保仓库已安装 Utterances。',
+  'guestbook.contact_url': '支持站内路径、HTTPS、邮箱和电话链接。',
+  'announcement.id': '发布新公告时修改此值，已关闭公告才会重新出现。',
+  'analytics.provider': '一次只启用一个统计服务；选择关闭时不会加载任何统计脚本。',
+  'font.preload': '“标记字体”只预加载明确标记的字体文件，通常更合适。',
+  'font.base_size': '支持数字、px 或 rem，例如 16px、1rem。',
+  'code_block.max_height': '可选，例如 480px；留空时不限制高度。',
+  'code_block.collapse_threshold_lines': '代码达到该行数后默认折叠。',
+  'code_block.preview_lines': '折叠状态下保留显示的代码行数。',
+  'license.url': '填写许可协议的完整 HTTPS 地址。'
+})
+
+const URL_FIELD_PATHS = new Set([
+  'profile.website',
+  'profile.social_links.*.url',
+  'links.friend_links.*.url',
+  'sponsor.supporters.*.url',
+  'analytics.umami.script_url',
+  'analytics.plausible.script_url',
+  'license.url'
+])
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]'
@@ -732,6 +813,137 @@ export function getFieldOptions(path, rootModel = {}) {
   }
 
   return SELECT_OPTIONS[normalizedPath] || []
+}
+
+function getRootValue(rootModel, path) {
+  return String(path || '')
+    .split('.')
+    .filter(Boolean)
+    .reduce((value, key) => value?.[key], rootModel)
+}
+
+export function isAdminFieldVisible(path, rootModel = {}) {
+  const normalizedPath = normalizeFieldPath(path)
+  const rootKey = normalizedPath.split('.')[0]
+  const localValue = localPath => getRootValue(rootModel, localPath)
+
+  if (rootKey === 'site') {
+    if (normalizedPath === 'site.header.leading_visual.type'
+      || normalizedPath === 'site.header.leading_visual.title'
+      || normalizedPath === 'site.header.leading_visual.title_size') {
+      return localValue('header.leading_visual.visible') !== false
+    }
+    if (['site.header.leading_visual.src', 'site.header.leading_visual.alt'].includes(normalizedPath)) {
+      return localValue('header.leading_visual.visible') !== false
+        && localValue('header.leading_visual.type') === 'image'
+    }
+    if (normalizedPath === 'site.features.outdated_threshold_days') {
+      return localValue('features.show_outdated_notice') === true
+    }
+  }
+
+  if (rootKey === 'background') {
+    if (normalizedPath === 'background.enabled') return true
+    if (localValue('enabled') !== true) return false
+    if (normalizedPath === 'background.mode') return true
+    const mode = localValue('mode')
+    if (['background.gradient_light', 'background.gradient_dark'].includes(normalizedPath)) {
+      return mode === 'gradient'
+    }
+    if ([
+      'background.image',
+      'background.dark_image',
+      'background.position',
+      'background.size',
+      'background.repeat',
+      'background.attachment'
+    ].includes(normalizedPath)) {
+      return mode === 'image'
+    }
+    return mode !== 'none'
+  }
+
+  if (rootKey === 'cover') {
+    if (normalizedPath === 'cover.enabled') return true
+    if (localValue('enabled') !== true) return false
+    if (normalizedPath === 'cover.fallback_image') return localValue('fallback') === 'image'
+    if (/^cover\.seeded_/u.test(normalizedPath) || normalizedPath === 'cover.source_switch') {
+      return localValue('fallback') === 'seeded'
+    }
+    if (normalizedPath.startsWith('cover.source_switch.')
+      && normalizedPath !== 'cover.source_switch.enabled') {
+      return localValue('fallback') === 'seeded' && localValue('source_switch.enabled') === true
+    }
+    if (normalizedPath === 'cover.detail.page_background') {
+      return localValue('detail.display_mode') === 'page-background'
+    }
+    if (normalizedPath.startsWith('cover.detail.page_background.')) {
+      return localValue('detail.display_mode') === 'page-background'
+    }
+    if (normalizedPath.startsWith('cover.detail.watermark.')
+      && normalizedPath !== 'cover.detail.watermark.enabled') {
+      return localValue('detail.watermark.enabled') === true
+    }
+  }
+
+  if (rootKey === 'comment') {
+    if (normalizedPath === 'comment.enabled' || normalizedPath === 'comment.provider') return true
+    const provider = localValue('provider')
+    if (!provider || localValue('enabled') === false) return false
+    if (normalizedPath === 'comment.giscus') return provider === 'giscus'
+    if (normalizedPath === 'comment.utterances') return provider === 'utterances'
+  }
+
+  if (rootKey === 'analytics') {
+    if (normalizedPath === 'analytics.provider') return true
+    const provider = localValue('provider')
+    if (!provider) return false
+    if (['analytics.umami', 'analytics.plausible', 'analytics.google_analytics', 'analytics.clarity']
+      .includes(normalizedPath)) {
+      return normalizedPath === `analytics.${provider}`
+    }
+  }
+
+  if (['announcement', 'guestbook', 'sponsor', 'font', 'code_block'].includes(rootKey)) {
+    if (normalizedPath === `${rootKey}.enabled`) return true
+    if (localValue('enabled') !== true) return false
+  }
+
+  if (rootKey === 'markdown') {
+    if (normalizedPath === 'markdown.enabled') return true
+    if (localValue('enabled') !== true) return false
+    if (normalizedPath.startsWith('markdown.mermaid.')
+      && normalizedPath !== 'markdown.mermaid.enabled') {
+      return localValue('mermaid.enabled') === true
+    }
+    if (normalizedPath.startsWith('markdown.math.')
+      && normalizedPath !== 'markdown.math.enabled') {
+      return localValue('math.enabled') === true
+    }
+  }
+
+  return true
+}
+
+export function getFieldHint(path) {
+  return FIELD_HINTS[normalizeFieldPath(path)] || ''
+}
+
+export function getAdminFieldInputType(path, value) {
+  if (typeof value === 'number') return 'number'
+  return URL_FIELD_PATHS.has(normalizeFieldPath(path)) ? 'url' : 'text'
+}
+
+export function getAdminNumberBounds(path) {
+  const normalizedPath = normalizeFieldPath(path)
+  if (normalizedPath.endsWith('.opacity')) return { min: 0, max: 1, step: 0.05 }
+  if (normalizedPath.endsWith('.columns') || normalizedPath.endsWith('.wide_columns')) {
+    return { min: 1, max: 5, step: 1 }
+  }
+  if (/\.(?:page_size|seeded_width|seeded_height|line_number_start|collapse_threshold_lines|preview_lines)$/u.test(normalizedPath)) {
+    return { min: 1, max: undefined, step: 1 }
+  }
+  return { min: undefined, max: undefined, step: 1 }
 }
 
 export function isMultilineField(key, value) {

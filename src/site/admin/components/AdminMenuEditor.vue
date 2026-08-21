@@ -1,11 +1,23 @@
 <template>
-  <section class="admin-menu-editor">
+  <section id="admin-site-menus" class="admin-menu-editor">
     <section class="admin-menu-section">
       <header class="admin-menu-section-header">
         <div>
           <h2>导航菜单</h2>
           <span>{{ visibleMenuCount }} 项显示中</span>
         </div>
+        <label class="admin-menu-limit-control">
+          <span>一级菜单上限</span>
+          <input
+            class="admin-control"
+            type="number"
+            min="1"
+            max="12"
+            :value="primaryLimit"
+            aria-label="一级菜单上限"
+            @change="updatePrimaryLimit($event.target.value)"
+          />
+        </label>
       </header>
 
       <div class="admin-menu-preview" aria-label="桌面菜单预览">
@@ -477,7 +489,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:links', 'update:pages'])
+const emit = defineEmits(['update:links', 'update:pages', 'update:primary-limit'])
 const collectionComponents = new Set(['list', 'card', 'grid', 'timeline'])
 const pageKinds = Object.freeze([
   { key: 'context', label: '单篇内容', icon: FileText },
@@ -657,6 +669,12 @@ function updateRow(index, key, value) {
 
 function movePage(index, direction) {
   emitRows(moveAdminMenuRow(rows.value, index, direction))
+}
+
+function updatePrimaryLimit(value) {
+  const parsed = Number.parseInt(value, 10)
+  const nextValue = Number.isInteger(parsed) ? Math.min(Math.max(parsed, 1), 12) : 5
+  emit('update:primary-limit', nextValue)
 }
 
 function setPageKind(kind) {

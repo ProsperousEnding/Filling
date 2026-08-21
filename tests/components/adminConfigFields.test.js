@@ -49,4 +49,51 @@ describe('AdminConfigFields', () => {
       enabled: true
     })
   })
+
+  it('only renders fields for the selected provider', async () => {
+    const model = {
+      provider: '',
+      respect_dnt: true,
+      umami: { website_id: '' },
+      plausible: { domain: '' }
+    }
+    wrapper = mount(AdminConfigFields, {
+      props: {
+        modelValue: model,
+        rootModel: model,
+        path: 'analytics'
+      }
+    })
+
+    expect(wrapper.find('#admin-field-analytics-umami-website_id').exists()).toBe(false)
+    expect(wrapper.find('#admin-field-analytics-plausible-domain').exists()).toBe(false)
+
+    await wrapper.get('select').setValue('umami')
+    const nextModel = wrapper.emitted('update:modelValue')[0][0]
+    await wrapper.setProps({ modelValue: nextModel, rootModel: nextModel })
+
+    expect(wrapper.find('#admin-field-analytics-umami-website_id').exists()).toBe(true)
+    expect(wrapper.find('#admin-field-analytics-plausible-domain').exists()).toBe(false)
+  })
+
+  it('shows inactive feature details only after enabling the feature', async () => {
+    const model = { enabled: false, mode: 'gradient', gradient_light: '' }
+    wrapper = mount(AdminConfigFields, {
+      props: {
+        modelValue: model,
+        rootModel: model,
+        path: 'background'
+      }
+    })
+
+    expect(wrapper.text()).not.toContain('模式')
+
+    await wrapper.get('[role="switch"]').trigger('click')
+    const nextModel = wrapper.emitted('update:modelValue')[0][0]
+    await wrapper.setProps({ modelValue: nextModel, rootModel: nextModel })
+
+    expect(wrapper.text()).toContain('模式')
+    expect(wrapper.text()).toContain('浅色渐变')
+    expect(wrapper.text()).not.toContain('浅色背景图')
+  })
 })

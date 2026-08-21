@@ -1,10 +1,11 @@
 <template>
   <div class="admin-field-list">
     <template v-for="(value, key) in modelValue" :key="key">
-      <template v-if="!excludedKeys.includes(key)">
+      <template v-if="!excludedKeys.includes(key) && isFieldVisible(key)">
       <section v-if="isObject(value)" class="admin-field-group">
         <header class="admin-field-group-header">
           <h3>{{ getFieldLabel(key) }}</h3>
+          <p v-if="getHint(key)">{{ getHint(key) }}</p>
         </header>
 
         <AdminConfigFields
@@ -81,6 +82,7 @@
       <div v-else-if="typeof value === 'boolean'" class="admin-field-row admin-field-toggle-row">
         <div>
           <label :for="fieldId(key)">{{ getFieldLabel(key) }}</label>
+          <small v-if="getHint(key)" class="admin-field-hint">{{ getHint(key) }}</small>
         </div>
         <button
           :id="fieldId(key)"
@@ -98,55 +100,58 @@
       <div v-else class="admin-field-row">
         <label :for="fieldId(key)">{{ getFieldLabel(key) }}</label>
 
-        <select
-          v-if="getOptions(key).length > 0"
-          :id="fieldId(key)"
-          class="admin-control"
-          :value="value"
-          @change="updateValue(key, $event.target.value)"
-        >
-          <option v-for="option in getOptions(key)" :key="option" :value="option">
-            {{ getOptionLabel(option) }}
-          </option>
-        </select>
-
-        <textarea
-          v-else-if="isMultilineField(key, value)"
-          :id="fieldId(key)"
-          class="admin-control"
-          :value="value"
-          rows="4"
-          @input="updateValue(key, $event.target.value)"
-        />
-
-        <div v-else-if="isColorValue(key, value)" class="admin-color-control">
-          <input
-            :id="`${fieldId(key)}-picker`"
-            type="color"
-            :value="value"
-            :aria-label="`${getFieldLabel(key)}颜色选择`"
-            @input="updateValue(key, $event.target.value)"
-          />
-          <input
+        <div class="admin-field-control">
+          <select
+            v-if="getOptions(key).length > 0"
             :id="fieldId(key)"
             class="admin-control"
-            type="text"
             :value="value"
+            @change="updateValue(key, $event.target.value)"
+          >
+            <option v-for="option in getOptions(key)" :key="option" :value="option">
+              {{ getOptionLabel(option) }}
+            </option>
+          </select>
+
+          <textarea
+            v-else-if="isMultilineField(key, value)"
+            :id="fieldId(key)"
+            class="admin-control"
+            :value="value"
+            rows="4"
             @input="updateValue(key, $event.target.value)"
           />
-        </div>
 
-        <input
-          v-else
-          :id="fieldId(key)"
-          class="admin-control"
-          :type="typeof value === 'number' ? 'number' : 'text'"
-          :value="value"
-          :min="getNumberBounds(key).min"
-          :max="getNumberBounds(key).max"
-          :step="getNumberBounds(key).step"
-          @input="updateScalar(key, value, $event.target.value)"
-        />
+          <div v-else-if="isColorValue(key, value)" class="admin-color-control">
+            <input
+              :id="`${fieldId(key)}-picker`"
+              type="color"
+              :value="value"
+              :aria-label="`${getFieldLabel(key)}颜色选择`"
+              @input="updateValue(key, $event.target.value)"
+            />
+            <input
+              :id="fieldId(key)"
+              class="admin-control"
+              type="text"
+              :value="value"
+              @input="updateValue(key, $event.target.value)"
+            />
+          </div>
+
+          <input
+            v-else
+            :id="fieldId(key)"
+            class="admin-control"
+            :type="getInputType(key, value)"
+            :value="value"
+            :min="getNumberBounds(key).min"
+            :max="getNumberBounds(key).max"
+            :step="getNumberBounds(key).step"
+            @input="updateScalar(key, value, $event.target.value)"
+          />
+          <small v-if="getHint(key)" class="admin-field-hint">{{ getHint(key) }}</small>
+        </div>
       </div>
       </template>
     </template>
@@ -161,9 +166,13 @@
 import { Plus, Trash2 } from '@lucide/vue'
 
 import {
+  getAdminFieldInputType,
+  getAdminNumberBounds,
   getArrayItemTemplate,
+  getFieldHint,
   getFieldLabel,
   getFieldOptions,
+  isAdminFieldVisible,
   isMultilineField
 } from '../adminConfigModel.js'
 
@@ -233,6 +242,8 @@ const OPTION_LABELS = Object.freeze({
   sans: '无衬线字体',
   serif: '衬线字体',
   mono: '等宽字体',
+  marked: '仅预加载标记字体',
+  all: '预加载全部字体',
   giscus: 'Giscus',
   utterances: 'Utterances',
   top: '顶部',
@@ -326,6 +337,18 @@ function getOptions(key) {
   return getFieldOptions(buildPath(key), props.rootModel)
 }
 
+function isFieldVisible(key) {
+  return isAdminFieldVisible(buildPath(key), props.rootModel)
+}
+
+function getHint(key) {
+  return getFieldHint(buildPath(key))
+}
+
+function getInputType(key, value) {
+  return getAdminFieldInputType(buildPath(key), value)
+}
+
 function getOptionLabel(option) {
   return OPTION_LABELS[option] || option || '关闭'
 }
@@ -335,12 +358,6 @@ function isColorValue(key, value) {
 }
 
 function getNumberBounds(key) {
-  if (key === 'opacity') {
-    return { min: 0, max: 1, step: 0.05 }
-  }
-  if (key.includes('columns')) {
-    return { min: 1, max: 5, step: 1 }
-  }
-  return { min: undefined, max: undefined, step: 1 }
+  return getAdminNumberBounds(buildPath(key))
 }
 </script>

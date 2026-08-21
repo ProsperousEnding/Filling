@@ -45,6 +45,14 @@ describe('AdminMenuEditor', () => {
     expect(wrapper.text()).toContain('about.md · /about')
   })
 
+  it('updates the primary menu limit from the navigation editor', async () => {
+    wrapper = mountEditor({ props: { pages: [], primaryLimit: 5 } })
+
+    await wrapper.get('[aria-label="一级菜单上限"]').setValue('7')
+
+    expect(wrapper.emitted('update:primary-limit')[0][0]).toBe(7)
+  })
+
   it('keeps a new page local until the simple dialog is complete', async () => {
     wrapper = mountEditor({
       props: { pages: [aboutPage] },
