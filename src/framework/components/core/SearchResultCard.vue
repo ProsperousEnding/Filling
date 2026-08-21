@@ -191,7 +191,7 @@ const displayCover = computed(() => {
 
   return resolveDisplayArticleCover(props.article, {
     coverConfig: configStore.coverConfig,
-    style: configStore.coverStyle
+    style: configStore.coverConfig?.seededStyle
   })
 })
 watch(displayCover, () => {

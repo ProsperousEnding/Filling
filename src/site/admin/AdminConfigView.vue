@@ -141,7 +141,7 @@
                 :key="preview.style"
                 type="button"
                 :class="{ active: selectedFile.model.seeded_style === preview.style }"
-                @click="setCoverStyle(preview.style)"
+                @click="setConfiguredCoverStyle(preview.style)"
               >
                 <span class="admin-cover-image">
                   <img :src="preview.url" alt="" loading="lazy" />
@@ -370,7 +370,11 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { parse, stringify } from 'smol-toml'
 
-import { createSeededArticleCover } from '../../framework/utils/articleCover.js'
+import {
+  SEEDED_COVER_STYLES,
+  SEEDED_COVER_STYLE_LABELS,
+  createSeededArticleCover
+} from '../../framework/utils/articleCover.js'
 import AdminConfigFields from './components/AdminConfigFields.vue'
 import AdminMenuEditor from './components/AdminMenuEditor.vue'
 import AdminSiteStructureEditor from './components/AdminSiteStructureEditor.vue'
@@ -509,19 +513,21 @@ const deploymentLabel = computed(() => {
 
 const coverPreviews = computed(() => {
   const model = selectedFile.value?.model || {}
-  const sources = Array.isArray(model.source_switch?.sources)
-    ? model.source_switch.sources
-    : []
-  const labels = model.source_switch?.labels || {}
+  const styleUrls = model.source_urls || model.style_urls || {}
+  const sources = [
+    ...SEEDED_COVER_STYLES,
+    ...Object.keys(styleUrls)
+  ].filter((style, index, styles) => styles.indexOf(style) === index)
 
   return sources.map(style => ({
     style,
-    label: labels[style] || style,
+    label: SEEDED_COVER_STYLE_LABELS[style] || style,
     url: createSeededArticleCover('admin-cover-preview', {
       style,
       width: 420,
       height: 236,
-      format: model.seeded_format || 'webp'
+      format: model.seeded_format || 'webp',
+      styleUrls
     })
   }))
 })
@@ -755,7 +761,7 @@ function resetSelectedFile() {
   scheduleValidation()
 }
 
-function setCoverStyle(style) {
+function setConfiguredCoverStyle(style) {
   if (!selectedFile.value) return
   updateSelectedModel({
     ...selectedFile.value.model,

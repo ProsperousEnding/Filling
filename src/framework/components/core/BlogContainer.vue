@@ -58,7 +58,7 @@
             
             <!-- 侧边栏 -->
             <div 
-              class="theme-sidebar-column hidden lg:sticky lg:top-4 lg:self-start lg:block lg:w-80 order-1"
+              class="theme-sidebar-column hidden lg:sticky lg:top-4 lg:self-start lg:block lg:w-72 xl:w-80 order-1"
               :class="[isSidebarLeft ? 'lg:order-1' : 'lg:order-2']"
               v-if="showDesktopSidebar"
             >
@@ -195,7 +195,6 @@ const handleEscape = (event) => {
 
 onMounted(() => {
   configStore.loadThemeFromStorage()
-  configStore.loadCoverStyleFromStorage()
 
   handleViewportChange()
 

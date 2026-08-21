@@ -51,7 +51,7 @@ const CONFIG_KEYS = Object.freeze({
   cover: new Set([
     'enabled', 'fallback', 'fallback_image', 'image', 'seeded_width', 'seeded_height',
     'seeded_format', 'seeded_style', 'seeded_anime_url', 'source_urls', 'style_urls',
-    'source_switch', 'style_switch', 'list', 'detail'
+    'list', 'detail'
   ]),
   guestbook: new Set([
     'enabled', 'kicker', 'title', 'description', 'guidelines', 'template',
@@ -276,9 +276,7 @@ function validateCoverConfig(cover, diagnostics) {
     const style = normalizeSeededCoverStyle(cover.seeded_style, '')
     const customStyles = new Set([
       ...Object.keys(isPlainObject(cover.source_urls) ? cover.source_urls : {}),
-      ...Object.keys(isPlainObject(cover.style_urls) ? cover.style_urls : {}),
-      ...(Array.isArray(cover?.source_switch?.sources) ? cover.source_switch.sources : []),
-      ...(Array.isArray(cover?.style_switch?.styles) ? cover.style_switch.styles : [])
+      ...Object.keys(isPlainObject(cover.style_urls) ? cover.style_urls : {})
     ].map(value => normalizeSeededCoverStyle(value, '')))
 
     if (!SEEDED_COVER_STYLES.includes(style) && !customStyles.has(style)) {

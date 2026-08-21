@@ -32,14 +32,14 @@ test('admin config models preserve current values while filling guided form defa
 
 test('admin config overrides omit defaults without losing custom values', () => {
   const model = createAdminConfigModel('cover', {
-    seeded_style: 'mwm-anime',
+    seeded_style: 'mwm-scenery',
     custom_source: {
       endpoint: 'https://example.com/image'
     }
   })
 
   assert.deepEqual(createAdminConfigOverrides('cover', model), {
-    seeded_style: 'mwm-anime',
+    seeded_style: 'mwm-scenery',
     custom_source: {
       endpoint: 'https://example.com/image'
     }

@@ -195,7 +195,7 @@ const props = defineProps({
 const configStore = useConfigStore()
 const coverResolveOptions = computed(() => ({
   coverConfig: configStore.coverConfig,
-  style: configStore.coverStyle
+  style: configStore.coverConfig?.seededStyle
 }))
 
 const coverListConfig = computed(() => {

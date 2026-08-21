@@ -12,30 +12,58 @@
     >
       <template v-if="usesArticleCard(item)">
         <div
-          v-if="showItemCover(item)"
-          class="menu-page-card-cover h-48 overflow-hidden"
-          :style="coverShellStyle"
+          v-if="showCoverSurface(item)"
+          class="menu-page-card-cover relative overflow-hidden"
+          :class="{ 'menu-page-card-cover-with-image': showItemCover(item) }"
         >
+          <div
+            class="h-44 sm:h-48"
+            :style="showItemCover(item) ? coverShellStyle : undefined"
+          ></div>
+
           <img
+            v-if="showItemCover(item)"
             :src="getItemCover(item)"
             :alt="item.title"
-            class="h-full w-full transition-transform duration-500"
+            class="absolute inset-0 h-full w-full transition-transform duration-500"
             :loading="coverListConfig.loading"
             :style="coverImageStyle"
           />
-        </div>
-        <div
-          v-else-if="showCoverPlaceholder"
-          class="menu-page-card-cover-placeholder h-48"
-          :data-placeholder="coverListConfig.placeholder"
-        >
-          <svg v-if="coverListConfig.placeholder === 'icon'" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+
+          <div
+            v-else
+            class="menu-page-card-cover-placeholder absolute inset-0"
+            :data-placeholder="coverListConfig.placeholder"
+          >
+            <svg v-if="coverListConfig.placeholder === 'icon'" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+
+          <div class="relative z-10 flex flex-col px-6 pt-6 pb-2">
+            <div class="menu-page-card-meta-row article-card-meta mb-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span
+                v-if="getPrimaryBadge(item)"
+                class="article-card-category inline-block px-3 py-1 text-xs font-medium rounded-full transition-colors duration-200"
+              >
+                {{ getPrimaryBadge(item) }}
+              </span>
+
+              <span v-if="item.meta" class="article-card-date text-xs">
+                {{ item.meta }}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div class="article-card-body p-6 flex flex-col flex-grow">
-          <div class="menu-page-card-meta-row article-card-meta mb-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          class="article-card-body flex flex-col flex-grow"
+          :class="showCoverSurface(item) ? 'px-6 pb-6' : 'p-6'"
+        >
+          <div
+            v-if="!showCoverSurface(item)"
+            class="menu-page-card-meta-row article-card-meta mb-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between"
+          >
             <span
               v-if="getPrimaryBadge(item)"
               class="article-card-category inline-block px-3 py-1 text-xs font-medium rounded-full transition-colors duration-200"
@@ -186,7 +214,7 @@ const props = defineProps({
 const configStore = useConfigStore()
 const coverResolveOptions = computed(() => ({
   coverConfig: configStore.coverConfig,
-  style: configStore.coverStyle
+  style: configStore.coverConfig?.seededStyle
 }))
 
 const coverListConfig = computed(() => {
@@ -243,6 +271,10 @@ function showItemCover(item) {
   return coverListConfig.value.showCover && hasItemCover(item)
 }
 
+function showCoverSurface(item) {
+  return showItemCover(item) || showCoverPlaceholder.value
+}
+
 function getItemCover(item) {
   return getMenuItemCover(item, coverResolveOptions.value)
 }
@@ -286,6 +318,38 @@ function getCardItemClass(item) {
 </script>
 
 <style scoped>
+.menu-page-card-cover-with-image::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 38% 0 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.58));
+}
+
+.menu-page-card-cover-with-image .article-card-category {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(15, 23, 42, 0.5) !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.menu-page-card-cover-with-image .article-card-date {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.44);
+  color: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 .menu-page-card-meta-row,
 .menu-page-card-action-row,
 .menu-page-card-entry-head,

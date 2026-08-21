@@ -11,7 +11,6 @@ import { normalizeMenuConfig, resolveMenuPageRegistry } from '../utils/menuConfi
 import { normalizeBuiltInPageLayoutsConfig } from '../utils/pageLayoutConfig'
 import { normalizeSidebarLayout } from '../utils/sidebarLayout'
 import { normalizeThemeAssetPath } from '../utils/themeAsset'
-import { normalizeSeededCoverStyle } from '../utils/articleCover'
 import { normalizeAnalyticsConfig } from '../utils/analyticsConfig'
 import {
   resolveFeatureMenuConfig,
@@ -419,10 +418,6 @@ const RAW_COVER_CONFIG_KEYS = new Set([
   'styleUrls',
   'source_urls',
   'sourceUrls',
-  'style_switch',
-  'styleSwitch',
-  'source_switch',
-  'sourceSwitch',
   'list',
   'display_mode',
   'displayMode',
@@ -1633,40 +1628,9 @@ function buildNormalizedState(config = {}) {
   return syncConfiguredRoutePatterns(normalizeConfigState(config))
 }
 
-function getCoverStyleStorageKey(coverConfig = {}) {
-  return String(coverConfig?.sourceSwitch?.storageKey || coverConfig?.styleSwitch?.storageKey || 'vue-blog-cover-source').trim() || 'vue-blog-cover-source'
-}
-
-function getAvailableCoverStyles(coverConfig = {}) {
-  const styles = Array.isArray(coverConfig?.sourceSwitch?.sources)
-    ? coverConfig.sourceSwitch.sources
-    : Array.isArray(coverConfig?.styleSwitch?.styles)
-      ? coverConfig.styleSwitch.styles
-      : ['picsum', 'cataas']
-
-  return styles
-    .map(style => normalizeSeededCoverStyle(style, ''))
-    .filter(Boolean)
-    .filter((style, index, list) => list.indexOf(style) === index)
-}
-
-function resolveCoverStyle(value, coverConfig = {}) {
-  const availableStyles = getAvailableCoverStyles(coverConfig)
-  const fallback = normalizeSeededCoverStyle(
-    coverConfig?.sourceSwitch?.defaultSource || coverConfig?.styleSwitch?.defaultStyle || coverConfig?.seededSource || coverConfig?.seededStyle,
-    'picsum'
-  )
-  const resolved = normalizeSeededCoverStyle(value, fallback)
-
-  return availableStyles.includes(resolved)
-    ? resolved
-    : availableStyles[0] || fallback
-}
-
 export const useConfigStore = defineStore('config', {
   state: () => ({
     theme: 'light',
-    coverStyle: 'picsum',
     mobileSidebarOpen: false,
     ...buildNormalizedState()
   }),
@@ -1674,7 +1638,6 @@ export const useConfigStore = defineStore('config', {
   actions: {
     initConfig(config = {}) {
       this.$patch(syncConfiguredRoutePatterns(normalizeRuntimeConfigInput(config)))
-      this.coverStyle = resolveCoverStyle(this.coverStyle, this.coverConfig)
     },
 
     setTheme(theme, { persist = true } = {}) {
@@ -1715,30 +1678,8 @@ export const useConfigStore = defineStore('config', {
       applyDocumentTheme(this.theme)
     },
 
-    setCoverStyle(style, { persist = true } = {}) {
-      this.coverStyle = resolveCoverStyle(style, this.coverConfig)
-
-      if (persist) {
-        writeLocalStorage(getCoverStyleStorageKey(this.coverConfig), this.coverStyle)
-      }
-    },
-
-    toggleCoverStyle() {
-      const styles = getAvailableCoverStyles(this.coverConfig)
-      const currentIndex = styles.indexOf(resolveCoverStyle(this.coverStyle, this.coverConfig))
-      const nextStyle = styles[(currentIndex + 1) % styles.length] || this.coverConfig?.seededSource || this.coverConfig?.seededStyle || 'picsum'
-
-      this.setCoverStyle(nextStyle)
-    },
-
-    loadCoverStyleFromStorage() {
-      const savedStyle = readLocalStorage(getCoverStyleStorageKey(this.coverConfig))
-      this.coverStyle = resolveCoverStyle(savedStyle || this.coverConfig?.seededSource || this.coverConfig?.seededStyle, this.coverConfig)
-    },
-
     updateConfig(config = {}) {
       this.$patch(syncConfiguredRoutePatterns(normalizeRuntimeConfigInput(config)))
-      this.coverStyle = resolveCoverStyle(this.coverStyle, this.coverConfig)
     },
 
     async reloadConfig() {
@@ -1750,13 +1691,11 @@ export const useConfigStore = defineStore('config', {
       }
 
       this.$patch(buildNormalizedState(createNamespacedConfigInput(configs)))
-      this.coverStyle = resolveCoverStyle(this.coverStyle, this.coverConfig)
     },
 
     async bootstrapConfig() {
       await this.reloadConfig()
       this.loadThemeFromStorage()
-      this.loadCoverStyleFromStorage()
     }
   }
 })

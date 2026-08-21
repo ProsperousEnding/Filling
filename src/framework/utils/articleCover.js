@@ -1,7 +1,7 @@
 const DEFAULT_PICSUM_WIDTH = 1200
 const DEFAULT_PICSUM_HEIGHT = 630
 const DEFAULT_PICSUM_FORMAT = 'webp'
-export const DEFAULT_SEEDED_COVER_STYLE = 'picsum'
+export const DEFAULT_SEEDED_COVER_STYLE = 'mwm-anime'
 export const SEEDED_COVER_STYLES = Object.freeze([
   'picsum',
   'cataas',
@@ -12,6 +12,16 @@ export const SEEDED_COVER_STYLES = Object.freeze([
   'loremflickr',
   'paugram-bing'
 ])
+export const SEEDED_COVER_STYLE_LABELS = Object.freeze({
+  picsum: 'Picsum 摄影',
+  cataas: 'Cataas 猫咪',
+  'mwm-anime': 'MWM 二次元',
+  'mwm-scenery': 'MWM 风景',
+  'paugram-anime': '保罗二次元',
+  'dmoe-anime': 'DMOE 二次元',
+  loremflickr: 'LoremFlickr 风景',
+  'paugram-bing': 'Bing 每日壁纸'
+})
 export const DEFAULT_SEEDED_COVER_URLS = Object.freeze({
   picsum: 'https://picsum.photos/seed/{seed}/{width}/{height}.{format}',
   cataas: 'https://cataas.com/cat?width={width}&height={height}&seed={hash}',

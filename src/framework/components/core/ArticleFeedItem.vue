@@ -147,7 +147,7 @@ const showCoverPlaceholder = computed(() => (
 
 const articleCover = computed(() => resolveDisplayArticleCover(props.article, {
   coverConfig: configStore.coverConfig,
-  style: configStore.coverStyle
+  style: configStore.coverConfig?.seededStyle
 }))
 
 watch(articleCover, () => {

@@ -43,29 +43,34 @@ test('new cover presets resolve to direct image endpoints', () => {
   )
 })
 
-test('removed cover sources fall back unless a custom URL is configured', () => {
+test('unknown cover sources fall back unless a custom URL is configured', () => {
   const staleConfig = normalizeCoverConfig({
-    seeded_style: 'xjh-acg',
-    source_switch: {
-      enabled: true,
-      sources: ['xjh-acg', 'picsum']
-    }
+    seeded_style: 'xjh-acg'
   })
 
-  assert.equal(staleConfig.seededStyle, 'picsum')
-  assert.deepEqual(staleConfig.sourceSwitch.sources, ['picsum'])
+  assert.equal(staleConfig.seededStyle, 'mwm-anime')
 
   const customConfig = normalizeCoverConfig({
     seeded_style: 'custom-cover',
     source_urls: {
       'custom-cover': 'https://images.example.com/{seed}.webp'
-    },
-    source_switch: {
-      enabled: true,
-      sources: ['custom-cover', 'picsum']
     }
   })
 
   assert.equal(customConfig.seededStyle, 'custom-cover')
-  assert.deepEqual(customConfig.sourceSwitch.sources, ['custom-cover', 'picsum'])
+})
+
+test('cover normalization exposes no visitor-specific source state', () => {
+  const config = normalizeCoverConfig({
+    seeded_style: 'mwm-anime',
+    source_switch: {
+      enabled: true,
+      sources: ['mwm-scenery']
+    }
+  })
+
+  assert.equal(config.seededStyle, 'mwm-anime')
+  assert.equal('seededSource' in config, false)
+  assert.equal('sourceSwitch' in config, false)
+  assert.equal('styleSwitch' in config, false)
 })

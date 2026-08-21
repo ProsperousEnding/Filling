@@ -7,7 +7,6 @@ site_url = "https://filling.initzo.com"
 author = "prosperousending"
 og_image = "icons/points.png"
 lang = "zh-CN"
-keywords = []
 theme_color = "#f8fafc"
 favicon = "icons/points.png"
 robots = "index,follow"
@@ -17,8 +16,6 @@ title = "Filling"
 visible = true
 type = "dots"
 title_size = "18"
-src = ""
-alt = ""
 
 [header.navbar]
 show_title = false
@@ -42,7 +39,6 @@ show_tag_count = true
 show_read_time = true
 show_profile_in_sidebar = true
 show_outdated_notice = false
-outdated_threshold_days = 365
 
 [home_articles]
 mode = "mixed"
@@ -50,16 +46,7 @@ page_size = 8
 paginate = true
 include_sticky = true
 sticky_first = true
-categories = []
-tags = []
-exclude_categories = []
-exclude_tags = []
-include_ids = []
-exclude_ids = []
 fallback_to_latest = false
-
-[menus]
-links = []
 
 [[menus.pages]]
 key = "about"

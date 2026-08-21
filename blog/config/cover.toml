@@ -1,30 +1,10 @@
 enabled = true
 fallback = "seeded"
-fallback_image = ""
-seeded_width = 1200
-seeded_height = 630
-seeded_format = "webp"
 seeded_style = "mwm-anime"
-
-[source_switch]
-enabled = false
-storage_key = "vue-blog-cover-source"
-sources = [ "picsum", "cataas", "mwm-anime", "mwm-scenery", "paugram-anime", "dmoe-anime", "loremflickr", "paugram-bing" ]
-
-[source_switch.labels]
-picsum = "Picsum"
-cataas = "Cataas"
-mwm-anime = "MWM 二次元"
-mwm-scenery = "MWM 风景"
-paugram-anime = "保罗二次元"
-dmoe-anime = "DMOE 二次元"
-loremflickr = "LoremFlickr 风景"
-paugram-bing = "Bing 每日壁纸"
 
 [list]
 show_cover = true
 loading = "lazy"
-aspect_ratio = ""
 object_fit = "cover"
 placeholder = "gradient"
 
@@ -33,15 +13,8 @@ show_cover = true
 show_related_cover = true
 display_mode = "image"
 loading = "eager"
-aspect_ratio = ""
 object_fit = "cover"
 placeholder = "gradient"
 
 [detail.page_background]
 content_style = "transparent"
-
-[detail.watermark]
-enabled = false
-text = ""
-position = "bottom-right"
-opacity = 0.72

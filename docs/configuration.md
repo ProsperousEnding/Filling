@@ -170,14 +170,7 @@ dark_image = "backgrounds/site-dark.webp"
 seeded_style = "mwm-anime"
 ```
 
-图源选择器默认不显示。需要允许访客在页面顶部选择自动封面图源时，再显式开启：
-
-```toml
-[source_switch]
-enabled = true
-```
-
-内置图源有 `picsum`、`cataas`、`mwm-anime`、`mwm-scenery`、`paugram-anime`、`dmoe-anime`、`loremflickr` 和 `paugram-bing`。默认仍使用 `mwm-anime`。详情页封面可进一步配置 `[detail].display_mode = "image" | "header-background" | "page-background"`。
+内置图源有 `picsum`、`cataas`、`mwm-anime`、`mwm-scenery`、`paugram-anime`、`dmoe-anime`、`loremflickr` 和 `paugram-bing`。站点统一使用这里配置的图源，不接受访客浏览器覆盖。默认使用 `mwm-anime`。详情页封面可进一步配置 `[detail].display_mode = "image" | "header-background" | "page-background"`。
 
 ## 评论
 

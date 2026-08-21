@@ -184,7 +184,7 @@ const isSmallScreen = computed(() => windowWidth.value < 640)
 const heroTagLimit = computed(() => (isSmallScreen.value ? 1 : 3))
 const coverResolveOptions = computed(() => ({
   coverConfig: configStore.coverConfig,
-  style: configStore.coverStyle
+  style: configStore.coverConfig?.seededStyle
 }))
 const coverListConfig = computed(() => {
   const list = configStore.coverConfig?.list || {}

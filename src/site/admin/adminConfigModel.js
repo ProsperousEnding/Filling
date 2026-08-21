@@ -166,31 +166,7 @@ const CONFIG_DEFAULTS = Object.freeze({
     seeded_width: 1200,
     seeded_height: 630,
     seeded_format: 'webp',
-    seeded_style: 'picsum',
-    source_switch: {
-      enabled: false,
-      storage_key: 'vue-blog-cover-source',
-      sources: [
-        'picsum',
-        'cataas',
-        'mwm-anime',
-        'mwm-scenery',
-        'paugram-anime',
-        'dmoe-anime',
-        'loremflickr',
-        'paugram-bing'
-      ],
-      labels: {
-        picsum: 'Picsum',
-        cataas: 'Cataas',
-        'mwm-anime': 'MWM 二次元',
-        'mwm-scenery': 'MWM 风景',
-        'paugram-anime': '保罗二次元',
-        'dmoe-anime': 'DMOE 二次元',
-        loremflickr: 'LoremFlickr 风景',
-        'paugram-bing': 'Bing 每日壁纸'
-      }
-    },
+    seeded_style: 'mwm-anime',
     list: {
       show_cover: true,
       loading: 'lazy',
@@ -505,8 +481,6 @@ const FIELD_LABELS = Object.freeze({
   seeded_height: '生成高度',
   seeded_format: '图片格式',
   seeded_style: '默认图源',
-  source_switch: '访客图源选择',
-  storage_key: '浏览器存储键',
   sources: '可选图源',
   labels: '图源名称',
   list: '列表封面',
@@ -657,7 +631,6 @@ const FIELD_HINTS = Object.freeze({
   'background.image': '填写 public/ 下的相对路径或完整图片地址。',
   'background.dark_image': '留空时深色模式继续使用浅色背景图。',
   'cover.fallback_image': '填写 public/ 下的相对路径或完整图片地址。',
-  'cover.source_switch.enabled': '开启后访客可以在网页上切换自动封面图源。',
   'cover.list.aspect_ratio': '可选，例如 16 / 9；留空使用主题默认比例。',
   'cover.detail.aspect_ratio': '可选，例如 16 / 9；留空使用主题默认比例。',
   'comment.provider': '选择服务商即启用评论；选择关闭会保留已填写参数。',
@@ -867,12 +840,8 @@ export function isAdminFieldVisible(path, rootModel = {}) {
     if (normalizedPath === 'cover.enabled') return true
     if (localValue('enabled') !== true) return false
     if (normalizedPath === 'cover.fallback_image') return localValue('fallback') === 'image'
-    if (/^cover\.seeded_/u.test(normalizedPath) || normalizedPath === 'cover.source_switch') {
+    if (/^cover\.seeded_/u.test(normalizedPath)) {
       return localValue('fallback') === 'seeded'
-    }
-    if (normalizedPath.startsWith('cover.source_switch.')
-      && normalizedPath !== 'cover.source_switch.enabled') {
-      return localValue('fallback') === 'seeded' && localValue('source_switch.enabled') === true
     }
     if (normalizedPath === 'cover.detail.page_background') {
       return localValue('detail.display_mode') === 'page-background'

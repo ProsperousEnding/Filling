@@ -1,7 +1,6 @@
 import {
   DEFAULT_SEEDED_COVER_STYLE,
   DEFAULT_SEEDED_COVER_URLS,
-  SEEDED_COVER_STYLES,
   normalizeSeededCoverStyle
 } from './articleCover.js'
 
@@ -12,17 +11,6 @@ const COVER_PLACEHOLDER_VALUES = new Set(['none', 'gradient', 'icon'])
 const COVER_DETAIL_DISPLAY_MODE_VALUES = new Set(['image', 'header-background', 'page-background'])
 const COVER_PAGE_BACKGROUND_CONTENT_STYLE_VALUES = new Set(['transparent', 'glass'])
 const COVER_WATERMARK_POSITION_VALUES = new Set(['top-left', 'top-right', 'bottom-left', 'bottom-right'])
-const DEFAULT_COVER_STYLE_LABELS = Object.freeze({
-  picsum: 'Picsum',
-  cataas: 'Cataas',
-  'mwm-anime': 'MWM 二次元',
-  'mwm-scenery': 'MWM 风景',
-  'paugram-anime': '保罗二次元',
-  'dmoe-anime': 'DMOE 二次元',
-  loremflickr: 'LoremFlickr 风景',
-  'paugram-bing': 'Bing 每日壁纸'
-})
-
 export const DEFAULT_COVER_CONFIG = Object.freeze({
   enabled: true,
   fallback: 'seeded',
@@ -31,18 +19,6 @@ export const DEFAULT_COVER_CONFIG = Object.freeze({
   seeded_height: 630,
   seeded_format: 'webp',
   seeded_style: DEFAULT_SEEDED_COVER_STYLE,
-  style_switch: {
-    enabled: false,
-    storage_key: 'vue-blog-cover-source',
-    styles: [...SEEDED_COVER_STYLES],
-    labels: DEFAULT_COVER_STYLE_LABELS
-  },
-  source_switch: {
-    enabled: false,
-    storage_key: 'vue-blog-cover-source',
-    sources: [...SEEDED_COVER_STYLES],
-    labels: DEFAULT_COVER_STYLE_LABELS
-  },
   list: {
     show_cover: true,
     loading: 'lazy',
@@ -156,30 +132,6 @@ function normalizeWatermarkPosition(value, fallback = DEFAULT_COVER_CONFIG.detai
   return COVER_WATERMARK_POSITION_VALUES.has(normalized) ? normalized : fallback
 }
 
-function normalizeStyleList(
-  values = [],
-  fallback = DEFAULT_COVER_CONFIG.style_switch.styles,
-  availableStyles = SEEDED_COVER_STYLES
-) {
-  const source = Array.isArray(values) ? values : fallback
-  const styles = source
-    .map(value => normalizeSeededCoverStyle(value, ''))
-    .filter(Boolean)
-    .filter(style => availableStyles.includes(style))
-    .filter((style, index, list) => list.indexOf(style) === index)
-
-  return styles.length > 0 ? styles : [...fallback]
-}
-
-function normalizeStyleLabels(labels = {}, styles = SEEDED_COVER_STYLES) {
-  const normalizedLabels = isPlainObject(labels) ? toCamelCase(labels) : {}
-
-  return styles.reduce((result, style) => {
-    result[style] = normalizeString(normalizedLabels[style], DEFAULT_COVER_STYLE_LABELS[style] || style)
-    return result
-  }, {})
-}
-
 function normalizeStyleUrls(styleUrls = {}, seededAnimeUrl = DEFAULT_COVER_CONFIG.seeded_anime_url) {
   const normalizedStyleUrls = isPlainObject(styleUrls) ? toCamelCase(styleUrls) : {}
   const mergedStyleUrls = {
@@ -201,31 +153,6 @@ function normalizeStyleUrls(styleUrls = {}, seededAnimeUrl = DEFAULT_COVER_CONFI
 
     return result
   }, {})
-}
-
-function normalizeStyleSwitchConfig(
-  styleSwitch = {},
-  defaultStyle = DEFAULT_SEEDED_COVER_STYLE,
-  availableStyles = SEEDED_COVER_STYLES
-) {
-  const normalizedStyleSwitch = isPlainObject(styleSwitch) ? toCamelCase(styleSwitch) : {}
-  const defaults = DEFAULT_COVER_CONFIG.style_switch
-  const styles = normalizeStyleList(
-    normalizedStyleSwitch.sources || normalizedStyleSwitch.styles || normalizedStyleSwitch.available || normalizedStyleSwitch.availableStyles,
-    defaults.styles,
-    availableStyles
-  )
-  const normalizedDefaultStyle = styles.includes(defaultStyle) ? defaultStyle : styles[0]
-
-  return {
-    enabled: normalizeBoolean(normalizedStyleSwitch.enabled, defaults.enabled),
-    storageKey: normalizeString(normalizedStyleSwitch.storageKey, defaults.storage_key),
-    styles,
-    sources: styles,
-    defaultStyle: normalizedDefaultStyle,
-    defaultSource: normalizedDefaultStyle,
-    labels: normalizeStyleLabels(normalizedStyleSwitch.labels, styles)
-  }
 }
 
 function normalizeListConfig(list = {}) {
@@ -291,12 +218,6 @@ export function normalizeCoverConfig(config = {}) {
   const seededStyle = availableStyles.includes(requestedSeededStyle)
     ? requestedSeededStyle
     : DEFAULT_COVER_CONFIG.seeded_style
-  const styleSwitch = normalizeStyleSwitchConfig(
-    normalizedConfig.sourceSwitch || normalizedConfig.styleSwitch,
-    seededStyle,
-    availableStyles
-  )
-
   return {
     enabled: normalizeBoolean(normalizedConfig.enabled, DEFAULT_COVER_CONFIG.enabled),
     fallback: normalizeFallbackMode(normalizedConfig.fallback),
@@ -305,12 +226,9 @@ export function normalizeCoverConfig(config = {}) {
     seededHeight: normalizePositiveInteger(normalizedConfig.seededHeight, DEFAULT_COVER_CONFIG.seeded_height),
     seededFormat: normalizeString(normalizedConfig.seededFormat, DEFAULT_COVER_CONFIG.seeded_format),
     seededStyle,
-    seededSource: seededStyle,
     seededAnimeUrl,
     styleUrls,
     sourceUrls: styleUrls,
-    styleSwitch,
-    sourceSwitch: styleSwitch,
     list: normalizeListConfig(normalizedConfig.list),
     detail: normalizeDetailConfig(normalizedConfig.detail)
   }

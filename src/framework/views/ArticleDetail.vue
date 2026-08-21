@@ -539,7 +539,7 @@ const articleCoverAspectRatio = computed(
 const articleCover = computed(() =>
     resolveDisplayArticleCover(article.value, {
         coverConfig: configStore.coverConfig,
-        style: configStore.coverStyle,
+        style: configStore.coverConfig?.seededStyle,
     }),
 );
 
@@ -644,7 +644,7 @@ const relatedCoverImageStyle = computed(() => ({
 const getRelatedArticleCover = (target) =>
     resolveDisplayArticleCover(target, {
         coverConfig: configStore.coverConfig,
-        style: configStore.coverStyle,
+        style: configStore.coverConfig?.seededStyle,
     });
 const getRelatedCoverKey = (target) =>
     String(target?.id || getRelatedArticleCover(target));

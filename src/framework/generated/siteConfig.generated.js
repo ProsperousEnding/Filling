@@ -19,39 +19,10 @@ const siteConfig = {
   "cover": {
     "enabled": true,
     "fallback": "seeded",
-    "fallback_image": "",
-    "seeded_width": 1200,
-    "seeded_height": 630,
-    "seeded_format": "webp",
     "seeded_style": "mwm-anime",
-    "source_switch": {
-      "enabled": false,
-      "storage_key": "vue-blog-cover-source",
-      "sources": [
-        "picsum",
-        "cataas",
-        "mwm-anime",
-        "mwm-scenery",
-        "paugram-anime",
-        "dmoe-anime",
-        "loremflickr",
-        "paugram-bing"
-      ],
-      "labels": {
-        "picsum": "Picsum",
-        "cataas": "Cataas",
-        "mwm-anime": "MWM 二次元",
-        "mwm-scenery": "MWM 风景",
-        "paugram-anime": "保罗二次元",
-        "dmoe-anime": "DMOE 二次元",
-        "loremflickr": "LoremFlickr 风景",
-        "paugram-bing": "Bing 每日壁纸"
-      }
-    },
     "list": {
       "show_cover": true,
       "loading": "lazy",
-      "aspect_ratio": "",
       "object_fit": "cover",
       "placeholder": "gradient"
     },
@@ -60,17 +31,10 @@ const siteConfig = {
       "show_related_cover": true,
       "display_mode": "image",
       "loading": "eager",
-      "aspect_ratio": "",
       "object_fit": "cover",
       "placeholder": "gradient",
       "page_background": {
         "content_style": "transparent"
-      },
-      "watermark": {
-        "enabled": false,
-        "text": "",
-        "position": "bottom-right",
-        "opacity": 0.72
       }
     }
   },
@@ -137,7 +101,6 @@ const siteConfig = {
     "copy_label": "复制代码",
     "copied_label": "已复制",
     "wrap_long_lines": false,
-    "max_height": "",
     "collapsible": true,
     "collapse_threshold_lines": 18,
     "preview_lines": 18,
@@ -145,19 +108,10 @@ const siteConfig = {
     "collapse_label": "收起代码",
     "mark_diff_lines": true,
     "languages": {
-      "javascript": {
-        "collapse_threshold_lines": 28,
-        "preview_lines": 22,
-        "wrap_long_lines": false
-      },
       "bash": {
         "show_line_numbers": false,
         "wrap_long_lines": true,
         "collapse_threshold_lines": 36
-      },
-      "diff": {
-        "show_copy_button": false,
-        "show_line_numbers": false
       }
     }
   },
@@ -235,7 +189,6 @@ const siteConfig = {
       "author": "prosperousending",
       "og_image": "icons/points.png",
       "lang": "zh-CN",
-      "keywords": [],
       "theme_color": "#f8fafc",
       "favicon": "icons/points.png",
       "robots": "index,follow"
@@ -245,9 +198,7 @@ const siteConfig = {
         "title": "Filling",
         "visible": true,
         "type": "dots",
-        "title_size": "18",
-        "src": "",
-        "alt": ""
+        "title_size": "18"
       },
       "navbar": {
         "show_title": false,
@@ -271,8 +222,7 @@ const siteConfig = {
       "show_tag_count": true,
       "show_read_time": true,
       "show_profile_in_sidebar": true,
-      "show_outdated_notice": false,
-      "outdated_threshold_days": 365
+      "show_outdated_notice": false
     },
     "home_articles": {
       "mode": "mixed",
@@ -280,16 +230,9 @@ const siteConfig = {
       "paginate": true,
       "include_sticky": true,
       "sticky_first": true,
-      "categories": [],
-      "tags": [],
-      "exclude_categories": [],
-      "exclude_tags": [],
-      "include_ids": [],
-      "exclude_ids": [],
       "fallback_to_latest": false
     },
     "menus": {
-      "links": [],
       "pages": [
         {
           "key": "about",

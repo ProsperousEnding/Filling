@@ -72,3 +72,20 @@ test('config diagnostics warns about unknown top-level fields', () => {
     message: 'Unknown field "preset_name"; check the spelling or remove it.'
   }])
 })
+
+test('config diagnostics reports the removed visitor cover source switch', () => {
+  const diagnostics = getConfigDiagnostics({
+    cover: {
+      source_switch: {
+        enabled: true
+      }
+    }
+  })
+
+  assert.deepEqual(diagnostics, [{
+    level: 'warning',
+    code: 'unknown-config-field',
+    path: 'cover.source_switch',
+    message: 'Unknown field "source_switch"; check the spelling or remove it.'
+  }])
+})

@@ -111,12 +111,7 @@ seeded_style = "mwm-anime"
 - `cataas`：随机猫咪。
 - `paugram-bing`：Bing 每日壁纸。
 
-访客图源选择器默认隐藏。需要开放时再添加：
-
-```toml
-[source_switch]
-enabled = true
-```
+站点中的所有自动封面统一使用 `seeded_style`，不会被访客浏览器中的本地选择覆盖。
 
 详情页默认显示独立封面，也可设置为 `header-background` 或 `page-background`：
 
