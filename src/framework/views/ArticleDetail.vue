@@ -1,7 +1,7 @@
 <template>
     <div class="article-detail-view" :class="articleViewClass">
         <img
-            v-if="isArticleCoverHeaderBackground || isArticleCoverPageBackground"
+            v-if="isArticleCoverHeaderBackground"
             :src="articleCover"
             alt=""
             class="article-detail-cover-probe"
@@ -11,9 +11,17 @@
         <div
             v-if="isArticleCoverPageBackground"
             class="article-detail-page-background"
-            :style="articlePageBackgroundStyle"
             aria-hidden="true"
-        ></div>
+        >
+            <img
+                :src="articleCover"
+                alt=""
+                class="article-detail-page-background-image"
+                :loading="articleCoverLoading"
+                decoding="async"
+                @error="articleCoverLoadFailed = true"
+            />
+        </div>
 
         <!-- 加载中 -->
         <div v-if="loading" class="py-12 flex justify-center">
@@ -631,13 +639,6 @@ const articleViewClass = computed(() => ({
         isArticleCoverPageBackground.value &&
         coverDetailConfig.value.pageBackground.contentStyle === "glass",
 }));
-const articlePageBackgroundStyle = computed(() =>
-    isArticleCoverPageBackground.value
-        ? {
-              backgroundImage: `url("${String(articleCover.value).replace(/"/g, '\\"')}")`,
-          }
-        : {},
-);
 const relatedCoverImageStyle = computed(() => ({
     objectFit: coverDetailConfig.value.objectFit,
 }));
@@ -906,16 +907,27 @@ function normalizeCoverWatermark(watermark = {}) {
     position: fixed;
     inset: 0;
     z-index: 0;
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
+    overflow: hidden;
+    background: rgb(15, 23, 42);
     pointer-events: none;
+}
+
+.article-detail-page-background-image {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
 }
 
 .article-detail-page-background::after {
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 1;
     background:
         linear-gradient(
             180deg,
