@@ -8,11 +8,15 @@ import {
 
 afterEach(() => {
   document.body.innerHTML = ''
+  document.documentElement.removeAttribute('data-runtime-pending')
+  window.clearTimeout(window.__fillingRuntimeFallbackTimer)
+  delete window.__fillingRuntimeFallbackTimer
   vi.restoreAllMocks()
 })
 
 describe('runtime handoff', () => {
   it('keeps the static preview until runtime content is ready', async () => {
+    document.documentElement.dataset.runtimePending = 'true'
     document.body.innerHTML = '<div id="app"><div data-static-preview="true">静态内容</div></div>'
     const staticRoot = document.querySelector('#app')
     const handoff = prepareRuntimeHandoff(document)
@@ -38,6 +42,19 @@ describe('runtime handoff', () => {
     expect(document.querySelector('[data-static-preview="true"]')).toBeNull()
     expect(document.querySelector('#app .menu-page-card-item')?.textContent).toContain('运行时文章')
     expect(document.querySelector('#app')?.style.visibility).toBe('')
+    expect(document.documentElement.hasAttribute('data-runtime-pending')).toBe(false)
+  })
+
+  it('restores the static preview when runtime initialization fails', () => {
+    document.documentElement.dataset.runtimePending = 'true'
+    document.body.innerHTML = '<div id="app"><div data-static-preview="true">静态内容</div></div>'
+    const handoff = prepareRuntimeHandoff(document)
+
+    handoff.abort()
+
+    expect(document.querySelector('[data-static-preview="true"]')?.textContent).toBe('静态内容')
+    expect(document.querySelector('[data-runtime-staging="true"]')).toBeNull()
+    expect(document.documentElement.hasAttribute('data-runtime-pending')).toBe(false)
   })
 
   it('waits while a loading placeholder remains', async () => {

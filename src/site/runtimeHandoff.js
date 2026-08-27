@@ -107,6 +107,17 @@ function waitForPaint(documentRef) {
   })
 }
 
+function clearRuntimePending(documentRef) {
+  const view = documentRef?.defaultView
+
+  if (view?.__fillingRuntimeFallbackTimer) {
+    view.clearTimeout(view.__fillingRuntimeFallbackTimer)
+    delete view.__fillingRuntimeFallbackTimer
+  }
+
+  documentRef?.documentElement?.removeAttribute('data-runtime-pending')
+}
+
 export function prepareRuntimeHandoff(documentRef = document) {
   const staticRoot = documentRef.querySelector('#app')
   const staticPreview = staticRoot?.querySelector('[data-static-preview="true"]')
@@ -114,7 +125,8 @@ export function prepareRuntimeHandoff(documentRef = document) {
   if (!staticRoot || !staticPreview) {
     return {
       mountTarget: staticRoot,
-      complete: async () => {}
+      complete: async () => clearRuntimePending(documentRef),
+      abort: () => clearRuntimePending(documentRef)
     }
   }
 
@@ -139,6 +151,11 @@ export function prepareRuntimeHandoff(documentRef = document) {
       runtimeRoot.removeAttribute('style')
       runtimeRoot.removeAttribute('data-runtime-staging')
       staticRoot.remove()
+      clearRuntimePending(documentRef)
+    },
+    abort: () => {
+      runtimeRoot.remove()
+      clearRuntimePending(documentRef)
     }
   }
 }

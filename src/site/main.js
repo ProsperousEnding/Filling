@@ -11,33 +11,39 @@ import { prepareRuntimeHandoff } from './runtimeHandoff'
 
 async function bootstrap() {
   const runtimeHandoff = prepareRuntimeHandoff()
-  const app = createApp(App)
-  const pinia = createPinia()
-  let configStore = null
-  const contentAdapter = createSiteContentAdapter({
-    baseUrl: import.meta.env.BASE_URL,
-    getConfig: () => configStore
-  })
 
-  installBlogRuntimeContext(app, pinia, {
-    baseUrl: import.meta.env.BASE_URL,
-    contentAdapter,
-    configProvider: loadAllConfigs
-  })
-  app.use(pinia)
+  try {
+    const app = createApp(App)
+    const pinia = createPinia()
+    let configStore = null
+    const contentAdapter = createSiteContentAdapter({
+      baseUrl: import.meta.env.BASE_URL,
+      getConfig: () => configStore
+    })
 
-  configStore = useConfigStore(pinia)
-  await configStore.bootstrapConfig()
-  const router = createSiteRouter({
-    base: import.meta.env.BASE_URL,
-    routePatterns: configStore.routePatterns,
-    menuConfig: configStore.menus
-  })
+    installBlogRuntimeContext(app, pinia, {
+      baseUrl: import.meta.env.BASE_URL,
+      contentAdapter,
+      configProvider: loadAllConfigs
+    })
+    app.use(pinia)
 
-  app.use(router)
-  await router.isReady()
-  app.mount(runtimeHandoff.mountTarget)
-  await runtimeHandoff.complete()
+    configStore = useConfigStore(pinia)
+    await configStore.bootstrapConfig()
+    const router = createSiteRouter({
+      base: import.meta.env.BASE_URL,
+      routePatterns: configStore.routePatterns,
+      menuConfig: configStore.menus
+    })
+
+    app.use(router)
+    await router.isReady()
+    app.mount(runtimeHandoff.mountTarget)
+    await runtimeHandoff.complete()
+  } catch (error) {
+    runtimeHandoff.abort()
+    throw error
+  }
 }
 
-bootstrap()
+bootstrap().catch(error => console.error(error))

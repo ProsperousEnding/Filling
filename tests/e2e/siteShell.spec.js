@@ -42,11 +42,13 @@ test('applies the saved theme before the runtime replaces the static preview', a
 
   const navigation = page.goto(sitePath('/articles'))
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await expect(page.locator('[data-static-preview="true"]')).toBeVisible()
+  await expect(page.locator('html')).toHaveAttribute('data-runtime-pending', 'true')
+  await expect(page.locator('[data-static-preview="true"]')).toBeHidden()
 
   releaseMainScript()
   await navigation
   await expect(page.locator('[data-static-preview="true"]')).toHaveCount(0)
+  await expect(page.locator('html')).not.toHaveAttribute('data-runtime-pending', 'true')
 })
 
 test('hydrates the article list and defers offscreen covers', async ({ page }) => {

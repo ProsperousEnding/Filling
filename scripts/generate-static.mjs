@@ -718,6 +718,7 @@ function replaceAppRoot(template, markup) {
 }
 
 const STATIC_PREVIEW_STYLE = `<style id="vue-blog-static-preview-style">
+  html[data-runtime-pending='true'] .ssg-shell{visibility:hidden}
   .ssg-shell{min-height:100vh;min-height:100dvh;background:var(--theme-body-background,#f8fafc);color:var(--theme-body-color,#0f172a);font-family:var(--font-sans,ui-sans-serif,system-ui,sans-serif)}
   .ssg-header{border-bottom:1px solid var(--theme-header-border,rgba(148,163,184,.2));background:var(--theme-header-bg,rgba(255,255,255,.9))}
   .ssg-header-inner,.ssg-main,.ssg-footer-inner{width:min(72rem,calc(100% - 2rem));margin:0 auto}
