@@ -100,6 +100,15 @@ jobs:
           VITE_SITE_URL: ${{ steps.pages_env.outputs.site_url }}
         run: pnpm lint && pnpm audit:prod && pnpm test && pnpm test:e2e
 
+      - name: Upload end-to-end failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Build and verify library package
         run: pnpm build:lib && pnpm test:package
 

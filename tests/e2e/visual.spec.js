@@ -16,7 +16,7 @@ test.beforeEach(async ({ page, browserName }) => {
   await installCoverFixture(page, COVER_FIXTURE)
 })
 
-test('article list visual baseline', async ({ page }) => {
+test('article list visual baseline @visual', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto(sitePath('/articles'))
   await expect(page.locator('[data-static-preview="true"]')).toHaveCount(0)
@@ -30,7 +30,7 @@ test('article list visual baseline', async ({ page }) => {
   })
 })
 
-test('article detail mobile visual baseline', async ({ page }) => {
+test('article detail mobile visual baseline @visual', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.addInitScript(() => localStorage.setItem('vue-blog-theme', 'dark'))
   await page.goto(sitePath('/article/config-site-and-theme'))

@@ -203,7 +203,8 @@ file = "about.md"
 | `pnpm build:config` | 解析、校验并生成站点配置 |
 | `pnpm build:content-index` | 重新生成内容和搜索索引 |
 | `pnpm test` | 运行单元测试与组件测试 |
-| `pnpm test:e2e` | 在 Chromium 中验证关键页面与响应式布局 |
+| `pnpm test:e2e` | 在 Chromium 与 WebKit 中验证关键页面与响应式布局 |
+| `pnpm test:visual` | 在 Chromium 中核对当前平台的页面截图基线 |
 | `pnpm audit:prod` | 检查生产依赖的已知安全漏洞 |
 | `pnpm build` | 构建静态站点到 `dist/` |
 | `pnpm build:lib` | 构建可复用框架到 `dist-lib/` |
