@@ -139,3 +139,41 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  deploy-worker:
+    if: github.ref_name == github.event.repository.default_branch && vars.DEPLOY_WORKER == 'true'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm worker:deploy
+
+      - name: Verify Worker routes
+        run: |
+          curl --fail --retry 3 --retry-delay 2 https://filling-config-api.initzo.com/health
+          curl --fail --location --retry 3 --retry-delay 2 --output /dev/null \
+            --get \
+            --data-urlencode "url=https://tc.alcy.cc/tc/20260429/66bb5763f4048e34959a028b3963bac2.webp" \
+            --data-urlencode "width=800" \
+            https://filling-config-api.initzo.com/image/cover
