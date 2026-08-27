@@ -2,7 +2,7 @@
 title: 评论、统计与内容增强
 description: 用单一 provider 配置评论和统计，并按需开启 Markdown 与代码块增强。
 date: 2026-05-13
-updated: 2026-08-21
+updated: 2026-08-28
 category: 配置
 cover_display_mode: page-background
 weight: 100
@@ -128,6 +128,8 @@ Markdown 代码块可通过 `title` 指定文件名：
 console.log('hello')
 ```
 ````
+
+开启 `show_line_numbers` 只会增加视觉行号。点击“复制代码”时，框架只复制每行的代码正文，自动排除行号并保留代码中的空行；因此不需要为了获得干净的复制结果而关闭行号。
 
 ## 修改后检查
 

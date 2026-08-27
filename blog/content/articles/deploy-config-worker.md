@@ -2,7 +2,7 @@
 title: 部署配置后台与 Cloudflare Worker
 description: 配置 GitHub App、Cloudflare Worker 和管理端 API，安全地在线修改并发布 TOML。
 date: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-28
 category: 部署
 cover_display_mode: page-background
 featured: true
@@ -155,15 +155,46 @@ image_proxy_url = "https://filling-config-api.example.com/image/cover"
 
 先部署 Worker、确认接口不是 `404`，再启用该配置，避免每张封面都产生一次无效代理请求。Worker 仅接受 `t.alcy.cc` 与 `tc.alcy.cc` 来源，并把宽度限制为 `480`、`800` 或 `1200`；处理失败时会跳回原始封面。
 
+## 使用 GitHub Actions 自动部署 Worker
+
+手动部署验证成功后，可以让默认分支每次通过完整检查时自动更新 Worker。先在 Cloudflare Dashboard 的 API Tokens 页面创建 Token；优先使用 `Edit Cloudflare Workers` 模板。如果使用自定义策略，至少要把资源限制到当前账户和站点区域，并允许 `Workers Scripts: Write`、`Workers Routes: Write` 与 `Account Settings: Read`。模板自动附带的读取或存储权限可以保留，不要为了缩减权限破坏 Wrangler 部署所需的策略。权限用途可对照 [Cloudflare Workers CI/CD 配置说明](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)。
+
+然后进入 GitHub 仓库：
+
+```text
+Settings > Secrets and variables > Actions
+```
+
+普通配置放在 `Variables`，Token 等敏感值放在 `Secrets`；两者的仓库级创建入口可对照 [GitHub Actions 变量说明](https://docs.github.com/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables) 和 [Secret 说明](https://docs.github.com/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)。
+
+在 `Variables` 标签添加两个普通变量：
+
+| 名称 | 值 | 用途 |
+| --- | --- | --- |
+| `DEPLOY_WORKER` | `true` | 明确启用 `deploy-worker` 任务 |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID | 指定 Worker 所属账户 |
+
+在 `Secrets` 标签添加：
+
+| 名称 | 值 |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | 刚创建的 Cloudflare API Token |
+
+API Token 必须放在 Secret，不能放入普通 Variable。这里的三项只供 GitHub Actions 部署 Worker 使用；它们和 Cloudflare Worker 自己运行时使用的 `GITHUB_CLIENT_SECRET`、`SESSION_SECRET` 是两组不同配置。
+
+当前 `.github/workflows/deploy-pages.yml` 会先完成测试、站点构建和 `worker:check`，随后只在默认分支且 `DEPLOY_WORKER == "true"` 时部署 Worker，并继续请求 `/health` 与 `/image/cover`。如果 fork 后更换了 Worker 域名，还要同步修改工作流 `Verify Worker routes` 步骤中的两个校验地址，否则部署成功后仍会检查原项目域名。
+
+推送一次提交后，在仓库的 `Actions` 页面确认 `build`、`deploy` 和 `deploy-worker` 均为成功状态。`deploy-worker` 显示跳过时先检查 `DEPLOY_WORKER` 是否作为 Repository Variable 保存，部署阶段报鉴权错误时再检查 Account ID、Token 权限和资源范围。
+
 ## 连接管理页面
 
-管理端默认 API 地址位于 `src/site/admin/adminApi.js`，也可以在构建时通过环境变量覆盖：
+当前仓库的管理端默认 API 已在 `src/site/admin/adminApi.js` 中指向正式 Worker，因此本项目直接构建即可。fork 项目改用自己的 Worker 时，可以修改该默认值，或在本地构建时通过环境变量覆盖：
 
 ```bash
 VITE_ADMIN_API_URL=https://filling-config-api.example.com pnpm build
 ```
 
-使用 GitHub Pages 工作流时，需要把同一个变量传入构建步骤。完成站点发布后访问：
+环境变量只对执行它的构建命令生效。需要在 GitHub Pages 自动构建中覆盖时，还要在工作流的 `Build site` 步骤显式传入 `VITE_ADMIN_API_URL`；仅在仓库 Variables 中创建同名变量不会自动进入 Vite。完成站点发布后访问：
 
 ```text
 https://blog.example.com/admin/config
@@ -198,6 +229,8 @@ VITE_ADMIN_API_URL=http://localhost:8787 pnpm dev
 - OAuth 回调失败：同时核对 GitHub App Callback URL 与 `GITHUB_CALLBACK_URL`。
 - 登录后提示无权访问：检查 `ADMIN_GITHUB_USER_ID` 是否为数字 ID，以及 App 是否安装到目标仓库。
 - 管理页请求了错误的域名：重新设置 `VITE_ADMIN_API_URL` 并构建站点。
+- `deploy-worker` 被跳过：确认仓库 Variable `DEPLOY_WORKER` 的值严格为 `true`。
+- `deploy-worker` 鉴权失败：检查 `CLOUDFLARE_ACCOUNT_ID`、API Token 权限和账户/区域资源范围。
 - `/image/cover` 返回 404：当前线上仍是旧 Worker，重新执行 `pnpm worker:deploy`。
 - `/image/cover` 跳回原图：检查部署版本是否包含名为 `IMAGES` 的 Images Binding。
 - 发布时提示配置冲突：刷新管理页，基于最新提交重新修改。

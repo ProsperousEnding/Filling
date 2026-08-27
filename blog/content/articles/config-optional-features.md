@@ -2,7 +2,7 @@
 title: 公告、字体、赞助与许可配置
 description: 配置 Filling 的低频功能，并理解每个功能真正的启用条件与页面注册方式。
 date: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-28
 category: 配置
 cover_display_mode: page-background
 weight: 80
@@ -14,7 +14,9 @@ tags:
 
 Filling 将低频功能集中在 `blog/config/optional/`。这些文件属于受管理配置，即使暂时关闭也应保留，线上配置后台会按固定白名单读取它们。
 
-不同功能的启用方式并不完全相同：公告、字体和赞助使用 `enabled`，许可协议通过有效的名称与链接生效。
+不同功能的启用方式并不完全相同：公告、字体、留言板和赞助使用 `enabled`，许可协议通过有效的名称与链接生效，统计则通过一个有效的 `provider` 生效。
+
+当前仓库已启用 `font.toml`、`guestbook.toml` 和默认许可协议；公告与赞助保持关闭，统计尚未选择 provider，Markdown 只启用了 Callout。需要调整时修改对应文件即可，不要通过删除文件来关闭功能。
 
 ## 全站公告
 
@@ -26,7 +28,7 @@ id = "release-2026-08"
 title = "站点配置已经更新"
 content = "新的封面和菜单配置已经上线。"
 link_text = "查看说明"
-link_url = "/article/config-site-and-theme"
+link_url = "/article/config-site-and-theme/"
 dismissible = true
 variant = "info"
 ```

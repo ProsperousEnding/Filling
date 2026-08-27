@@ -2,7 +2,7 @@
 title: 站点、主题与封面配置
 description: 从站点信息到 MWM 自动封面，理清主题和文章封面的配置边界。
 date: 2026-05-13
-updated: 2026-08-25
+updated: 2026-08-28
 category: 配置
 cover_display_mode: page-background
 sticky: true
@@ -83,7 +83,7 @@ show_name = false
 current_preset = "default"
 ```
 
-预设 CSS 位于 `public/themes/`。只切换现有主题时修改 `current_preset` 即可；内置主题不加载重复的 JavaScript。
+当前仓库提供 `default`、`ocean` 和 `forest` 三个预设。预设 CSS 位于 `public/themes/`，名称必须对应 `[presets.<name>]`；只切换现有主题时修改 `current_preset` 即可，内置主题不加载重复的 JavaScript。
 页面背景由对应主题 CSS 的 `--theme-body-background` 提供，会和文字、面板、控件一起切换。
 
 ## 文章封面
@@ -124,6 +124,8 @@ display_mode = "image"
 - `cataas`：猫咪图片。
 
 所有自动封面统一使用 `seeded_style`。`fixed = false` 时随机打乱 `source_urls` 图片池；打开固定模式后，框架按文章标识稳定选择。没有配置图片池时才会直接使用随机接口。站点不存在第二套浏览器本地选择，访客也不会覆盖站点配置。当前图片池直接查看 `blog/config/cover.toml`；可选的 `image_proxy_url` 只应在图片服务已经部署可用后填写。
+
+当前列表封面使用 `loading = "lazy"`，进入视口附近才开始请求；详情页封面使用 `loading = "eager"`，优先加载首屏图片。`placeholder = "gradient"` 只在图片请求期间显示跟随主题的占位背景，不是另一套壁纸或封面。`object_fit` 只控制图片在既定容器内的裁切方式，不改变封面来源。
 
 详情页支持三种展示方式：
 

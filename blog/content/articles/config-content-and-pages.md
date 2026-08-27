@@ -2,7 +2,7 @@
 title: 内容页面与写作
 description: 从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。
 date: 2026-05-13
-updated: 2026-08-21
+updated: 2026-08-28
 category: 配置
 cover_display_mode: page-background
 featured: true
@@ -31,6 +31,7 @@ blog/content/
 ```yaml
 ---
 title: 示例文章
+slug: example-article
 date: 2026-08-20
 updated: 2026-08-20
 description: 用一句话说明文章解决的问题。
@@ -48,6 +49,7 @@ cover_display_mode: image
 常用 frontmatter：
 
 - `title`、`date`、`updated`、`description`：文章基本信息。
+- `slug`：文章 URL 标识；省略时使用 Markdown 文件名。
 - `category`、`tags`：分类和标签。
 - `cover`：`public/` 下的相对路径或完整图片地址。
 - `cover_display_mode`：`image`、`header-background` 或 `page-background`。
@@ -69,7 +71,7 @@ page_size = 8
 
 需要精确控制时使用 `include_ids`、`exclude_ids`、`categories`、`tags` 等字段。精选或置顶模式没有结果时默认保持空状态；只有明确需要时才开启 `fallback_to_latest = true`。
 
-`home_hidden: true` 只会让文章离开首页，不会影响 `/articles`、分类、标签、归档和搜索。
+`home_hidden: true` 只会让文章离开首页，不会影响 `/articles/`、分类、标签、归档和搜索。
 
 ## 注册内容页面
 
@@ -103,10 +105,13 @@ folder = "projects"
 
 启用且可见的页面会自动进入桌面和移动导航，自定义页面默认进入桌面端“更多”。`key` 必须唯一，目录页面只读取第一层 `.md` 文件；非法路径、重复路由或内容解析失败会在构建时直接报错。
 
+文章和站内页面使用带尾斜杠的规范地址，例如 `/article/example-article/` 和 `/projects/`。直接访问不带尾斜杠的静态地址时会重定向到规范地址；自定义 `path` 也应写成静态站内路径，不能与内置页面或其他内容页重叠。
+
 只有需要覆盖默认行为时才添加高级字段：
 
 - `visible = false`：保留路由，但不显示菜单。
 - `enabled = false`：关闭路由与静态生成。
+- `path = "/projects/"`：覆盖页面路径，构建时会检查路径安全与冲突。
 - `menu_group = "primary" | "more"`：指定桌面菜单分组。
 - `menu_order`：数值越小越靠前。
 
@@ -144,3 +149,5 @@ pnpm build:content-index
 ```
 
 第一条检查配置与路由，第二条重新生成文章、页面和搜索索引。发布前可运行 `pnpm check` 完整验证。
+
+生产构建会为首页、文章、分页和已启用的内容页面生成完整 HTML；浏览器加载 JavaScript 后会在现有内容上接管，不需要再维护另一份静态页面模板。

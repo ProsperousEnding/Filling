@@ -33,7 +33,7 @@ const articles = [
     "excerpt": "配置 Filling 的低频功能，并理解每个功能真正的启用条件与页面注册方式。",
     "readTime": 3,
     "createdAt": "2026-08-21T00:00:00.000Z",
-    "updatedAt": "2026-08-21T00:00:00.000Z",
+    "updatedAt": "2026-08-28T00:00:00.000Z",
     "license": {
       "name": "CC BY-NC-SA 4.0",
       "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
@@ -77,9 +77,9 @@ const articles = [
     "description": "配置 GitHub App、Cloudflare Worker 和管理端 API，安全地在线修改并发布 TOML。",
     "summary": "配置 GitHub App、Cloudflare Worker 和管理端 API，安全地在线修改并发布 TOML。",
     "excerpt": "配置 GitHub App、Cloudflare Worker 和管理端 API，安全地在线修改并发布 TOML。",
-    "readTime": 5,
+    "readTime": 7,
     "createdAt": "2026-08-21T00:00:00.000Z",
-    "updatedAt": "2026-08-21T00:00:00.000Z",
+    "updatedAt": "2026-08-28T00:00:00.000Z",
     "license": {
       "name": "CC BY-NC-SA 4.0",
       "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
@@ -123,9 +123,9 @@ const articles = [
     "description": "用单一 provider 配置评论和统计，并按需开启 Markdown 与代码块增强。",
     "summary": "用单一 provider 配置评论和统计，并按需开启 Markdown 与代码块增强。",
     "excerpt": "用单一 provider 配置评论和统计，并按需开启 Markdown 与代码块增强。",
-    "readTime": 2,
+    "readTime": 3,
     "createdAt": "2026-05-13T00:00:00.000Z",
-    "updatedAt": "2026-08-21T00:00:00.000Z",
+    "updatedAt": "2026-08-28T00:00:00.000Z",
     "license": {
       "name": "CC BY-NC-SA 4.0",
       "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
@@ -169,9 +169,9 @@ const articles = [
     "description": "从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。",
     "summary": "从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。",
     "excerpt": "从文章 frontmatter 到菜单页面，了解内容目录、首页筛选与自动路由的现行规则。",
-    "readTime": 3,
+    "readTime": 4,
     "createdAt": "2026-05-13T00:00:00.000Z",
-    "updatedAt": "2026-08-21T00:00:00.000Z",
+    "updatedAt": "2026-08-28T00:00:00.000Z",
     "license": {
       "name": "CC BY-NC-SA 4.0",
       "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
@@ -217,7 +217,7 @@ const articles = [
     "excerpt": "从站点信息到 MWM 自动封面，理清主题和文章封面的配置边界。",
     "readTime": 4,
     "createdAt": "2026-05-13T00:00:00.000Z",
-    "updatedAt": "2026-08-25T00:00:00.000Z",
+    "updatedAt": "2026-08-28T00:00:00.000Z",
     "license": {
       "name": "CC BY-NC-SA 4.0",
       "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
