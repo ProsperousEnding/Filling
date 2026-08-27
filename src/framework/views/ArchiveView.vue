@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onServerPrefetch, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import CollectionLayoutSwitcher from '../components/core/CollectionLayoutSwitcher.vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
@@ -33,6 +33,7 @@ import {
 } from '../utils/pageCollectionItems'
 import { resolveMenuPage } from '../utils/menuConfig'
 import { resolveBuiltInPageComponent } from './pageComponentRegistry'
+import { applyMaybeAsync } from '../utils/asyncValue'
 
 const route = useRoute()
 const articleStore = useArticleStore()
@@ -92,14 +93,21 @@ usePageMetadata({
   description: () => pageDescription.value
 })
 
-fetchArchiveGroups().catch(() => {})
+const initialArchiveRequest = fetchArchiveGroups()
+onServerPrefetch(() => initialArchiveRequest)
 
-async function fetchArchiveGroups() {
+function fetchArchiveGroups() {
   try {
-    archiveGroups.value = await articleStore.fetchArchiveGroups()
+    return applyMaybeAsync(articleStore.fetchArchiveGroups(), (result) => {
+      archiveGroups.value = result || []
+    }).catch((error) => {
+      console.error('获取归档列表失败:', error)
+      archiveGroups.value = []
+    })
   } catch (error) {
     console.error('获取归档列表失败:', error)
     archiveGroups.value = []
+    return Promise.resolve()
   }
 }
 </script>

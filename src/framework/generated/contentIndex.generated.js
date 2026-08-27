@@ -233,11 +233,11 @@ const articles = [
   }
 ]
 const articleEntryPaths = {
-  "deploy-config-worker": "/article/deploy-config-worker",
-  "config-optional-features": "/article/config-optional-features",
-  "config-content-and-pages": "/article/config-content-and-pages",
-  "config-comments-and-analytics": "/article/config-comments-and-analytics",
-  "config-site-and-theme": "/article/config-site-and-theme"
+  "deploy-config-worker": "/article/deploy-config-worker/",
+  "config-optional-features": "/article/config-optional-features/",
+  "config-content-and-pages": "/article/config-content-and-pages/",
+  "config-comments-and-analytics": "/article/config-comments-and-analytics/",
+  "config-site-and-theme": "/article/config-site-and-theme/"
 }
 const additionalEntries = [
   {
@@ -254,9 +254,9 @@ const additionalEntries = [
     "license": null,
     "cover": "https://t.alcy.cc/pc/?seed=666491",
     "coverSource": "",
-    "to": "/about",
+    "to": "/about/",
     "sectionTitle": "",
-    "sectionPath": "/about",
+    "sectionPath": "/about/",
     "sourcePath": "/blog/content/about.md"
   }
 ]

@@ -80,10 +80,10 @@ test('route patterns preserve required parameters', () => {
     tag_page: '/invalid-without-params'
   })
 
-  assert.equal(patterns.articleDetail, '/posts/:id')
-  assert.equal(patterns.categoryPage, '/topics/:id/p/:page')
+  assert.equal(patterns.articleDetail, '/posts/:id/')
+  assert.equal(patterns.categoryPage, '/topics/:id/p/:page/')
   assert.equal(patterns.tagPage, BLOG_PATH_PATTERNS.tagPage)
-  assert.equal(getArticlePath('hello world', patterns), '/posts/hello%20world')
+  assert.equal(getArticlePath('hello world', patterns), '/posts/hello%20world/')
 })
 
 test('menu source detection keeps built-in and configured pages separate', () => {

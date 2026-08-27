@@ -15,6 +15,12 @@ export function getHomeArticleModeTitle(mode) {
   return HOME_ARTICLE_MODE_TITLES[normalizeHomeArticleMode(mode)]
 }
 
+export function resolveHomeArticlePageTitle(mode, menuConfig = {}) {
+  const pages = Array.isArray(menuConfig?.pages) ? menuConfig.pages : []
+  const override = pages.find(page => String(page?.key || '').trim().toLowerCase() === 'home')
+  return String(override?.title || '').trim() || getHomeArticleModeTitle(mode)
+}
+
 function normalizeLookupValue(input) {
   return String(input ?? '')
     .trim()

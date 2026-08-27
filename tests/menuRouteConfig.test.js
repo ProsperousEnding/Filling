@@ -8,14 +8,14 @@ import {
 } from '../src/framework/utils/menuRouteConfig.js'
 
 test('menu page paths accept static routes and reject unsafe syntax', () => {
-  assert.equal(normalizeMenuPagePath('/项目/demo'), '/项目/demo')
-  assert.equal(normalizeMenuPagePath('/docs/'), '/docs')
+  assert.equal(normalizeMenuPagePath('/项目/demo'), '/项目/demo/')
+  assert.equal(normalizeMenuPagePath('/docs/'), '/docs/')
   assert.equal(normalizeMenuPagePath('/../outside'), '')
   assert.equal(normalizeMenuPagePath('/docs?mode=full'), '')
 })
 
 test('menu links accept supported targets and reject unsafe or incomplete values', () => {
-  assert.equal(normalizeMenuLinkTarget('/guide'), '/guide')
+  assert.equal(normalizeMenuLinkTarget('/guide'), '/guide/')
   assert.equal(normalizeMenuLinkTarget('https://example.com/docs'), 'https://example.com/docs')
   assert.equal(normalizeMenuLinkTarget('mailto:hello@example.com'), 'mailto:hello@example.com')
   assert.equal(normalizeMenuLinkTarget('javascript:alert(1)'), '')

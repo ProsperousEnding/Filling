@@ -112,18 +112,20 @@ describe('BlogContainer sidebar mounting', () => {
     expect(container.get('.sidebar-stub').attributes('data-mobile')).toBe('false')
   })
 
-  it('does not mount a hidden desktop sidebar on mobile widths', async () => {
+  it('keeps the desktop sidebar DOM stable while opening the mobile drawer', async () => {
     const { configStore, wrapper: container } = await mountBlogContainer({ width: 900 })
     const trigger = container.get('.header-trigger')
 
-    expect(container.find('.sidebar-stub').exists()).toBe(false)
+    expect(container.findAll('.sidebar-stub')).toHaveLength(1)
+    expect(container.get('.theme-sidebar-column').classes()).toContain('hidden')
+    expect(container.get('.sidebar-stub').attributes('data-mobile')).toBe('false')
 
     trigger.element.focus()
     configStore.openMobileSidebar()
     await flushPromises()
 
-    expect(container.findAll('.sidebar-stub')).toHaveLength(1)
-    expect(container.get('.sidebar-stub').attributes('data-mobile')).toBe('true')
+    expect(container.findAll('.sidebar-stub')).toHaveLength(2)
+    expect(container.get('[role="dialog"] .sidebar-stub').attributes('data-mobile')).toBe('true')
     expect(container.get('[role="dialog"]').attributes('aria-modal')).toBe('true')
     expect(container.get('.theme-app').attributes()).toHaveProperty('inert')
     expect(document.activeElement).toBe(container.get('.drawer-first-action').element)

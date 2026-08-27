@@ -27,9 +27,10 @@
       <div v-else>
         <div class="article-grid-list grid" :class="gridClass">
           <article-card 
-            v-for="article in articles" 
+            v-for="(article, articleIndex) in articles"
             :key="article.id" 
             :article="article"
+            :priority="articleIndex === 0"
             class="h-full"
           />
         </div>

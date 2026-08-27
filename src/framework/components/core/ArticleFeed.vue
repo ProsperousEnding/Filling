@@ -26,10 +26,10 @@
       <!-- 全背景图列表布局 - 单列 -->
       <div v-else class="article-feed-list space-y-5 md:space-y-8">
         <ArticleFeedItem
-          v-for="article in articles"
+          v-for="(article, articleIndex) in articles"
           :key="article.id"
           :article="article"
-          :is-small-screen="isSmallScreen"
+          :priority="articleIndex === 0"
         />
         
         <!-- 分页 -->
@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed } from 'vue'
 import ArticleFeedItem from './ArticleFeedItem.vue'
 import Pagination from './Pagination.vue'
 
@@ -88,22 +88,6 @@ const handlePageChange = (page) => {
   emit('page-change', page)
 }
 
-// 窗口宽度
-const windowWidth = ref(1024) // 默认值
-const isSmallScreen = computed(() => windowWidth.value < 640)
-const syncWindowWidth = () => {
-  windowWidth.value = window.innerWidth
-}
-
-// 监听窗口大小变化
-onMounted(() => {
-  syncWindowWidth()
-  window.addEventListener('resize', syncWindowWidth)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', syncWindowWidth)
-})
 </script>
 
 <style scoped>

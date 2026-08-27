@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onServerPrefetch, ref } from 'vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { useCategoryStore } from '../stores/category'
 import { useConfigStore } from '../stores/config'
@@ -20,6 +20,7 @@ import { usePageMetadata } from '../composables/usePageMetadata'
 import { createCategoryCollectionItems, createCollectionPage } from '../utils/pageCollectionItems'
 import { resolveMenuPage } from '../utils/menuConfig'
 import TaxonomyIndexPage from './pageComponents/TaxonomyIndexPage.vue'
+import { applyMaybeAsync } from '../utils/asyncValue'
 
 const categoryStore = useCategoryStore()
 const configStore = useConfigStore()
@@ -50,15 +51,21 @@ usePageMetadata({
   description: () => pageDescription.value
 })
 
-fetchCategories().catch(() => {})
+const initialCategoriesRequest = fetchCategories()
+onServerPrefetch(() => initialCategoriesRequest)
 
-async function fetchCategories() {
+function fetchCategories() {
   try {
-    const result = await categoryStore.fetchCategories()
-    categories.value = result || []
+    return applyMaybeAsync(categoryStore.fetchCategories(), (result) => {
+      categories.value = result || []
+    }).catch((error) => {
+      console.error('获取分类列表失败:', error)
+      categories.value = []
+    })
   } catch (error) {
     console.error('获取分类列表失败:', error)
     categories.value = []
+    return Promise.resolve()
   }
 }
 </script>

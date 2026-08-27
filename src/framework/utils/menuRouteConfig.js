@@ -63,21 +63,21 @@ export function normalizeMenuPagePath(value, fallback = '') {
   }
 
   const withLeadingSlash = target.startsWith('/') ? target : `/${target}`
-  const withoutTrailingSlash = withLeadingSlash === '/'
+  const canonicalPath = withLeadingSlash === '/'
     ? withLeadingSlash
-    : withLeadingSlash.replace(/\/+$/, '')
+    : `${withLeadingSlash.replace(/\/+$/, '')}/`
 
-  if (withoutTrailingSlash === '/') {
-    return withoutTrailingSlash
+  if (canonicalPath === '/') {
+    return canonicalPath
   }
 
-  const segments = withoutTrailingSlash.split('/').slice(1)
+  const segments = canonicalPath.split('/').slice(1, -1)
 
   if (segments.some(segment => !segment || segment === '.' || segment === '..')) {
     return ''
   }
 
-  return withoutTrailingSlash
+  return canonicalPath
 }
 
 export function normalizeMenuContentPath(value, kind = 'file') {
@@ -215,7 +215,7 @@ export function getCustomMenuPageRoutePatterns(page = {}) {
   if (MENU_COLLECTION_PAGE_COMPONENTS.has(page.component) && page.folder) {
     patterns.push({
       key: page.key,
-      pattern: `${page.path}/:itemId`,
+      pattern: `${page.path}:itemId/`,
       type: 'item'
     })
   }

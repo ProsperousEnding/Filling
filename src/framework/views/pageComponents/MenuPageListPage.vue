@@ -1,7 +1,7 @@
 <template>
   <div class="menu-page-list">
     <component
-      v-for="item in page.items"
+      v-for="(item, itemIndex) in page.items"
       :is="resolveItemTag(item)"
       :key="item.key"
       v-bind="item.href ? { href: item.href } : { to: item.to }"
@@ -17,10 +17,11 @@
           :srcset="getItemCoverSrcset(item) || undefined"
           :alt="item.title"
           class="absolute inset-0 h-full w-full"
-          :loading="coverListConfig.loading"
+          :loading="itemIndex === 0 ? 'eager' : coverListConfig.loading"
           sizes="(min-width: 1280px) 900px, (min-width: 768px) 70vw, 100vw"
-          fetchpriority="low"
+          :fetchpriority="itemIndex === 0 ? 'high' : 'low'"
           :style="coverImageStyle"
+          @state-change="setCoverImageState(item, $event)"
         />
 
         <div
@@ -46,17 +47,24 @@
 
             <div v-if="getHeroTags(item).length > 0" class="flex flex-wrap gap-1.5 sm:max-w-[70%] sm:justify-end">
               <span
-                v-for="tag in getHeroTags(item)"
+                v-for="(tag, tagIndex) in getHeroTags(item)"
                 :key="`${item.key}-${tag.label}`"
                 class="article-feed-tag px-2 py-0.5 text-[0.6875rem] rounded-md transition-colors duration-150"
+                :class="{ 'hidden sm:inline-flex': tagIndex > 0 }"
               >
                 #{{ tag.label }}
               </span>
               <span
                 v-if="getRemainingHeroTagCount(item) > 0"
-                class="article-feed-tag-more text-xs"
+                class="article-feed-tag-more hidden text-xs sm:inline"
               >
                 +{{ getRemainingHeroTagCount(item) }}
+              </span>
+              <span
+                v-if="getMobileRemainingHeroTagCount(item) > 0"
+                class="article-feed-tag-more text-xs sm:hidden"
+              >
+                +{{ getMobileRemainingHeroTagCount(item) }}
               </span>
             </div>
           </div>
@@ -69,8 +77,7 @@
 
               <p
                 v-if="item.description"
-                class="article-feed-excerpt text-xs sm:text-sm leading-relaxed mt-2 max-w-3xl"
-                :class="isSmallScreen ? 'line-clamp-1' : 'line-clamp-2'"
+                class="article-feed-excerpt line-clamp-1 mt-2 max-w-3xl text-xs leading-relaxed sm:line-clamp-2 sm:text-sm"
               >
                 {{ item.description }}
               </p>
@@ -158,7 +165,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import DeferredImage from '../../components/core/DeferredImage.vue'
 import { useConfigStore } from '../../stores/config'
 import { createArticleCoverSrcset } from '../../utils/articleCover'
@@ -183,9 +190,8 @@ defineProps({
 })
 
 const configStore = useConfigStore()
-const windowWidth = ref(1024)
-const isSmallScreen = computed(() => windowWidth.value < 640)
-const heroTagLimit = computed(() => (isSmallScreen.value ? 1 : 3))
+const DESKTOP_HERO_TAG_LIMIT = 3
+const coverImageStates = ref(new Map())
 const coverResolveOptions = computed(() => ({
   coverConfig: configStore.coverConfig,
   style: configStore.coverConfig?.seededStyle
@@ -212,14 +218,6 @@ const showCoverPlaceholder = computed(() => (
   coverListConfig.value.showCover && coverListConfig.value.placeholder !== 'none'
 ))
 
-function syncWindowWidth() {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  windowWidth.value = window.innerWidth
-}
-
 function resolveItemTag(item) {
   return resolveMenuItemTag(item)
 }
@@ -244,6 +242,20 @@ function getItemCoverSrcset(item) {
   })
 }
 
+function getCoverImageKey(item) {
+  return String(item?.key || item?.to || item?.href || item?.title || '')
+}
+
+function getCoverImageState(item) {
+  return coverImageStates.value.get(getCoverImageKey(item)) || 'loaded'
+}
+
+function setCoverImageState(item, state) {
+  const nextStates = new Map(coverImageStates.value)
+  nextStates.set(getCoverImageKey(item), state)
+  coverImageStates.value = nextStates
+}
+
 function usesHeroSurface(item) {
   return isArticleLikeMenuItem(item, coverResolveOptions.value)
 }
@@ -253,11 +265,15 @@ function getPrimaryBadge(item) {
 }
 
 function getHeroTags(item) {
-  return getMenuItemTags(item, heroTagLimit.value)
+  return getMenuItemTags(item, DESKTOP_HERO_TAG_LIMIT)
 }
 
 function getRemainingHeroTagCount(item) {
-  return getMenuItemRemainingTagCount(item, heroTagLimit.value)
+  return getMenuItemRemainingTagCount(item, DESKTOP_HERO_TAG_LIMIT)
+}
+
+function getMobileRemainingHeroTagCount(item) {
+  return getMenuItemRemainingTagCount(item, 1)
 }
 
 function getDetailLines(item) {
@@ -286,7 +302,10 @@ function getListItemClass(item) {
       'overflow-hidden',
       'transition-[border-color,box-shadow,transform]',
       'duration-200',
-      !showItemCover(item) ? 'article-feed-card-without-cover' : ''
+      showItemCover(item) ? 'article-feed-card-with-cover' : 'article-feed-card-without-cover',
+      showItemCover(item) && getCoverImageState(item) !== 'loaded'
+        ? 'article-feed-card-cover-pending'
+        : ''
     ]
   }
 
@@ -311,14 +330,6 @@ function getListItemStyle(item) {
   }
 }
 
-onMounted(() => {
-  syncWindowWidth()
-  window.addEventListener('resize', syncWindowWidth)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', syncWindowWidth)
-})
 </script>
 
 <style scoped>

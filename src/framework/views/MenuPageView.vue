@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onServerPrefetch, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBlogRuntimeContext } from '../runtime/runtimeContext'
 import {
@@ -46,7 +46,7 @@ import { resolveMenuPageComponent, resolveMenuPageComponentKey } from './pageCom
 
 const route = useRoute()
 const configStore = useConfigStore()
-const { contentAdapter } = useBlogRuntimeContext()
+const { contentAdapter, prerenderState } = useBlogRuntimeContext()
 
 const page = computed(() => {
   const menuPageKey = String(route.meta?.menuPageKey || '').trim()
@@ -75,10 +75,12 @@ const loadedPageSource = ref({
 })
 
 let sourceLoadSequence = 0
+let initialSourceRequest = Promise.resolve()
 
-watch([page, resolvedComponentKey], async ([nextPage, nextComponentKey]) => {
+async function loadPageSource(nextPage, nextComponentKey) {
   sourceLoadSequence += 1
   const currentSequence = sourceLoadSequence
+  const stateKey = `menu-page:${nextPage?.key || nextPage?.path || ''}`
 
   sourceLoading.value = false
   loadedPageSource.value = {
@@ -91,6 +93,11 @@ watch([page, resolvedComponentKey], async ([nextPage, nextComponentKey]) => {
   }
 
   if (!menuPageUsesExternalSource(nextPage, nextComponentKey)) {
+    return
+  }
+
+  if (Object.prototype.hasOwnProperty.call(prerenderState, stateKey)) {
+    loadedPageSource.value = prerenderState[stateKey]
     return
   }
 
@@ -111,12 +118,19 @@ watch([page, resolvedComponentKey], async ([nextPage, nextComponentKey]) => {
       contentHtml: resolvedSource?.contentHtml || '',
       items: Array.isArray(resolvedSource?.items) ? resolvedSource.items : []
     }
+    prerenderState[stateKey] = loadedPageSource.value
   } finally {
     if (currentSequence === sourceLoadSequence) {
       sourceLoading.value = false
     }
   }
+}
+
+watch([page, resolvedComponentKey], ([nextPage, nextComponentKey]) => {
+  initialSourceRequest = loadPageSource(nextPage, nextComponentKey)
 }, { immediate: true })
+
+onServerPrefetch(() => initialSourceRequest)
 
 const resolvedPage = computed(() => {
   if (!page.value) {

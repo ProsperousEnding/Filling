@@ -12,9 +12,9 @@
           :srcset="articleCoverSrcset || undefined"
           :alt="article.title"
           class="article-card-cover-image w-full h-full transition-transform duration-200 hover:scale-[1.02]"
-          :loading="coverListConfig.loading"
+          :loading="priority ? 'eager' : coverListConfig.loading"
           sizes="(min-width: 1280px) 420px, (min-width: 768px) 50vw, 100vw"
-          fetchpriority="low"
+          :fetchpriority="priority ? 'high' : 'low'"
           :style="coverImageStyle"
           @error="coverLoadFailed = true"
         />
@@ -99,6 +99,10 @@ import { getArticleRoute } from '../../utils/articleRoute'
 import { createArticleCoverSrcset, resolveDisplayArticleCover } from '../../utils/articleCover'
 
 const props = defineProps({
+  priority: {
+    type: Boolean,
+    default: false
+  },
   article: {
     type: Object,
     required: true

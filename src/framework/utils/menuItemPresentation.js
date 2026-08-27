@@ -45,13 +45,18 @@ export function getMenuItemHref(item) {
   return item?.external ? item.href : undefined
 }
 
+function normalizeComparablePath(value) {
+  const path = String(value || '').trim()
+  return path === '/' ? path : path.replace(/\/+$/u, '')
+}
+
 export function isMenuItemActive(item, activePath) {
   if (Array.isArray(item?.children) && item.children.some(child => isMenuItemActive(child, activePath))) {
     return true
   }
 
-  const currentPath = String(activePath || '')
-  const targetPath = String(item?.matchPath || item?.to || '')
+  const currentPath = normalizeComparablePath(activePath)
+  const targetPath = normalizeComparablePath(item?.matchPath || item?.to)
 
   if (!currentPath || !targetPath) {
     return false

@@ -16,19 +16,19 @@ export const BLOG_ROUTE_NAMES = Object.freeze({
 
 export const BLOG_PATH_PATTERNS = Object.freeze({
   home: '/',
-  articles: '/articles',
-  articlesPage: '/articles/page/:page',
-  articleDetail: '/article/:id',
-  categories: '/category',
-  categoryDetail: '/category/:id',
-  categoryPage: '/category/:id/page/:page',
-  tags: '/tag',
-  tagDetail: '/tag/:id',
-  tagPage: '/tag/:id/page/:page',
-  archive: '/archive',
-  archiveYear: '/archive/:year',
-  search: '/search',
-  notFound: '/404'
+  articles: '/articles/',
+  articlesPage: '/articles/page/:page/',
+  articleDetail: '/article/:id/',
+  categories: '/category/',
+  categoryDetail: '/category/:id/',
+  categoryPage: '/category/:id/page/:page/',
+  tags: '/tag/',
+  tagDetail: '/tag/:id/',
+  tagPage: '/tag/:id/page/:page/',
+  archive: '/archive/',
+  archiveYear: '/archive/:year/',
+  search: '/search/',
+  notFound: '/404/'
 })
 
 const DEFAULT_BLOG_NAV_ITEMS = Object.freeze([
@@ -75,15 +75,15 @@ function normalizePathPattern(value, fallback, { requiredParams = [] } = {}) {
   }
 
   const withLeadingSlash = normalizedValue.startsWith('/') ? normalizedValue : `/${normalizedValue}`
-  const withoutTrailingSlash = withLeadingSlash === '/'
+  const canonicalPath = withLeadingSlash === '/'
     ? withLeadingSlash
-    : withLeadingSlash.replace(/\/+$/, '')
+    : `${withLeadingSlash.replace(/\/+$/, '')}/`
 
-  if (requiredParams.some(param => !withoutTrailingSlash.includes(`:${param}`))) {
+  if (requiredParams.some(param => !canonicalPath.includes(`:${param}`))) {
     return fallback
   }
 
-  return withoutTrailingSlash || fallback
+  return canonicalPath || fallback
 }
 
 function pickPatternInput(source, key) {

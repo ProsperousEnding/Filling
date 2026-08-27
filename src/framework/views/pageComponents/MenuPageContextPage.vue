@@ -18,11 +18,10 @@
 
     <div v-if="page.items.length > 0" class="menu-page-context-list">
       <component
-        :is="resolveItemTag(item)"
+        :is="resolveMenuItemTag(item)"
         v-for="item in page.items"
         :key="item.key"
-        :to="item.to || undefined"
-        :href="item.href || undefined"
+        v-bind="getMenuItemTargetProps(item)"
         class="menu-page-context-item theme-list-row"
         :target="item.external ? '_blank' : undefined"
         :rel="item.external ? 'noreferrer' : undefined"
@@ -43,6 +42,11 @@
 </template>
 
 <script setup>
+import {
+  getMenuItemTargetProps,
+  resolveMenuItemTag
+} from './menuPageItemPresentation.js'
+
 defineProps({
   page: {
     type: Object,
@@ -53,10 +57,4 @@ defineProps({
     default: () => []
   }
 })
-
-function resolveItemTag(item) {
-  if (item?.href) return 'a'
-  if (item?.to) return 'router-link'
-  return 'article'
-}
 </script>

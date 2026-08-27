@@ -52,6 +52,17 @@
   --theme-feed-overlay-top: rgba(15, 23, 42, 0.18);
   --theme-feed-overlay-mid: rgba(15, 23, 42, 0.54);
   --theme-feed-overlay-bottom: rgba(2, 6, 23, 0.88);
+  --theme-cover-loading-background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-link) 38%, var(--theme-panel-strong)),
+    color-mix(in srgb, var(--theme-text-soft) 58%, var(--theme-panel-muted))
+  );
+  --theme-cover-loading-overlay: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.12) 0%,
+    rgba(15, 23, 42, 0.3) 48%,
+    rgba(15, 23, 42, 0.68) 100%
+  );
   --theme-on-image: #ffffff;
   --theme-on-image-muted: rgba(226, 232, 240, 0.92);
   --theme-mark-bg: rgba(250, 204, 21, 0.28);
@@ -75,6 +86,12 @@
   --theme-sidebar-border: color-mix(in srgb, var(--theme-border) 50%, transparent);
   --theme-sidebar-highlight: rgba(255, 255, 255, 0.03);
   --theme-sidebar-contact-shadow: rgba(2, 6, 23, 0.12);
+  --theme-cover-loading-overlay: linear-gradient(
+    180deg,
+    rgba(2, 6, 23, 0.08) 0%,
+    rgba(2, 6, 23, 0.24) 48%,
+    rgba(2, 6, 23, 0.62) 100%
+  );
 }
 
 body {
@@ -447,6 +464,10 @@ a {
   background: var(--theme-feed-fallback) !important;
 }
 
+:root .article-feed-card-with-cover {
+  background: var(--theme-cover-loading-background) !important;
+}
+
 :root .article-feed-card-overlay {
   background: linear-gradient(
     180deg,
@@ -454,6 +475,10 @@ a {
     var(--theme-feed-overlay-mid) 48%,
     var(--theme-feed-overlay-bottom) 100%
   ) !important;
+}
+
+:root .article-feed-card-cover-pending .article-feed-card-overlay {
+  background: var(--theme-cover-loading-overlay) !important;
 }
 
 :root .article-feed-card-fallback {

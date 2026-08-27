@@ -1,3 +1,5 @@
+import { RouterLink } from 'vue-router'
+
 import { resolveDisplayArticleCover } from '../../utils/articleCover'
 
 function normalizeString(value) {
@@ -28,8 +30,14 @@ function normalizeNamedValue(value) {
 
 export function resolveMenuItemTag(item) {
   if (item?.href) return 'a'
-  if (item?.to) return 'router-link'
+  if (item?.to) return RouterLink
   return 'article'
+}
+
+export function getMenuItemTargetProps(item) {
+  if (item?.href) return { href: item.href }
+  if (item?.to) return { to: item.to }
+  return {}
 }
 
 export function getMenuItemCover(item, options = {}) {

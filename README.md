@@ -143,7 +143,7 @@ seeded_style = "mwm-anime"
 fixed = false
 ```
 
-默认直接使用 MWM 随机二次元封面。在配置后台打开“固定文章封面”后，框架才会按文章从 `source_urls` 中稳定选择图片；关闭时固定图片不会接管随机图源。可选图源和所有字段说明见 [配置参考](./docs/configuration.md)。修改后可以单独检查配置：
+默认会在每次构建发布时打乱 MWM 图片池，并让同一版本的预渲染页面与客户端保持一致。在配置后台打开“固定文章封面”后，框架会按文章从 `source_urls` 中稳定选择图片，使封面跨版本保持不变。可选图源和所有字段说明见 [配置参考](./docs/configuration.md)。修改后可以单独检查配置：
 
 ```bash
 pnpm build:config

@@ -53,7 +53,7 @@ mode = "mixed"
 - `sticky`：只显示置顶或手动指定的文章。
 - `mixed`：依次合并手动指定、置顶、精选和最新文章。
 
-`page_size`、`categories`、`tags`、`include_ids` 和 `exclude_ids` 可进一步控制结果。`/articles` 始终是全部文章页，不受首页筛选影响。
+`page_size`、`categories`、`tags`、`include_ids` 和 `exclude_ids` 可进一步控制结果。`/articles/` 始终是全部文章页，不受首页筛选影响。
 
 ## 个人资料
 
@@ -97,7 +97,7 @@ seeded_style = "mwm-anime"
 fixed = false
 ```
 
-默认会在每次访问时打乱 MWM 图片池，并尽量避免同页文章出现重复封面。希望每篇文章长期显示同一张图片时，在配置后台打开“固定文章封面”，或修改配置：
+默认会在每次构建发布时打乱 MWM 图片池，并尽量避免同页文章出现重复封面；同一个已发布版本中的服务端 HTML 与客户端会保持一致，不会在接管后换图。希望每篇文章跨版本长期显示同一张图片时，在配置后台打开“固定文章封面”，或修改配置：
 
 ```toml
 fixed = true

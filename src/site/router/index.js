@@ -1,6 +1,7 @@
 import { createBlogRouter, createBlogRoutes } from '@framework/router'
 
 const AdminConfigView = () => import('../admin/AdminConfigView.vue')
+const NotFoundView = () => import('../views/NotFoundView.vue')
 
 export function createSiteRouter(options = {}) {
   const routes = [
@@ -18,7 +19,15 @@ export function createSiteRouter(options = {}) {
         standalone: true
       }
     },
-    ...createBlogRoutes(options.routePatterns, options.menuConfig)
+    ...createBlogRoutes(options.routePatterns, options.menuConfig),
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: NotFoundView,
+      meta: {
+        title: '页面未找到'
+      }
+    }
   ]
 
   return createBlogRouter({

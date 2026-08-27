@@ -34,7 +34,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['load', 'error'])
+const emit = defineEmits(['load', 'error', 'state-change'])
 
 function isHydratingPrerenderedPage() {
   return typeof document !== 'undefined'
@@ -58,6 +58,14 @@ const resolvedSourceSet = computed(() => (
   shouldLoad.value && !fallbackSource.value ? String(props.srcset || '').trim() : ''
 ))
 let observer
+let emittedImageState = ''
+
+function emitImageState() {
+  if (imageState.value === emittedImageState) return
+
+  emittedImageState = imageState.value
+  emit('state-change', imageState.value)
+}
 
 function startObserving() {
   if (shouldLoad.value || !imageRef.value) return
@@ -104,6 +112,8 @@ watch(() => [props.src, props.srcset], () => {
   hasLoaded.value = false
 })
 
+watch(imageState, emitImageState)
+
 watch(normalizedLoading, (loading) => {
   if (loading === 'eager') {
     shouldLoad.value = true
@@ -118,6 +128,8 @@ onMounted(() => {
   if (imageRef.value?.complete && imageRef.value.naturalWidth > 0) {
     hasLoaded.value = true
   }
+
+  emitImageState()
 })
 
 onBeforeUnmount(() => {

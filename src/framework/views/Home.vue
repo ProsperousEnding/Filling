@@ -50,7 +50,7 @@ import { useConfigStore } from '../stores/config'
 import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { usePageMetadata } from '../composables/usePageMetadata'
 import { createArticleCollectionItems, createCollectionPage } from '../utils/pageCollectionItems'
-import { getHomeArticleModeTitle } from '../utils/homeArticleSelection'
+import { resolveHomeArticlePageTitle } from '../utils/homeArticleSelection'
 import { resolveMenuPage } from '../utils/menuConfig'
 import { resolveBuiltInPageComponent } from './pageComponentRegistry'
 
@@ -62,11 +62,8 @@ const defaultPageSize = computed(() => homeArticleConfig.value.pageSize || confi
 const pageConfig = computed(() => (
   resolveMenuPage('home', configStore.menus, configStore.routePatterns)
 ))
-const pageOverride = computed(() => (
-  configStore.menus?.pages?.find(page => page.key === 'home') || null
-))
 const pageTitle = computed(() => (
-  pageOverride.value?.title || getHomeArticleModeTitle(homeArticleConfig.value.mode)
+  resolveHomeArticlePageTitle(homeArticleConfig.value.mode, configStore.menus)
 ))
 const displayTitle = computed(() => (
   currentPage.value > 1 ? `${pageTitle.value} · 第 ${currentPage.value} 页` : pageTitle.value

@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onServerPrefetch, ref } from 'vue'
 import { useBuiltInPageLayout } from '../composables/useBuiltInPageLayout'
 import { useTagStore } from '../stores/tag'
 import { useConfigStore } from '../stores/config'
@@ -20,6 +20,7 @@ import { usePageMetadata } from '../composables/usePageMetadata'
 import { createCollectionPage, createTagCollectionItems } from '../utils/pageCollectionItems'
 import { resolveMenuPage } from '../utils/menuConfig'
 import TaxonomyIndexPage from './pageComponents/TaxonomyIndexPage.vue'
+import { applyMaybeAsync } from '../utils/asyncValue'
 
 const tagStore = useTagStore()
 const configStore = useConfigStore()
@@ -50,15 +51,21 @@ usePageMetadata({
   description: () => pageDescription.value
 })
 
-fetchTags().catch(() => {})
+const initialTagsRequest = fetchTags()
+onServerPrefetch(() => initialTagsRequest)
 
-async function fetchTags() {
+function fetchTags() {
   try {
-    const result = await tagStore.fetchTags()
-    tags.value = result || []
+    return applyMaybeAsync(tagStore.fetchTags(), (result) => {
+      tags.value = result || []
+    }).catch((error) => {
+      console.error('获取标签列表失败:', error)
+      tags.value = []
+    })
   } catch (error) {
     console.error('获取标签列表失败:', error)
     tags.value = []
+    return Promise.resolve()
   }
 }
 </script>

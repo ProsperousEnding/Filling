@@ -440,7 +440,7 @@ const CONFIG_NAMESPACE_KEYS = Object.freeze([
   'guestbook'
 ])
 
-let reloadSeq = 0
+const reloadSequences = new WeakMap()
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]'
@@ -1658,10 +1658,11 @@ export const useConfigStore = defineStore('config', {
     },
 
     async reloadConfig() {
-      const currentSeq = ++reloadSeq
+      const currentSeq = (reloadSequences.get(this) || 0) + 1
+      reloadSequences.set(this, currentSeq)
       const configs = await loadStoreConfigs(this)
 
-      if (currentSeq !== reloadSeq) {
+      if (currentSeq !== reloadSequences.get(this)) {
         return
       }
 

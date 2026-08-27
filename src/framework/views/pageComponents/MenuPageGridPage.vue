@@ -1,11 +1,10 @@
 <template>
   <div class="menu-page-grid-list" :style="containerStyle">
     <component
-      v-for="item in page.items"
+      v-for="(item, itemIndex) in page.items"
       :is="resolveItemTag(item)"
       :key="item.key"
-      :to="item.to || undefined"
-      :href="item.href || undefined"
+      v-bind="getMenuItemTargetProps(item)"
       :class="getGridItemClass(item)"
       :target="item.external ? '_blank' : undefined"
       :rel="item.external ? 'noreferrer' : undefined"
@@ -21,9 +20,9 @@
             :srcset="getItemCoverSrcset(item) || undefined"
             :alt="item.title"
             class="h-full w-full transition-transform duration-500"
-            :loading="coverListConfig.loading"
+            :loading="itemIndex === 0 ? 'eager' : coverListConfig.loading"
             sizes="(min-width: 1280px) 360px, (min-width: 768px) 50vw, 100vw"
-            fetchpriority="low"
+            :fetchpriority="itemIndex === 0 ? 'high' : 'low'"
             :style="coverImageStyle"
           />
         </div>
@@ -185,6 +184,7 @@ import {
   getMenuItemIconKind,
   getMenuItemPrimaryBadge,
   getMenuItemTags,
+  getMenuItemTargetProps,
   hasMenuItemCover,
   isArticleLikeMenuItem,
   resolveMenuItemTag

@@ -178,7 +178,7 @@ export function createBlogRoutes(routePatterns = getBlogPathPatterns(), menuConf
         )
       })
       .map(page => ({
-        path: `${page.path}/:itemId`,
+        path: `${page.path}:itemId/`,
         name: `MenuPageItem:${page.key}`,
         component: MenuPageItemView,
         meta: {

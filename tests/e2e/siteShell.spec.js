@@ -8,7 +8,7 @@ const COVER_FIXTURE = `
   </svg>
 `
 
-test.describe('static fallback', () => {
+test.describe('prerendered pages', () => {
   test.use({ javaScriptEnabled: false })
 
   test('renders the complete Vue homepage without JavaScript', async ({ page }) => {
@@ -20,26 +20,29 @@ test.describe('static fallback', () => {
     await expect(page.locator('.sidebar-container-desktop')).toBeVisible()
     await expect(page.locator('.article-feed-card img[src]')).toHaveCount(5)
     await expect(page.locator('.article-feed-card').first()).toHaveAttribute('href', /\/article\//u)
+    await expect(page.locator('.article-feed-card img').first()).toHaveAttribute('loading', 'eager')
+    await expect(page.locator('.article-feed-card img').first()).toHaveAttribute('fetchpriority', 'high')
+    await expect(page.locator('.article-feed-card img').nth(1)).toHaveAttribute('loading', 'lazy')
   })
 
-  test('keeps article lists and article content readable without JavaScript', async ({ page }) => {
+  test('keeps the themed article list and article content readable without JavaScript', async ({ page }) => {
     await page.goto(sitePath('/articles'))
 
-    const staticPreview = page.locator('[data-static-preview="true"]')
-    const articleLinks = staticPreview.locator('.ssg-list-title a')
+    const prerenderedRoot = page.locator('#app[data-vue-prerendered="true"]')
+    const articleLinks = prerenderedRoot.locator('a.article-card-shell')
 
-    await expect(staticPreview).toBeVisible()
+    await expect(prerenderedRoot).toBeVisible()
     await expect(articleLinks).toHaveCount(5)
     await expect(page.locator('link[rel="stylesheet"][href$="/themes/default.css"]')).toHaveCount(1)
 
     await articleLinks.first().click()
 
-    await expect(page.locator('[data-static-preview="true"] .ssg-article')).toBeVisible()
-    await expect(page.locator('.ssg-article-content')).not.toBeEmpty()
+    await expect(page.locator('#app[data-vue-prerendered="true"] .article-detail-shell')).toBeVisible()
+    await expect(page.locator('.article-content')).not.toBeEmpty()
   })
 })
 
-test('keeps the fallback visible while a non-prerendered route starts', async ({ page }) => {
+test('keeps the same prerendered article list visible while hydration starts', async ({ page }) => {
   let releaseMainScript
   const mainScriptGate = new Promise(resolve => {
     releaseMainScript = resolve
@@ -53,11 +56,13 @@ test('keeps the fallback visible while a non-prerendered route starts', async ({
 
   const navigation = page.goto(sitePath('/articles'))
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await expect(page.locator('[data-static-preview="true"]')).toBeVisible()
+  await expect(page.locator('#app[data-vue-prerendered="true"]')).toBeVisible()
+  await expect(page.locator('.article-card-shell')).toHaveCount(5)
 
   releaseMainScript()
   await navigation
-  await expect(page.locator('[data-static-preview="true"]')).toHaveCount(0)
+  await expect(page.locator('#app')).not.toHaveAttribute('data-vue-prerendered', 'true')
+  await expect(page.locator('.article-card-shell')).toHaveCount(5)
 })
 
 test('hydrates the prerendered homepage in place', async ({ page }) => {
@@ -76,7 +81,7 @@ test('hydrates the prerendered homepage in place', async ({ page }) => {
   expect(hydrationMessages).toEqual([])
 })
 
-test('hydrates the article list and defers offscreen covers', async ({ page }) => {
+test('hydrates the article list with one prioritized cover and native lazy loading', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 600 })
   await installCoverFixture(page, COVER_FIXTURE)
 
@@ -88,17 +93,61 @@ test('hydrates the article list and defers offscreen covers', async ({ page }) =
   await expect(page.locator('[data-static-preview="true"]')).toHaveCount(0)
   await expect(cards).toHaveCount(5)
   await expect(covers).toHaveCount(5)
-  await expect.poll(async () => covers.evaluateAll(images => (
-    images.filter(image => image.hasAttribute('src')).length
-  ))).toBeLessThan(5)
+  await expect(covers.first()).toHaveAttribute('loading', 'eager')
+  await expect(covers.first()).toHaveAttribute('fetchpriority', 'high')
+  await expect(covers.nth(1)).toHaveAttribute('loading', 'lazy')
+  await expect(covers.nth(1)).toHaveAttribute('fetchpriority', 'low')
+  await expect(page.locator('.menu-page-card-list .menu-page-card-item img[src]')).toHaveCount(5)
+})
 
-  for (let index = 0; index < await covers.count(); index += 1) {
-    await covers.nth(index).scrollIntoViewIfNeeded()
-  }
+test('keeps responsive homepage content stable through mobile hydration', async ({ page }) => {
+  let releaseMainScript
+  const mainScriptGate = new Promise(resolve => {
+    releaseMainScript = resolve
+  })
+  const hydrationMessages = []
 
-  await expect.poll(async () => covers.evaluateAll(images => (
-    images.filter(image => image.hasAttribute('src')).length
-  ))).toBe(5)
+  await page.setViewportSize({ width: 390, height: 844 })
+  page.on('console', (message) => {
+    if (/hydration/iu.test(message.text())) hydrationMessages.push(message.text())
+  })
+  await page.route(/\/assets\/index-[^/]+\.js$/u, async (route) => {
+    await mainScriptGate
+    await route.continue()
+  })
+
+  const navigation = page.goto(sitePath('/'))
+  await expect(page.locator('#app[data-vue-prerendered="true"]')).toBeVisible()
+  const beforeHydration = await page.locator('.article-feed-card').first().evaluate(card => ({
+    excerptClass: card.querySelector('.article-feed-excerpt')?.className,
+    sidebarCount: document.querySelectorAll('.sidebar-container-desktop').length,
+    tagClasses: Array.from(card.querySelectorAll('.article-feed-tag')).map(tag => tag.className),
+    tagTexts: Array.from(card.querySelectorAll('.article-feed-tag')).map(tag => tag.textContent.trim())
+  }))
+
+  releaseMainScript()
+  await navigation
+  await expect(page.locator('#app')).not.toHaveAttribute('data-vue-prerendered', 'true')
+
+  const afterHydration = await page.locator('.article-feed-card').first().evaluate(card => ({
+    excerptClass: card.querySelector('.article-feed-excerpt')?.className,
+    sidebarCount: document.querySelectorAll('.sidebar-container-desktop').length,
+    tagClasses: Array.from(card.querySelectorAll('.article-feed-tag')).map(tag => tag.className),
+    tagTexts: Array.from(card.querySelectorAll('.article-feed-tag')).map(tag => tag.textContent.trim())
+  }))
+
+  expect(afterHydration).toEqual(beforeHydration)
+  expect(hydrationMessages).toEqual([])
+})
+
+test('redirects a direct extensionless request to its prerendered directory URL', async ({ page }) => {
+  const canonicalUrl = sitePath('/articles')
+
+  await page.goto(canonicalUrl.replace(/\/$/u, ''))
+
+  await expect(page).toHaveURL(new RegExp(`${canonicalUrl.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}$`, 'u'))
+  await expect(page.locator('.article-card-shell')).toHaveCount(5)
+  await expect(page.locator('#app')).not.toHaveAttribute('data-vue-prerendered', 'true')
 })
 
 test('article list has no horizontal overflow on mobile', async ({ page }) => {

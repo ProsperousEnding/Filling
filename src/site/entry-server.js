@@ -7,7 +7,7 @@ import { resetRuntimeRandomCoverPool } from '@framework/utils/articleCover'
 export async function render(url, options = {}) {
   const baseUrl = options.baseUrl || import.meta.env.BASE_URL
   resetRuntimeRandomCoverPool(options.coverPoolSeed)
-  const { app } = await createSiteApp({
+  const { app, runtimeContext } = await createSiteApp({
     baseUrl,
     history: createMemoryHistory(baseUrl),
     ssr: true,
@@ -19,6 +19,7 @@ export async function render(url, options = {}) {
 
   return {
     html,
-    modules: Array.from(renderContext.modules || [])
+    modules: Array.from(renderContext.modules || []),
+    prerenderState: runtimeContext.prerenderState
   }
 }

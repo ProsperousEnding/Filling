@@ -14,8 +14,7 @@
 
       <component
         :is="resolveItemTag(item)"
-        :to="item.to || undefined"
-        :href="item.href || undefined"
+        v-bind="getMenuItemTargetProps(item)"
         :class="getTimelineCardClass(item)"
         :data-stamp="getTimelineStamp(item)"
         :target="item.external ? '_blank' : undefined"
@@ -154,6 +153,7 @@ import {
   getMenuItemDetails,
   getMenuItemPrimaryBadge,
   getMenuItemTags,
+  getMenuItemTargetProps,
   isArticleLikeMenuItem,
   resolveMenuItemTag
 } from './menuPageItemPresentation.js'

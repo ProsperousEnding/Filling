@@ -23,11 +23,15 @@ export function createBlogRuntimeContext(options = {}) {
   const configProvider = options.configProvider
     ? resolveConfigProvider(options.configProvider)
     : null
+  const prerenderState = options.prerenderState && typeof options.prerenderState === 'object'
+    ? options.prerenderState
+    : {}
 
   return Object.freeze({
     baseUrl: normalizeBlogBaseUrl(options.baseUrl ?? options.base),
     contentAdapter: options.contentAdapter || getContentAdapter(),
-    configProvider
+    configProvider,
+    prerenderState
   })
 }
 

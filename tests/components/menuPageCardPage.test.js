@@ -7,7 +7,20 @@ import { useConfigStore } from '../../src/framework/stores/config.js'
 
 let wrapper
 
-function mountPage() {
+function createArticleItem(key = 'article-card-layout') {
+  return {
+    key,
+    kind: 'article',
+    title: '文章标题',
+    description: '文章摘要',
+    category: { label: '分类标签' },
+    meta: '2026-08-21',
+    cover: `https://example.com/${key}.jpg`,
+    tags: []
+  }
+}
+
+function mountPage(items = [createArticleItem()]) {
   const pinia = createPinia()
   const configStore = useConfigStore(pinia)
   configStore.$patch({
@@ -25,16 +38,7 @@ function mountPage() {
   wrapper = mount(MenuPageCardPage, {
     props: {
       page: {
-        items: [{
-          key: 'article-card-layout',
-          kind: 'article',
-          title: '文章标题',
-          description: '文章摘要',
-          category: { label: '分类标签' },
-          meta: '2026-08-21',
-          cover: 'https://example.com/cover.jpg',
-          tags: []
-        }]
+        items
       }
     },
     global: {
@@ -64,5 +68,20 @@ describe('menu page card cover boundary', () => {
     ]))
     expect(cover.find('.menu-page-card-article-title').exists()).toBe(false)
     expect(wrapper.get('.menu-page-card-article-title').element.closest('.menu-page-card-cover')).toBeNull()
+  })
+
+  it('loads the first cover eagerly and defers later covers', () => {
+    mountPage([
+      createArticleItem('first-article'),
+      createArticleItem('second-article')
+    ])
+
+    const images = wrapper.findAll('.menu-page-card-cover img')
+
+    expect(images).toHaveLength(2)
+    expect(images[0].attributes('loading')).toBe('eager')
+    expect(images[0].attributes('fetchpriority')).toBe('high')
+    expect(images[1].attributes('loading')).toBe('lazy')
+    expect(images[1].attributes('fetchpriority')).toBe('low')
   })
 })

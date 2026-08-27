@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   getHomeArticleModeTitle,
+  resolveHomeArticlePageTitle,
   selectHomeArticles
 } from '../src/framework/utils/homeArticleSelection.js'
 
@@ -26,6 +27,13 @@ test('home article modes expose matching default page titles', () => {
   assert.equal(getHomeArticleModeTitle('sticky'), '置顶文章')
   assert.equal(getHomeArticleModeTitle('mixed'), '推荐文章')
   assert.equal(getHomeArticleModeTitle('unsupported'), '最新文章')
+})
+
+test('home page title only treats an explicit menu entry as an override', () => {
+  assert.equal(resolveHomeArticlePageTitle('mixed'), '推荐文章')
+  assert.equal(resolveHomeArticlePageTitle('featured', {
+    pages: [{ key: 'home', title: '编辑精选' }]
+  }), '编辑精选')
 })
 
 test('home article selection applies the same mode, visibility and ordering rules', () => {

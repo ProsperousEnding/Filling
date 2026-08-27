@@ -96,6 +96,18 @@ image_proxy_url = "https://filling-config-api.initzo.com/image/cover"
 
 修改后重新构建并发布站点。若接口仍返回 `404`，说明线上 Worker 代码尚未更新；若返回 `307` 跳转到原图，则检查部署版本的 `IMAGES` binding。
 
+### 自动部署 Worker
+
+Pages 工作流会先执行 `pnpm worker:check`。需要在默认分支通过检查后自动发布 Worker 时，在 GitHub 仓库的 Actions 配置中添加：
+
+| 类型 | 名称 | 值 |
+| --- | --- | --- |
+| Actions Variable | `DEPLOY_WORKER` | `true` |
+| Actions Variable | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID |
+| Actions Secret | `CLOUDFLARE_API_TOKEN` | 具有 Worker 部署权限的 API Token |
+
+`DEPLOY_WORKER` 未设为 `true` 时，部署任务会明确跳过，不影响普通 fork 或只发布 Pages 的仓库。任务发布 `worker/wrangler.jsonc` 后会继续检查 `/health` 和 `/image/cover`，避免代码已合并但线上仍停留在旧版本。
+
 ### Secret
 
 以下变量必须选择 `Secret` 类型：

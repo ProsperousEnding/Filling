@@ -58,13 +58,14 @@ const articleHtml = await readFile(
 )
 assert.equal(articleHtml.includes('<meta property="og:type" content="article"'), true)
 assert.equal(articleHtml.includes('<link rel="canonical"'), true)
-assert.equal(articleHtml.includes('data-static-preview="true"'), true)
-assert.equal(articleHtml.includes('data-runtime-pending'), false)
-assert.equal(articleHtml.includes('class="ssg-article-content article-content"'), true)
+assert.equal(articleHtml.includes('data-vue-prerendered="true"'), true)
+assert.equal(articleHtml.includes('data-static-preview="true"'), false)
+assert.equal(articleHtml.includes('class="article-detail-shell'), true)
 assert.equal(/<div id="app">\s*<\/div>/u.test(articleHtml), false)
 
 const articlesHtml = await readFile(path.join(distDir, 'articles', 'index.html'), 'utf8')
-assert.equal(articlesHtml.includes('class="ssg-list"'), true)
+assert.equal(articlesHtml.includes('data-vue-prerendered="true"'), true)
+assert.equal(articlesHtml.includes('article-card-shell'), true)
 assert.equal(articlesHtml.includes('/article/'), true)
 assert.match(
   articlesHtml,
@@ -81,6 +82,7 @@ assert.match(indexHtml, /<img[^>]+src="https:\/\//u)
 
 const notFoundHtml = await readFile(path.join(distDir, '404.html'), 'utf8')
 assert.equal(notFoundHtml.includes('页面未找到'), true)
-assert.equal(notFoundHtml.includes('data-static-preview="true"'), true)
+assert.equal(notFoundHtml.includes('data-vue-prerendered="true"'), true)
+assert.equal(notFoundHtml.includes('data-static-preview="true"'), false)
 
 console.log('Static site routes, metadata, and deployment files verified.')

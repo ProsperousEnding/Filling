@@ -1,11 +1,10 @@
 <template>
   <div class="menu-page-card-list" :style="containerStyle">
     <component
-      v-for="item in page.items"
+      v-for="(item, itemIndex) in page.items"
       :is="resolveItemTag(item)"
       :key="item.key"
-      :to="item.to || undefined"
-      :href="item.href || undefined"
+      v-bind="getMenuItemTargetProps(item)"
       :class="getCardItemClass(item)"
       :target="item.external ? '_blank' : undefined"
       :rel="item.external ? 'noreferrer' : undefined"
@@ -27,9 +26,9 @@
             :srcset="getItemCoverSrcset(item) || undefined"
             :alt="item.title"
             class="absolute inset-0 h-full w-full transition-transform duration-200"
-            :loading="coverListConfig.loading"
+            :loading="itemIndex === 0 ? 'eager' : coverListConfig.loading"
             sizes="(min-width: 1280px) 420px, (min-width: 768px) 50vw, 100vw"
-            fetchpriority="low"
+            :fetchpriority="itemIndex === 0 ? 'high' : 'low'"
             :style="coverImageStyle"
           />
 
@@ -204,6 +203,7 @@ import {
   getMenuItemIconKind,
   getMenuItemPrimaryBadge,
   getMenuItemTags,
+  getMenuItemTargetProps,
   hasMenuItemCover,
   isArticleLikeMenuItem,
   resolveMenuItemTag

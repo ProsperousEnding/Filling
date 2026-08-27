@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onServerPrefetch, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCategoryStore } from '../stores/category'
 import { useConfigStore } from '../stores/config'
@@ -56,6 +56,7 @@ import { createArticleCollectionItems, createCollectionPage } from '../utils/pag
 import { resolveMenuPage } from '../utils/menuConfig'
 import { getCategoryRoute } from '../utils/routeLinks'
 import { resolveBuiltInPageComponent } from './pageComponentRegistry'
+import { applyMaybeAsync } from '../utils/asyncValue'
 
 const route = useRoute()
 const categoryId = computed(() => String(route.params.id || ''))
@@ -76,24 +77,31 @@ const resolvedComponent = computed(() => resolveBuiltInPageComponent('articles',
 
 const category = ref(null)
 
-async function fetchCategory() {
+function fetchCategory() {
   if (!categoryId.value) {
     category.value = null
     return
   }
 
   try {
-    const categoryData = await categoryStore.fetchCategoryDetail(categoryId.value)
-    category.value = categoryData
+    return applyMaybeAsync(categoryStore.fetchCategoryDetail(categoryId.value), (categoryData) => {
+      category.value = categoryData
+    }).catch((error) => {
+      console.error('获取分类信息失败:', error)
+      category.value = null
+    })
   } catch (error) {
     console.error('获取分类信息失败:', error)
     category.value = null
+    return Promise.resolve()
   }
 }
 
+let initialCategoryRequest = Promise.resolve()
 watch(categoryId, () => {
-  fetchCategory().catch(() => {})
+  initialCategoryRequest = fetchCategory()
 }, { immediate: true })
+onServerPrefetch(() => initialCategoryRequest)
 
 const {
   items,

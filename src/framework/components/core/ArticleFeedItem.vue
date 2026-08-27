@@ -2,7 +2,11 @@
   <div class="article-feed-item article-item">
     <div
       class="article-feed-card relative h-52 sm:h-56 md:h-64 rounded-lg md:rounded-xl overflow-hidden transition-[border-color,box-shadow,transform] duration-200 bg-cover bg-center"
-      :class="showArticleCover ? 'article-feed-card-with-cover' : 'article-feed-card-without-cover'"
+      :class="{
+        'article-feed-card-with-cover': showArticleCover,
+        'article-feed-card-without-cover': !showArticleCover,
+        'article-feed-card-cover-pending': showArticleCover && coverImageState !== 'loaded'
+      }"
       :style="articleCardStyle"
     >
       <DeferredImage
@@ -11,10 +15,11 @@
         :srcset="articleCoverSrcset || undefined"
         alt=""
         class="article-feed-cover-image absolute inset-0 h-full w-full"
-        :loading="coverListConfig.loading"
+        :loading="priority ? 'eager' : coverListConfig.loading"
         sizes="(min-width: 1280px) 900px, (min-width: 768px) 70vw, 100vw"
-        fetchpriority="low"
+        :fetchpriority="priority ? 'high' : 'low'"
         :style="articleCoverImageStyle"
+        @state-change="coverImageState = $event"
         @error="coverLoadFailed = true"
       />
       <div class="article-feed-card-overlay absolute inset-0"></div>
@@ -43,16 +48,20 @@
 
           <div v-if="article.tags && article.tags.length > 0" class="article-feed-tags flex flex-wrap justify-end">
             <component
-              v-for="tag in article.tags.slice(0, isSmallScreen ? 1 : 3)"
+              v-for="(tag, tagIndex) in article.tags.slice(0, 3)"
               :key="typeof tag === 'string' ? tag : tag.id"
               :is="tagPageEnabled ? 'router-link' : 'span'"
               :to="tagPageEnabled ? getTagRoute(tag) : undefined"
               class="article-feed-tag ml-1 md:ml-1.5 mb-1 px-2 py-0.5 text-[0.6875rem] rounded-md transition-colors duration-150"
+              :class="{ 'hidden sm:inline-flex': tagIndex > 0 }"
             >
               #{{ typeof tag === 'string' ? tag : tag.name }}
             </component>
-            <span v-if="article.tags.length > (isSmallScreen ? 1 : 3)" class="article-feed-tag-more text-xs ml-1 md:ml-2">
-              +{{ article.tags.length - (isSmallScreen ? 1 : 3) }}
+            <span v-if="article.tags.length > 3" class="article-feed-tag-more ml-1 hidden text-xs sm:inline md:ml-2">
+              +{{ article.tags.length - 3 }}
+            </span>
+            <span v-if="article.tags.length > 1" class="article-feed-tag-more ml-1 text-xs sm:hidden">
+              +{{ article.tags.length - 1 }}
             </span>
           </div>
         </div>
@@ -65,8 +74,7 @@
           </h2>
 
           <p
-            class="article-feed-excerpt text-xs md:text-sm leading-relaxed mt-1 md:mt-2 mb-2 md:mb-3 max-w-3xl"
-            :class="isSmallScreen ? 'line-clamp-1' : 'line-clamp-2'"
+            class="article-feed-excerpt line-clamp-1 mt-1 mb-2 max-w-3xl text-xs leading-relaxed sm:line-clamp-2 md:mt-2 md:mb-3 md:text-sm"
           >
             {{ article.excerpt }}
           </p>
@@ -108,18 +116,19 @@ import { getArticleRoute, getCategoryRoute, getTagRoute } from '../../utils/rout
 import DeferredImage from './DeferredImage.vue'
 
 const props = defineProps({
+  priority: {
+    type: Boolean,
+    default: false
+  },
   article: {
     type: Object,
     required: true
-  },
-  isSmallScreen: {
-    type: Boolean,
-    default: false
   }
 })
 
 const configStore = useConfigStore()
 const coverLoadFailed = ref(false)
+const coverImageState = ref('loaded')
 const categoryPageEnabled = computed(() => Boolean(configStore.pageRegistry?.categories))
 const tagPageEnabled = computed(() => Boolean(configStore.pageRegistry?.tags))
 const coverListConfig = computed(() => {

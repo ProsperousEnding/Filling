@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onServerPrefetch, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBlogRuntimeContext } from '../runtime/runtimeContext'
 import { usePageMetadata } from '../composables/usePageMetadata'
@@ -50,7 +50,7 @@ import { scrollBlogViewport } from '../utils/blogScroll'
 
 const route = useRoute()
 const configStore = useConfigStore()
-const { contentAdapter } = useBlogRuntimeContext()
+const { contentAdapter, prerenderState } = useBlogRuntimeContext()
 
 const itemId = computed(() => String(route.params.itemId || '').trim())
 const page = computed(() => {
@@ -67,12 +67,20 @@ const item = ref(null)
 const loading = ref(false)
 
 let activeRequestId = 0
+let initialItemRequest = Promise.resolve()
 
-watch([page, itemId], async ([nextPage, nextItemId], [previousPage, previousItemId]) => {
+async function loadPageItem(nextPage, nextItemId, previousPage, previousItemId) {
   const requestId = ++activeRequestId
+  const stateKey = `menu-item:${nextPage?.key || nextPage?.path || ''}:${nextItemId}`
   item.value = null
 
   if (!nextPage || !nextItemId) {
+    loading.value = false
+    return
+  }
+
+  if (Object.prototype.hasOwnProperty.call(prerenderState, stateKey)) {
+    item.value = prerenderState[stateKey]
     loading.value = false
     return
   }
@@ -87,6 +95,7 @@ watch([page, itemId], async ([nextPage, nextItemId], [previousPage, previousItem
     }
 
     item.value = resolvedItem || null
+    prerenderState[stateKey] = item.value
   } finally {
     if (requestId === activeRequestId) {
       loading.value = false
@@ -100,7 +109,13 @@ watch([page, itemId], async ([nextPage, nextItemId], [previousPage, previousItem
   ) {
     scrollBlogViewport({ top: 0, behavior: 'smooth' })
   }
+}
+
+watch([page, itemId], ([nextPage, nextItemId], [previousPage, previousItemId]) => {
+  initialItemRequest = loadPageItem(nextPage, nextItemId, previousPage, previousItemId)
 }, { immediate: true })
+
+onServerPrefetch(() => initialItemRequest)
 
 usePageMetadata({
   title: () => item.value?.title || page.value?.title || '页面',

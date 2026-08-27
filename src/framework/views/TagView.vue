@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onServerPrefetch, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTagStore } from '../stores/tag'
 import { useConfigStore } from '../stores/config'
@@ -58,6 +58,7 @@ import { createArticleCollectionItems, createCollectionPage } from '../utils/pag
 import { resolveMenuPage } from '../utils/menuConfig'
 import { getTagRoute } from '../utils/routeLinks'
 import { resolveBuiltInPageComponent } from './pageComponentRegistry'
+import { applyMaybeAsync } from '../utils/asyncValue'
 
 const route = useRoute()
 const tagId = computed(() => String(route.params.id || ''))
@@ -78,24 +79,31 @@ const resolvedComponent = computed(() => resolveBuiltInPageComponent('articles',
 
 const tag = ref(null)
 
-async function fetchTag() {
+function fetchTag() {
   if (!tagId.value) {
     tag.value = null
     return
   }
 
   try {
-    const tagData = await tagStore.fetchTagDetail(tagId.value)
-    tag.value = tagData
+    return applyMaybeAsync(tagStore.fetchTagDetail(tagId.value), (tagData) => {
+      tag.value = tagData
+    }).catch((error) => {
+      console.error('获取标签信息失败:', error)
+      tag.value = null
+    })
   } catch (error) {
     console.error('获取标签信息失败:', error)
     tag.value = null
+    return Promise.resolve()
   }
 }
 
+let initialTagRequest = Promise.resolve()
 watch(tagId, () => {
-  fetchTag().catch(() => {})
+  initialTagRequest = fetchTag()
 }, { immediate: true })
+onServerPrefetch(() => initialTagRequest)
 
 const {
   items,

@@ -174,7 +174,7 @@ describe('Sidebar data loading', () => {
 
     const viewAllLinks = sidebar.findAll('.sidebar-section-view-all')
     expect(viewAllLinks.map(link => link.text())).toEqual(['全部分类', '全部标签'])
-    expect(viewAllLinks.map(link => link.attributes('href'))).toEqual(['/category', '/tag'])
+    expect(viewAllLinks.map(link => link.attributes('href'))).toEqual(['/category/', '/tag/'])
     expect(sidebar.findAll('.sidebar-section-count').map(count => count.text())).toContain('8')
     expect(sidebar.findAll('.sidebar-section-count').map(count => count.text())).toContain('12')
   })

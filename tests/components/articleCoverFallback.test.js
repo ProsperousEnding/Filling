@@ -78,4 +78,84 @@ describe('article cover fallback', () => {
     expect(wrapper.find('.article-feed-cover-image').exists()).toBe(false)
     expect(wrapper.find('.article-feed-card-fallback').exists()).toBe(true)
   })
+
+  it('promotes explicitly prioritized article covers', () => {
+    const pinia = createPinia()
+    const configStore = useConfigStore(pinia)
+    configStore.$patch({
+      coverConfig: {
+        list: {
+          showCover: true,
+          loading: 'lazy',
+          objectFit: 'cover',
+          placeholder: 'gradient'
+        }
+      }
+    })
+
+    wrapper = mount(ArticleFeedItem, {
+      props: {
+        priority: true,
+        article: {
+          id: 'priority-cover',
+          title: '首屏封面',
+          excerpt: '首张封面应进入浏览器高优先级请求队列。',
+          cover: 'https://example.com/priority.jpg',
+          tags: []
+        }
+      },
+      global: {
+        plugins: [pinia],
+        stubs: {
+          RouterLink: { template: '<a><slot /></a>' }
+        }
+      }
+    })
+
+    const image = wrapper.get('.article-feed-cover-image')
+
+    expect(image.attributes('loading')).toBe('eager')
+    expect(image.attributes('fetchpriority')).toBe('high')
+  })
+
+  it('uses the themed loading surface until a feed cover finishes loading', async () => {
+    const pinia = createPinia()
+    const configStore = useConfigStore(pinia)
+    configStore.$patch({
+      coverConfig: {
+        list: {
+          showCover: true,
+          loading: 'lazy',
+          objectFit: 'cover',
+          placeholder: 'gradient'
+        }
+      }
+    })
+
+    wrapper = mount(ArticleFeedItem, {
+      props: {
+        article: {
+          id: 'loading-cover',
+          title: '加载中的封面',
+          excerpt: '封面加载时不应暴露纯黑底色。',
+          cover: 'https://example.com/loading.jpg',
+          tags: []
+        }
+      },
+      global: {
+        plugins: [pinia],
+        stubs: {
+          RouterLink: { template: '<a><slot /></a>' }
+        }
+      }
+    })
+
+    const card = wrapper.get('.article-feed-card')
+    const image = wrapper.get('.article-feed-cover-image')
+
+    await wrapper.vm.$nextTick()
+    expect(card.classes()).toContain('article-feed-card-cover-pending')
+    await image.trigger('load')
+    expect(card.classes()).not.toContain('article-feed-card-cover-pending')
+  })
 })

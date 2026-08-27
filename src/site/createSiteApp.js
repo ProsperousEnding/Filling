@@ -18,10 +18,11 @@ export async function createSiteApp(options = {}) {
     getConfig: () => configStore
   })
 
-  installBlogRuntimeContext(app, pinia, {
+  const runtimeContext = installBlogRuntimeContext(app, pinia, {
     baseUrl,
     contentAdapter,
-    configProvider: loadAllConfigs
+    configProvider: loadAllConfigs,
+    prerenderState: options.prerenderState
   })
   app.use(pinia)
 
@@ -49,6 +50,7 @@ export async function createSiteApp(options = {}) {
     app,
     configStore,
     pinia,
-    router
+    router,
+    runtimeContext
   }
 }

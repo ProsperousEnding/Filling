@@ -21,6 +21,7 @@
                 :loading="articleCoverLoading"
                 sizes="100vw"
                 fetchpriority="high"
+                @state-change="articleCoverImageState = $event"
                 @error="articleCoverLoadFailed = true"
             />
         </div>
@@ -436,7 +437,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, onServerPrefetch, watch } from "vue";
 import { useRoute } from "vue-router";
 import CommentSection from "../components/core/CommentSection.vue";
 import DeferredImage from "../components/core/DeferredImage.vue";
@@ -458,6 +459,7 @@ import {
     getTagRoute,
 } from "../utils/routeLinks";
 import { usePageMetadata } from "../composables/usePageMetadata";
+import { useBlogRuntimeContext } from "../runtime/runtimeContext";
 import { scrollBlogViewport } from "../utils/blogScroll";
 
 // 获取路由参数
@@ -468,6 +470,7 @@ const homeRoute = getHomeRoute();
 // 获取store
 const articleStore = useArticleStore();
 const configStore = useConfigStore();
+const { prerenderState } = useBlogRuntimeContext();
 const config = configStore;
 const articleRoute = (target) => getArticleRoute(target);
 const categoryPageEnabled = computed(() =>
@@ -480,9 +483,11 @@ const article = ref(null);
 const relatedArticles = ref([]);
 const articleCoverLoadFailed = ref(false);
 const relatedCoverFailures = ref(new Set());
+const articleCoverImageState = ref("loaded");
 const loading = ref(false);
 const hasResolved = ref(false);
 let activeRequestId = 0;
+let initialArticleRequest = Promise.resolve();
 const displayUpdatedAt = computed(() => {
     const updatedAt = article.value?.updatedAt;
 
@@ -661,6 +666,9 @@ const articleViewClass = computed(() => ({
     "article-detail-view-page-background-glass":
         isArticleCoverPageBackground.value &&
         coverDetailConfig.value.pageBackground.contentStyle === "glass",
+    "article-detail-view-page-background-pending":
+        isArticleCoverPageBackground.value &&
+        articleCoverImageState.value !== "loaded",
 }));
 const relatedCoverImageStyle = computed(() => ({
     objectFit: coverDetailConfig.value.objectFit,
@@ -761,7 +769,7 @@ usePageMetadata({
 // 监听路由参数变化，支持同组件内跳转
 watch(
     articleId,
-    async (newId, oldId) => {
+    (newId, oldId) => {
         if (!newId) {
             activeRequestId += 1;
             article.value = null;
@@ -771,18 +779,38 @@ watch(
             return;
         }
 
-        await fetchArticleDetail(String(newId));
-
-        if (oldId && newId !== oldId) {
-            scrollBlogViewport({ top: 0, behavior: "smooth" });
-        }
+        initialArticleRequest = fetchArticleDetail(String(newId)).then(() => {
+            if (oldId && newId !== oldId) {
+                scrollBlogViewport({ top: 0, behavior: "smooth" });
+            }
+        });
     },
     { immediate: true },
 );
 
+onServerPrefetch(() => initialArticleRequest);
+
 // 获取文章详情
 async function fetchArticleDetail(id) {
     const requestId = ++activeRequestId;
+    const stateKey = `article:${id}`;
+    const cachedState = Object.prototype.hasOwnProperty.call(
+        prerenderState,
+        stateKey,
+    )
+        ? prerenderState[stateKey]
+        : null;
+
+    if (cachedState) {
+        article.value = cachedState.article || null;
+        relatedArticles.value = Array.isArray(cachedState.relatedArticles)
+            ? cachedState.relatedArticles
+            : [];
+        loading.value = false;
+        hasResolved.value = true;
+        return;
+    }
+
     const shouldShowLoading = hasResolved.value;
     article.value = null;
     relatedArticles.value = [];
@@ -800,6 +828,10 @@ async function fetchArticleDetail(id) {
 
         article.value = articleData || null;
         relatedArticles.value = Array.isArray(relatedData) ? relatedData : [];
+        prerenderState[stateKey] = {
+            article: article.value,
+            relatedArticles: relatedArticles.value,
+        };
     } catch (error) {
         if (requestId !== activeRequestId) {
             return;
@@ -937,7 +969,7 @@ function normalizeCoverWatermark(watermark = {}) {
     inset: 0;
     z-index: 0;
     overflow: hidden;
-    background: rgb(15, 23, 42);
+    background: var(--theme-cover-loading-background);
     pointer-events: none;
 }
 
@@ -970,6 +1002,11 @@ function normalizeCoverWatermark(watermark = {}) {
             rgba(255, 255, 255, 0.08),
             transparent 30%
         );
+}
+
+.article-detail-view-page-background-pending
+    .article-detail-page-background::after {
+    background: var(--theme-cover-loading-overlay);
 }
 
 .article-detail-view-with-page-background .article-detail-shell {

@@ -139,7 +139,7 @@ describe('AdminMenuEditor', () => {
       title: '说明',
       component: 'context',
       content: '# 使用说明',
-      path: '/guide'
+      path: '/guide/'
     })])
   })
 

@@ -142,7 +142,7 @@ test('cover URL pools choose one stable source from the article seed', () => {
   ].map(seed => createSeededArticleCover(seed, options))).size > 1)
 })
 
-test('random cover mode shuffles the configured pool and keeps an article stable in one session', () => {
+test('random cover mode shuffles the configured pool and keeps an article stable in one build', () => {
   const pool = [
     'https://images.example.com/one.webp',
     'https://images.example.com/two.webp'

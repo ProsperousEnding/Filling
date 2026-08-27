@@ -78,6 +78,7 @@ test('menu presentation marks exact, descendant, and parent items active', () =>
   }
 
   assert.equal(isMenuItemActive(item, '/articles/example'), true)
+  assert.equal(isMenuItemActive({ to: '/articles/', children: [] }, '/articles/page/2/'), true)
   assert.equal(isMenuItemActive(item.children[0], '/tags'), false)
   assert.equal(isMenuItemActive({ to: '/', children: [] }, '/articles'), false)
   assert.equal(isMenuItemActive({ to: '/', children: [] }, '/'), true)

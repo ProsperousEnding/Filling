@@ -167,7 +167,7 @@ seeded_style = "mwm-anime"
 fixed = false
 ```
 
-内置图源有 `picsum`、`cataas`、`mwm-anime`、`mwm-scenery`、`paugram-anime`、`dmoe-anime`、`loremflickr` 和 `paugram-bing`。MWM、保罗和 DMOE 属于随机接口，即使 URL 带有 `seed` 也不会返回固定图片。当前图源配置了图片池，因此默认的 `fixed = false` 会在每次访问时打乱图片池，并尽量避免同页重复。要让每篇文章稳定使用同一张图片，打开配置后台的“固定文章封面”：
+内置图源有 `picsum`、`cataas`、`mwm-anime`、`mwm-scenery`、`paugram-anime`、`dmoe-anime`、`loremflickr` 和 `paugram-bing`。MWM、保罗和 DMOE 属于随机接口，即使 URL 带有 `seed` 也不会返回固定图片。当前图源配置了图片池，因此默认的 `fixed = false` 会在每次构建发布时打乱图片池，并尽量避免同页重复。要让每篇文章跨版本稳定使用同一张图片，打开配置后台的“固定文章封面”：
 
 ```toml
 seeded_style = "mwm-anime"
@@ -180,7 +180,7 @@ mwm-anime = [
 ]
 ```
 
-开启固定模式后，框架按文章 seed 固定选择池中的图片；关闭时则按访问随机分配。没有为当前图源配置图片池时，框架才直接使用远程接口。该选择属于站点配置，不接受访客浏览器覆盖。`image_proxy_url` 是可选优化地址，只应在图片服务已部署可用后填写。详情页封面可进一步配置 `[detail].display_mode = "image" | "header-background" | "page-background"`。
+开启固定模式后，框架按文章 seed 固定选择池中的图片；关闭时则在构建发布时随机分配。没有为当前图源配置图片池时，框架才直接使用远程接口。该选择属于站点配置，不接受访客浏览器覆盖。`image_proxy_url` 是可选优化地址，只应在图片服务已部署可用后填写。详情页封面可进一步配置 `[detail].display_mode = "image" | "header-background" | "page-background"`。
 
 ## 评论
 

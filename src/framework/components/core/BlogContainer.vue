@@ -117,7 +117,7 @@ const canShowSidebarOnCurrentRoute = computed(() => (
   configState.sidebarVisible
   && (!isArticleRoute.value || configState.showSidebarOnArticles !== false)
 ))
-const showDesktopSidebar = computed(() => canShowSidebarOnCurrentRoute.value && !isMobileViewport.value)
+const showDesktopSidebar = computed(() => canShowSidebarOnCurrentRoute.value)
 const showMobileSidebar = computed(() => canShowSidebarOnCurrentRoute.value && isMobileViewport.value && configState.mobileSidebarOpen)
 const mobileSidebarPositionClass = computed(() => (
   isSidebarLeft.value ? 'left-0' : 'right-0'

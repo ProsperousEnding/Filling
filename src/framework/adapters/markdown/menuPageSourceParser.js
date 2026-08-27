@@ -149,7 +149,7 @@ export function resolveMenuCollectionItemPath(pagePath, itemId) {
     return ''
   }
 
-  return `${normalizedPagePath}/${normalizedItemId}`
+  return `${normalizedPagePath.replace(/\/+$/u, '')}/${normalizedItemId}/`
 }
 
 export function isMenuSourcePathInFolder(sourcePath, folderPrefix) {
