@@ -37,17 +37,20 @@
     "test": "pnpm test:unit && pnpm test:components",
     "test:unit": "node --test tests/*.test.js",
     "test:components": "vitest run --config vitest.config.js",
+    "test:e2e": "playwright test",
+    "test:bundle": "node scripts/verify-bundle-size.mjs",
     "test:site": "node scripts/verify-site-build.mjs",
     "test:package": "node scripts/verify-library-package.mjs",
+    "audit:prod": "pnpm audit --prod",
     "worker:dev": "wrangler dev --config worker/wrangler.jsonc",
     "worker:check": "wrangler deploy --config worker/wrangler.jsonc --dry-run --outdir dist-worker",
     "worker:deploy": "wrangler deploy --config worker/wrangler.jsonc",
     "lint": "eslint .",
-    "check": "pnpm lint && pnpm test && pnpm build && pnpm test:site && pnpm build:lib && pnpm test:package",
+    "check": "pnpm lint && pnpm audit:prod && pnpm test && pnpm test:e2e && pnpm build && pnpm test:site && pnpm test:bundle && pnpm build:lib && pnpm test:package && pnpm worker:check",
     "prepack": "pnpm test && pnpm build:lib && pnpm test:package"
   },
   "dependencies": {
-    "@chenglou/pretext": "^0.0.4",
+    "@chenglou/pretext": "^0.0.8",
     "@lucide/vue": "^1.33.0",
     "front-matter": "^4.0.2",
     "smol-toml": "^1.8.0"
@@ -59,6 +62,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.10",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/compiler-sfc": "^3.5.30",
@@ -70,12 +74,18 @@
     "happy-dom": "^20.11.2",
     "markdown-it": "^14.1.0",
     "pinia": "^2.1.7",
-    "postcss": "^8.4.35",
+    "postcss": "^8.5.26",
     "tailwindcss": "^3.4.1",
     "vite": "7.1.5",
     "vitest": "^4.1.11",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
     "wrangler": "^4.124.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "js-yaml@3": "3.15.1",
+      "nanoid@3": "3.3.18"
+    }
   }
 }

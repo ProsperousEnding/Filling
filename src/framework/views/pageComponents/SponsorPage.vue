@@ -274,7 +274,7 @@ function getSupporterMeta(supporter) {
   color: rgb(148 163 184);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -283,7 +283,7 @@ function getSupporterMeta(supporter) {
   color: rgb(15 23 42);
   font-size: clamp(1.45rem, 3vw, 2.15rem);
   line-height: 1.2;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 .sponsor-page-section-title {
@@ -291,7 +291,7 @@ function getSupporterMeta(supporter) {
   color: rgb(15 23 42);
   font-size: 1.18rem;
   line-height: 1.35;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .sponsor-page-action-panel {

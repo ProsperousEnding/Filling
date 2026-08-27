@@ -15,6 +15,8 @@ export const DEFAULT_COVER_CONFIG = Object.freeze({
   enabled: true,
   fallback: 'seeded',
   fallback_image: '',
+  image_proxy_url: '',
+  fixed: false,
   seeded_width: 1200,
   seeded_height: 630,
   seeded_format: 'webp',
@@ -145,10 +147,12 @@ function normalizeStyleUrls(styleUrls = {}, seededAnimeUrl = DEFAULT_COVER_CONFI
 
   return Object.entries(mergedStyleUrls).reduce((result, [key, value]) => {
     const style = normalizeSeededCoverStyle(key, '')
-    const url = normalizeString(value)
+    const source = Array.isArray(value)
+      ? [...new Set(value.map(item => normalizeString(item)).filter(Boolean))]
+      : normalizeString(value)
 
-    if (style && url) {
-      result[style] = url
+    if (style && (Array.isArray(source) ? source.length > 0 : source)) {
+      result[style] = source
     }
 
     return result
@@ -222,6 +226,8 @@ export function normalizeCoverConfig(config = {}) {
     enabled: normalizeBoolean(normalizedConfig.enabled, DEFAULT_COVER_CONFIG.enabled),
     fallback: normalizeFallbackMode(normalizedConfig.fallback),
     fallbackImage: normalizeString(normalizedConfig.fallbackImage || normalizedConfig.image),
+    imageProxyUrl: normalizeString(normalizedConfig.imageProxyUrl),
+    fixed: normalizeBoolean(normalizedConfig.fixed, DEFAULT_COVER_CONFIG.fixed),
     seededWidth: normalizePositiveInteger(normalizedConfig.seededWidth, DEFAULT_COVER_CONFIG.seeded_width),
     seededHeight: normalizePositiveInteger(normalizedConfig.seededHeight, DEFAULT_COVER_CONFIG.seeded_height),
     seededFormat: normalizeString(normalizedConfig.seededFormat, DEFAULT_COVER_CONFIG.seeded_format),

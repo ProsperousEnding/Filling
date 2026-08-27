@@ -96,17 +96,17 @@ const normalizedItems = computed(() => (
 .taxonomy-index {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.625rem;
 }
 
 .taxonomy-panel {
   overflow: hidden;
-  border: 1px solid rgba(226, 232, 240, 0.86);
-  border-radius: 1.2rem;
-  background: rgba(255, 255, 255, 0.74);
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(18px) saturate(1.08);
-  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-panel);
+  background: var(--theme-panel-background);
+  box-shadow: var(--theme-shadow-xs);
+  backdrop-filter: blur(18px) saturate(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(1.04);
 }
 
 .taxonomy-row {
@@ -114,14 +114,14 @@ const normalizedItems = computed(() => (
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.86rem;
-  min-height: 4.75rem;
-  padding: 0.88rem 1rem;
+  gap: 0.75rem;
+  min-height: 3.75rem;
+  padding: 0.625rem 0.75rem;
   color: inherit;
   text-decoration: none;
-  animation: taxonomy-row-enter 0.3s ease both;
+  animation: taxonomy-row-enter var(--theme-motion-slow) ease both;
   animation-delay: var(--taxonomy-delay);
-  transition: background-color 0.16s ease;
+  transition: background-color var(--theme-motion-fast) ease;
 }
 
 .taxonomy-row + .taxonomy-row {
@@ -136,18 +136,18 @@ const normalizedItems = computed(() => (
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.3rem;
-  height: 2.3rem;
+  width: 2rem;
+  height: 2rem;
   border: 1px solid rgba(203, 213, 225, 0.78);
-  border-radius: 0.72rem;
+  border-radius: var(--theme-radius-control);
   background: rgba(248, 250, 252, 0.76);
   color: rgb(71 85 105);
   flex-shrink: 0;
 }
 
 .taxonomy-row-icon svg {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 0.9375rem;
+  height: 0.9375rem;
 }
 
 .taxonomy-row-main {
@@ -157,10 +157,10 @@ const normalizedItems = computed(() => (
 .taxonomy-row-title {
   display: block;
   color: rgb(15 23 42);
-  font-size: 0.98rem;
+  font-size: 0.875rem;
   line-height: 1.32;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 
@@ -173,7 +173,7 @@ const normalizedItems = computed(() => (
   margin-top: 0.2rem;
   overflow: hidden;
   color: rgb(100 116 139);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
@@ -183,19 +183,19 @@ const normalizedItems = computed(() => (
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: 0.375rem;
   color: rgb(148 163 184);
 }
 
 .taxonomy-row-count {
   display: inline-flex;
-  min-height: 1.45rem;
+  min-height: 1.25rem;
   align-items: center;
-  padding: 0.16rem 0.52rem;
-  border-radius: 9999px;
-  background: rgba(241, 245, 249, 0.92);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
   color: rgb(100 116 139);
-  font-size: 0.74rem;
+  font-size: 0.6875rem;
   line-height: 1.1;
   font-weight: 600;
   white-space: nowrap;
@@ -210,32 +210,32 @@ const normalizedItems = computed(() => (
 .taxonomy-tag-cloud {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.72rem;
-  padding: 1.15rem 1.25rem;
-  border: 1px solid rgba(226, 232, 240, 0.86);
-  border-radius: 1.45rem;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.055);
-  backdrop-filter: blur(18px) saturate(1.08);
-  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  gap: 0.5rem;
+  padding: 0.875rem;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-panel);
+  background: var(--theme-panel-background);
+  box-shadow: var(--theme-shadow-xs);
+  backdrop-filter: blur(18px) saturate(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(1.04);
 }
 
 .taxonomy-tag-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.42rem;
-  min-height: 2.15rem;
-  padding: 0.38rem 0.72rem;
+  min-height: 1.75rem;
+  padding: 0.28rem 0.5rem;
   border: 1px solid rgba(226, 232, 240, 0.92);
-  border-radius: 9999px;
+  border-radius: 0.4375rem;
   background: rgba(248, 250, 252, 0.86);
   color: rgb(37 99 235);
-  font-size: calc(0.82rem * var(--taxonomy-weight));
+  font-size: calc(0.75rem * var(--taxonomy-weight));
   line-height: 1.2;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   text-decoration: none;
-  animation: taxonomy-row-enter 0.28s ease both;
+  animation: taxonomy-row-enter var(--theme-motion-slow) ease both;
   animation-delay: var(--taxonomy-delay);
   transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
 }
@@ -255,11 +255,11 @@ const normalizedItems = computed(() => (
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.24rem;
-  height: 1.24rem;
-  padding: 0 0.34rem;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.9);
+  min-width: auto;
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
   color: rgb(100 116 139);
   font-size: 0.68rem;
   line-height: 1;
@@ -281,13 +281,13 @@ const normalizedItems = computed(() => (
 :global(.dark .taxonomy-panel) {
   border-color: rgba(51, 65, 85, 0.82);
   background: rgba(15, 23, 42, 0.72);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+  box-shadow: var(--theme-shadow-xs);
 }
 
 :global(.dark .taxonomy-tag-cloud) {
   border-color: rgba(51, 65, 85, 0.82);
   background: rgba(15, 23, 42, 0.72);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+  box-shadow: var(--theme-shadow-xs);
 }
 
 :global(.dark .taxonomy-tag-pill) {
@@ -303,7 +303,7 @@ const normalizedItems = computed(() => (
 }
 
 :global(.dark .taxonomy-tag-count) {
-  background: rgba(15, 23, 42, 0.8);
+  background: transparent;
   color: rgb(203 213 225);
 }
 
@@ -336,7 +336,7 @@ const normalizedItems = computed(() => (
 }
 
 :global(.dark .taxonomy-row-count) {
-  background: rgba(30, 41, 59, 0.95);
+  background: transparent;
   color: rgb(203 213 225);
 }
 

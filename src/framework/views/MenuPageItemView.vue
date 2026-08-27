@@ -46,6 +46,7 @@ import { useBlogRuntimeContext } from '../runtime/runtimeContext'
 import { usePageMetadata } from '../composables/usePageMetadata'
 import { useConfigStore } from '../stores/config'
 import { resolveMenuPage } from '../utils/menuConfig'
+import { scrollBlogViewport } from '../utils/blogScroll'
 
 const route = useRoute()
 const configStore = useConfigStore()
@@ -96,9 +97,8 @@ watch([page, itemId], async ([nextPage, nextItemId], [previousPage, previousItem
     previousPage?.key === nextPage?.key
     && previousItemId
     && previousItemId !== nextItemId
-    && typeof window !== 'undefined'
   ) {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollBlogViewport({ top: 0, behavior: 'smooth' })
   }
 }, { immediate: true })
 

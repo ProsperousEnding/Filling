@@ -200,7 +200,6 @@ const pageType = ref('default')
 const sidebarOptions = Object.freeze([
   { key: 'profile', label: '个人资料' },
   { key: 'announcement', label: '公告' },
-  { key: 'search', label: '搜索' },
   { key: 'latest-articles', label: '最新文章' },
   { key: 'categories', label: '分类' },
   { key: 'tags', label: '标签' }

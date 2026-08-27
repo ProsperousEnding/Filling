@@ -49,7 +49,18 @@ filling-config-api.initzo.com
 
 ### 部署 Worker 代码
 
-项目根目录已经提供 `worker/wrangler.jsonc`，其中 Worker 名称和自定义域名均为 `filling-config-api`。首次部署执行：
+项目根目录已经提供 `worker/wrangler.jsonc`，其中 Worker 名称和自定义域名均为 `filling-config-api`，并通过以下配置声明封面转换绑定：
+
+```json
+"images": {
+  "binding": "IMAGES"
+},
+"cache": {
+  "enabled": true
+}
+```
+
+这个绑定由 Wrangler 在部署时创建，不需要先在 Dashboard 中建立图片库，也不要求侧边栏出现 `Images` 菜单。首次部署执行：
 
 ```bash
 pnpm install
@@ -65,6 +76,25 @@ curl https://filling-config-api.initzo.com/health
 ```
 
 正常响应应包含 `"ok":true` 和 `"configured":true`，不会返回任何变量或密钥的真实值。
+
+随后检查封面接口。将 `url` 换成真实存在的 MWM 封面地址：
+
+```bash
+curl --fail-with-body --output /dev/null \
+  --write-out "%{http_code} %{content_type}\n" \
+  --get \
+  --data-urlencode "url=https://tc.alcy.cc/tc/20260429/66bb5763f4048e34959a028b3963bac2.webp" \
+  --data-urlencode "width=800" \
+  https://filling-config-api.initzo.com/image/cover
+```
+
+接口确认可用后，才在 `blog/config/cover.toml` 顶层配置：
+
+```toml
+image_proxy_url = "https://filling-config-api.initzo.com/image/cover"
+```
+
+修改后重新构建并发布站点。若接口仍返回 `404`，说明线上 Worker 代码尚未更新；若返回 `307` 跳转到原图，则检查部署版本的 `IMAGES` binding。
 
 ### Secret
 
@@ -159,6 +189,7 @@ Worker API 遵守以下约束：
 
 - [ ] `https://filling-config-api.initzo.com` 可以访问 Worker。
 - [ ] `/health` 返回 `ok: true` 和 `configured: true`。
+- [ ] `/image/cover` 可以返回图片，且 Worker 部署中存在 `IMAGES` binding。
 - [ ] GitHub App Callback URL 与 `GITHUB_CALLBACK_URL` 完全一致。
 - [ ] `GITHUB_BRANCH` 为 `main`。
 - [ ] GitHub App 只安装到 `ProsperousEnding/Filling`。

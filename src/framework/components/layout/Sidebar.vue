@@ -136,109 +136,6 @@
           </div>
         </section>
 
-        <section
-          v-else-if="componentKey === 'search' && searchPageEnabled"
-          class="sidebar-search-panel"
-        >
-          <div
-            class="sidebar-search-combobox"
-            @focusin="handleSearchFocus"
-            @focusout="handleSearchFocusOut"
-          >
-            <div class="sidebar-search" role="search">
-              <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-search-leading" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                v-model="searchKeyword"
-                type="search"
-                placeholder="搜索文章..."
-                aria-label="搜索文章"
-                role="combobox"
-                aria-autocomplete="list"
-                aria-haspopup="listbox"
-                :aria-expanded="showSearchSuggestions"
-                :aria-controls="searchSuggestions.length > 0 ? searchListboxId : undefined"
-                :aria-activedescendant="activeSearchSuggestionId || undefined"
-                autocomplete="off"
-                class="sidebar-search-input font-sf-pro"
-                @keydown="handleSearchKeydown"
-              />
-              <button
-                v-if="searchKeyword"
-                type="button"
-                class="sidebar-search-clear"
-                aria-label="清除搜索"
-                @click="clearSidebarSearch"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <button
-                v-if="trimmedSearchKeyword"
-                type="button"
-                class="sidebar-search-submit"
-                title="查看完整搜索结果"
-                aria-label="查看完整搜索结果"
-                @click="handleSearch"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            </div>
-
-            <div
-              v-if="showSearchSuggestions"
-              class="sidebar-search-suggestions"
-            >
-              <div
-                v-if="searchSuggestionsLoading || !searchSuggestionsReady"
-                class="sidebar-search-message"
-                role="status"
-                aria-live="polite"
-              >
-                搜索中...
-              </div>
-              <div
-                v-else-if="searchSuggestions.length > 0"
-                :id="searchListboxId"
-                class="sidebar-search-listbox"
-                role="listbox"
-                aria-label="搜索建议"
-              >
-                <RouterLink
-                  v-for="(suggestion, index) in searchSuggestions"
-                  :id="getSearchSuggestionId(index)"
-                  :key="suggestion.key"
-                  :to="suggestion.to"
-                  class="sidebar-search-suggestion"
-                  :class="{ 'sidebar-search-suggestion-active': index === activeSearchSuggestionIndex }"
-                  role="option"
-                  :aria-selected="index === activeSearchSuggestionIndex"
-                  @mouseenter="activeSearchSuggestionIndex = index"
-                  @click="selectSearchSuggestion"
-                >
-                  <span class="sidebar-search-suggestion-title">{{ suggestion.title }}</span>
-                  <span class="sidebar-search-suggestion-meta">{{ suggestion.meta }}</span>
-                </RouterLink>
-              </div>
-              <div v-else class="sidebar-search-message" role="status" aria-live="polite">
-                未找到相关内容
-              </div>
-
-              <button
-                type="button"
-                class="sidebar-search-view-all"
-                @click="handleSearch"
-              >
-                查看全部结果<span v-if="searchSuggestionsReady">（{{ searchSuggestionsTotal }}）</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
         <template v-else-if="isSidebarMenuComponent(componentKey)">
           <div
             v-if="isLoading && !hasVisibleSidebarMenuContent && isFirstSidebarMenuComponent(componentKey)"
@@ -292,15 +189,14 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, onBeforeUnmount, ref, useId, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
 import { useConfigStore } from '../../stores/config'
 import { useCategoryStore } from '../../stores/category'
 import { useTagStore } from '../../stores/tag'
 import { useArticleStore } from '../../stores/article'
-import { useSearchStore } from '../../stores/search'
-import { getCategoriesPath, getSearchRoute, getTagsPath } from '../../utils/routeLinks'
+import { getCategoriesPath, getTagsPath } from '../../utils/routeLinks'
 import { getMaxMenuSourceLimit, menuUsesSource, resolveSidebarMenuSections } from '../../utils/menuConfig'
 import { resolveSidebarComponents } from '../../utils/sidebarLayout'
 import { useBlogBaseUrl } from '../../runtime/runtimeContext'
@@ -316,12 +212,10 @@ const props = defineProps({
 const SidebarSection = defineAsyncComponent(() => import('./SidebarSection.vue'))
 
 const route = useRoute()
-const router = useRouter()
 const configStore = useConfigStore()
 const categoryStore = useCategoryStore()
 const tagStore = useTagStore()
 const articleStore = useArticleStore()
-const searchStore = useSearchStore()
 const baseUrl = useBlogBaseUrl()
 
 const config = configStore
@@ -329,24 +223,12 @@ const categories = ref([])
 const tags = ref([])
 const latestArticles = ref([])
 const avatarLoadFailed = ref(false)
-const searchKeyword = ref('')
-const searchSuggestions = ref([])
-const searchSuggestionsTotal = ref(0)
-const searchSuggestionsLoading = ref(false)
-const searchSuggestionsReady = ref(false)
-const searchSuggestionsOpen = ref(false)
-const activeSearchSuggestionIndex = ref(-1)
 const isLoading = ref(false)
 const sidebarDataErrors = ref({
   categories: '',
   tags: '',
   'latest-articles': ''
 })
-const searchListboxId = `sidebar-search-results-${useId()}`
-const SIDEBAR_SEARCH_DELAY = 250
-const SIDEBAR_SEARCH_LIMIT = 5
-let searchTimer = null
-let activeSearchRequestId = 0
 let sidebarDataRequestId = 0
 const SIDEBAR_MENU_COMPONENT_KEYS = Object.freeze([
   'categories',
@@ -367,15 +249,6 @@ const DEFAULT_PROFILE_DISPLAY = Object.freeze({
   showSocialLinks: true
 })
 
-const trimmedSearchKeyword = computed(() => searchKeyword.value.trim())
-const showSearchSuggestions = computed(() => Boolean(
-  searchSuggestionsOpen.value && trimmedSearchKeyword.value
-))
-const activeSearchSuggestionId = computed(() => (
-  activeSearchSuggestionIndex.value >= 0
-    ? getSearchSuggestionId(activeSearchSuggestionIndex.value)
-    : ''
-))
 const profileDisplay = computed(() => ({
   ...DEFAULT_PROFILE_DISPLAY,
   ...(config.userProfile?.display || {})
@@ -511,7 +384,6 @@ const sidebarAnnouncementBadge = computed(() => {
       return '公告'
   }
 })
-const searchPageEnabled = computed(() => Boolean(config.pageRegistry?.search))
 const hasSidebarAnnouncement = computed(() => (
   sidebarAnnouncement.value?.enabled === true
   && Boolean(
@@ -588,166 +460,6 @@ function getWebsiteLabel(value) {
   } catch {
     return value.replace(/^https?:\/\//i, '').replace(/\/+$/, '')
   }
-}
-
-function handleSearch() {
-  const keyword = trimmedSearchKeyword.value
-  if (!keyword) return
-
-  router.push(getSearchRoute({
-    keyword,
-    page: 1
-  }))
-
-  resetSidebarSearch()
-  closeSidebar()
-}
-
-function cancelScheduledSearch() {
-  if (searchTimer !== null) {
-    clearTimeout(searchTimer)
-    searchTimer = null
-  }
-}
-
-function clearSearchSuggestionState() {
-  searchSuggestions.value = []
-  searchSuggestionsTotal.value = 0
-  searchSuggestionsLoading.value = false
-  searchSuggestionsReady.value = false
-  activeSearchSuggestionIndex.value = -1
-}
-
-function resetSidebarSearch() {
-  cancelScheduledSearch()
-  activeSearchRequestId += 1
-  searchSuggestionsOpen.value = false
-  clearSearchSuggestionState()
-  searchKeyword.value = ''
-}
-
-function clearSidebarSearch() {
-  resetSidebarSearch()
-}
-
-function handleSearchFocus() {
-  if (trimmedSearchKeyword.value) {
-    searchSuggestionsOpen.value = true
-  }
-}
-
-function handleSearchFocusOut(event) {
-  if (event.currentTarget?.contains(event.relatedTarget)) {
-    return
-  }
-
-  searchSuggestionsOpen.value = false
-  activeSearchSuggestionIndex.value = -1
-}
-
-function getSearchSuggestionId(index) {
-  return `${searchListboxId}-option-${index}`
-}
-
-function getSearchSuggestionMeta(record) {
-  if (record?.kind === 'page') return '页面'
-  if (record?.kind === 'entry') return toTrimmedString(record.sectionTitle) || '内容'
-
-  return toTrimmedString(record?.category?.name) || '文章'
-}
-
-function normalizeSearchSuggestions(records = []) {
-  return (Array.isArray(records) ? records : [])
-    .map((record, index) => {
-      const title = toTrimmedString(record?.title)
-      const to = toTrimmedString(record?.to)
-
-      if (!title || !to) {
-        return null
-      }
-
-      return {
-        key: toTrimmedString(record?.id) || `${to}-${index}`,
-        title,
-        to,
-        meta: getSearchSuggestionMeta(record)
-      }
-    })
-    .filter(Boolean)
-}
-
-async function loadSearchSuggestions(keyword, requestId) {
-  searchSuggestionsLoading.value = true
-
-  try {
-    const result = await searchStore.search({
-      keyword,
-      page: 1,
-      pageSize: SIDEBAR_SEARCH_LIMIT
-    })
-
-    if (requestId !== activeSearchRequestId || keyword !== trimmedSearchKeyword.value) {
-      return
-    }
-
-    searchSuggestions.value = normalizeSearchSuggestions(result?.data)
-    searchSuggestionsTotal.value = Number(result?.total) || 0
-  } catch (error) {
-    if (requestId === activeSearchRequestId) {
-      console.error('加载搜索建议失败', error)
-      searchSuggestions.value = []
-      searchSuggestionsTotal.value = 0
-    }
-  } finally {
-    if (requestId === activeSearchRequestId) {
-      searchSuggestionsLoading.value = false
-      searchSuggestionsReady.value = true
-    }
-  }
-}
-
-function handleSearchKeydown(event) {
-  if (event.key === 'Escape') {
-    searchSuggestionsOpen.value = false
-    activeSearchSuggestionIndex.value = -1
-    return
-  }
-
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    const suggestion = searchSuggestions.value[activeSearchSuggestionIndex.value]
-
-    if (suggestion) {
-      router.push(suggestion.to)
-      selectSearchSuggestion()
-      return
-    }
-
-    handleSearch()
-    return
-  }
-
-  if (!['ArrowDown', 'ArrowUp'].includes(event.key) || searchSuggestions.value.length === 0) {
-    return
-  }
-
-  event.preventDefault()
-  searchSuggestionsOpen.value = true
-  const direction = event.key === 'ArrowDown' ? 1 : -1
-  const itemCount = searchSuggestions.value.length
-
-  if (activeSearchSuggestionIndex.value < 0) {
-    activeSearchSuggestionIndex.value = direction > 0 ? 0 : itemCount - 1
-    return
-  }
-
-  const nextIndex = activeSearchSuggestionIndex.value + direction
-  activeSearchSuggestionIndex.value = (nextIndex + itemCount) % itemCount
-}
-
-function selectSearchSuggestion() {
-  resetSidebarSearch()
-  closeSidebar()
 }
 
 function formatDate(dateString) {
@@ -933,33 +645,7 @@ watch(
   { immediate: true }
 )
 
-watch(searchKeyword, () => {
-  cancelScheduledSearch()
-  activeSearchRequestId += 1
-  clearSearchSuggestionState()
-
-  const keyword = trimmedSearchKeyword.value
-  if (!keyword) {
-    searchSuggestionsOpen.value = false
-    return
-  }
-
-  const requestId = activeSearchRequestId
-  searchSuggestionsOpen.value = true
-  searchTimer = setTimeout(() => {
-    searchTimer = null
-    loadSearchSuggestions(keyword, requestId)
-  }, SIDEBAR_SEARCH_DELAY)
-})
-
-watch(() => route.fullPath, () => {
-  searchSuggestionsOpen.value = false
-  activeSearchSuggestionIndex.value = -1
-})
-
 onBeforeUnmount(() => {
-  cancelScheduledSearch()
-  activeSearchRequestId += 1
   sidebarDataRequestId += 1
 })
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="article-card article-card-shell flex flex-col backdrop-blur-sm rounded-2xl transition-all duration-300 h-full overflow-hidden">
+  <div class="article-card article-card-shell flex flex-col rounded-xl transition-[border-color,box-shadow,transform] duration-200 h-full overflow-hidden">
     <!-- 文章封面 -->
     <div
       v-if="showArticleCover"
@@ -7,11 +7,14 @@
       :style="coverShellStyle"
     >
       <router-link :to="articleRoute">
-        <img
+        <DeferredImage
           :src="articleCover"
+          :srcset="articleCoverSrcset || undefined"
           :alt="article.title"
-          class="article-card-cover-image w-full h-full transition-transform duration-500 hover:scale-105"
+          class="article-card-cover-image w-full h-full transition-transform duration-200 hover:scale-[1.02]"
           :loading="coverListConfig.loading"
+          sizes="(min-width: 1280px) 420px, (min-width: 768px) 50vw, 100vw"
+          fetchpriority="low"
           :style="coverImageStyle"
           @error="coverLoadFailed = true"
         />
@@ -29,12 +32,12 @@
     </div>
 
     <!-- 文章内容 -->
-    <div class="article-card-body p-6 flex flex-col flex-grow">
+    <div class="article-card-body p-5 flex flex-col flex-grow">
       <!-- 分类和日期 -->
       <div class="article-card-meta flex justify-between items-center mb-3 gap-3">
         <span
           v-if="article.category"
-          class="article-card-category inline-block px-3 py-1 text-xs font-medium rounded-full transition-colors duration-200"
+          class="article-card-category inline-block px-2 py-0.5 text-[0.6875rem] font-medium rounded-md transition-colors duration-150"
         >
           {{ typeof article.category === 'string' ? article.category : article.category.name }}
         </span>
@@ -46,38 +49,28 @@
         </span>
       </div>
 
-      <div ref="textBlockRef" class="article-card-copy">
+      <div class="article-card-copy">
         <!-- 标题 -->
-        <h3 class="article-card-title text-lg leading-[1.35] font-medium mb-3 transition-colors duration-200">
+        <h3 class="article-card-title text-lg leading-[1.35] font-medium mb-2 transition-colors duration-150">
           <router-link :to="articleRoute" class="article-card-title-link block">
-            <MeasuredText
-              tag="span"
-              class="block"
-              :text="article.title"
-              :lines="2"
-              :available-width="textBlockWidth"
-            />
+            <span class="block line-clamp-2">{{ article.title }}</span>
           </router-link>
         </h3>
 
         <!-- 摘要 -->
-        <MeasuredText
-          tag="p"
-          class="article-card-excerpt text-sm mb-4 flex-grow leading-relaxed"
-          :text="article.excerpt"
-          :lines="3"
-          :available-width="textBlockWidth"
-        />
+        <p class="article-card-excerpt text-sm mb-3 flex-grow leading-relaxed line-clamp-3">
+          {{ article.excerpt }}
+        </p>
       </div>
 
       <!-- 底部信息 -->
       <div class="mt-auto">
         <!-- 标签 -->
-        <div v-if="article.tags && article.tags.length" class="article-card-tags flex flex-wrap gap-2 mb-4">
+        <div v-if="article.tags && article.tags.length" class="article-card-tags flex flex-wrap gap-1.5 mb-3">
           <span
             v-for="tag in article.tags"
             :key="typeof tag === 'string' ? tag : tag.id"
-            class="article-card-tag inline-block px-2 py-0.5 text-xs rounded-full transition-colors duration-200"
+            class="article-card-tag inline-block px-2 py-0.5 text-xs rounded-md transition-colors duration-150"
           >
             #{{ typeof tag === 'string' ? tag : tag.name }}
           </span>
@@ -86,7 +79,7 @@
         <!-- 阅读更多 -->
         <router-link
           :to="articleRoute"
-          class="article-card-read-link inline-flex items-center text-sm font-medium transition-colors duration-200 rounded-lg px-3 py-1"
+          class="article-card-read-link inline-flex items-center text-[0.8125rem] font-medium transition-colors duration-150 rounded-md px-2.5 py-1"
         >
           阅读更多
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -100,11 +93,10 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useElementWidth } from '../../composables/useElementWidth'
-import MeasuredText from './MeasuredText.vue'
+import DeferredImage from './DeferredImage.vue'
 import { useConfigStore } from '../../stores/config'
 import { getArticleRoute } from '../../utils/articleRoute'
-import { resolveDisplayArticleCover } from '../../utils/articleCover'
+import { createArticleCoverSrcset, resolveDisplayArticleCover } from '../../utils/articleCover'
 
 const props = defineProps({
   article: {
@@ -116,10 +108,14 @@ const props = defineProps({
 const configStore = useConfigStore()
 const coverLoadFailed = ref(false)
 const articleRoute = computed(() => getArticleRoute(props.article))
-const { elementRef: textBlockRef, width: textBlockWidth } = useElementWidth()
 const articleCover = computed(() => resolveDisplayArticleCover(props.article, {
   coverConfig: configStore.coverConfig,
   style: configStore.coverConfig?.seededStyle
+}))
+const articleCoverSrcset = computed(() => createArticleCoverSrcset(articleCover.value, {
+  imageProxyUrl: configStore.coverConfig?.imageProxyUrl,
+  sourceWidth: configStore.coverConfig?.seededWidth,
+  sourceHeight: configStore.coverConfig?.seededHeight
 }))
 const coverListConfig = computed(() => {
   const list = configStore.coverConfig?.list || {}

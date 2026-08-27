@@ -1,11 +1,11 @@
 <template>
   <header :class="headerClass" @keydown.esc="handleHeaderEscape">
-    <div class="blog-container site-header-bar py-3">
-      <div class="flex items-center justify-between gap-4">
-        <div v-if="showBrandGroup" class="site-brand-group flex min-w-0 items-center gap-3">
+    <div class="blog-container site-header-bar">
+      <div class="flex items-center justify-between gap-3">
+        <div v-if="showBrandGroup" class="site-brand-group flex min-w-0 items-center gap-2">
           <div
             v-if="showLeadingVisual"
-            class="site-header-leading mr-2 flex items-center"
+            class="site-header-leading flex items-center"
           >
             <img
               v-if="leadingVisual.type === 'image' && leadingVisualSrc"
@@ -62,11 +62,11 @@
           />
         </div>
 
-        <div v-if="showActions" class="site-header-actions flex shrink-0 items-center space-x-3">
+        <div v-if="showActions" class="site-header-actions flex shrink-0 items-center gap-1.5">
           <router-link
             v-if="showSearchAction"
             :to="searchPath"
-            class="site-header-action rounded-full p-2 transition-all"
+            class="site-header-action inline-flex items-center justify-center"
             aria-label="搜索"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -77,7 +77,7 @@
           <button
             v-if="navbar.showThemeToggle"
             type="button"
-            class="site-header-action rounded-full p-2 transition-all"
+            class="site-header-action inline-flex items-center justify-center"
             aria-label="切换主题"
             @click="toggleTheme"
           >
@@ -92,7 +92,7 @@
           <button
             v-if="showStandaloneSidebarToggle"
             type="button"
-            class="site-header-action rounded-full p-2 transition-all lg:hidden"
+            class="site-header-action inline-flex items-center justify-center lg:hidden"
             :aria-label="config.mobileSidebarOpen ? '关闭内容面板' : '打开内容面板'"
             @click="toggleSidebarDrawer"
           >
@@ -105,7 +105,7 @@
             v-if="showMobileMenuToggle"
             ref="mobileMenuTrigger"
             type="button"
-            class="site-header-action rounded-full p-2 transition-all lg:hidden"
+            class="site-header-action inline-flex items-center justify-center lg:hidden"
             :aria-label="mobileMenuOpen ? '关闭导航菜单' : '打开导航菜单'"
             :aria-expanded="mobileMenuOpen"
             aria-controls="site-mobile-navigation"
@@ -341,7 +341,13 @@ watch(showMobileMenuToggle, (visible) => {
 
 <style scoped>
 header {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
+}
+
+.site-header-bar {
+  min-height: 3.375rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .site-mobile-nav {
@@ -356,7 +362,7 @@ header {
 
 .site-header-leading {
   flex-shrink: 0;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .site-header-leading-image {
@@ -367,28 +373,41 @@ header {
 
 .site-header-leading-title {
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: rgb(15 23 42 / 0.88);
   white-space: nowrap;
 }
 
 .site-header-dots {
-  gap: 0.5rem;
+  gap: 0.32rem;
   flex-shrink: 0;
 }
 
 .site-header-dot {
-  width: 0.95rem;
-  height: 0.95rem;
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 9999px;
   background: var(--site-header-dot-color);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  transition: transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+  transition: transform var(--theme-motion-normal) ease, filter var(--theme-motion-normal) ease, opacity var(--theme-motion-normal) ease;
 }
 
 .site-header-dot:hover {
   filter: brightness(0.94);
   transform: translateY(-0.5px);
+}
+
+.site-header-action {
+  width: 1.875rem;
+  height: 1.875rem;
+  padding: 0;
+  border-radius: var(--theme-radius-control);
+  transition: color var(--theme-motion-fast) ease, background-color var(--theme-motion-fast) ease;
+}
+
+.site-header-action svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .site-mobile-nav-tools {
@@ -533,6 +552,14 @@ header {
   .site-mobile-nav-has-blur {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+@supports (font: -apple-system-body) {
+  .site-header-has-blur,
+  .site-mobile-nav-has-blur {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
 </style>

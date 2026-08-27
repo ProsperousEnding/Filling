@@ -34,6 +34,21 @@ export function resolveThemeAssetUrl(value, baseUrl = '/') {
   return `${normalizedBaseUrl}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
 }
 
+export function resolveThemePresetAssetPath(themeConfig = {}, assetType = 'css') {
+  const normalizedAssetType = normalizeString(assetType).toLowerCase() === 'js' ? 'js' : 'css'
+  const snakeCaseKey = `${normalizedAssetType}_file`
+  const camelCaseKey = `${normalizedAssetType}File`
+  const currentPreset = normalizeString(themeConfig?.current_preset || themeConfig?.currentPreset) || 'default'
+  const preset = themeConfig?.presets?.[currentPreset] || {}
+
+  return normalizeThemeAssetPath(
+    preset?.[snakeCaseKey]
+    || preset?.[camelCaseKey]
+    || themeConfig?.[snakeCaseKey]
+    || themeConfig?.[camelCaseKey]
+  )
+}
+
 export function isThemeAssetPathAllowed(value) {
   return Boolean(normalizeThemeAssetPath(value))
 }

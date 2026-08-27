@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { nextTick } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { BLOG_ROUTE_NAMES } from '../../src/framework/router/routeManifest.js'
@@ -20,7 +19,6 @@ function createDeferred() {
 }
 
 async function mountSidebar({
-  searchArticles,
   profile,
   site,
   getCategories,
@@ -34,11 +32,6 @@ async function mountSidebar({
       {
         path: '/',
         name: BLOG_ROUTE_NAMES.home,
-        component: { template: '<div />' }
-      },
-      {
-        path: '/search',
-        name: BLOG_ROUTE_NAMES.search,
         component: { template: '<div />' }
       },
       {
@@ -62,8 +55,7 @@ async function mountSidebar({
   const contentAdapter = {
     getCategories: getCategories || (() => []),
     getTags: getTags || (() => []),
-    getLatestArticles: getLatestArticles || (() => []),
-    searchArticles: searchArticles || (() => ({ data: [], total: 0 }))
+    getLatestArticles: getLatestArticles || (() => [])
   }
 
   pinia.use(() => ({
@@ -96,133 +88,10 @@ async function mountSidebar({
   return { configStore, router, wrapper }
 }
 
-async function advanceSidebarSearch() {
-  await vi.advanceTimersByTimeAsync(250)
-  await flushPromises()
-  await nextTick()
-}
-
 afterEach(() => {
   wrapper?.unmount()
   wrapper = undefined
   vi.useRealTimers()
-})
-
-describe('Sidebar realtime search', () => {
-  it('shows suggestions after the input debounce without navigating', async () => {
-    vi.useFakeTimers()
-    const searchArticles = vi.fn(({ keyword }) => ({
-      data: [{
-        id: 'article:vue',
-        kind: 'article',
-        title: `${keyword} 入门`,
-        category: { name: '前端' },
-        to: '/article/vue'
-      }],
-      total: 3
-    }))
-    const { router, wrapper: sidebar } = await mountSidebar({ searchArticles })
-    const input = sidebar.get('.sidebar-search-input')
-
-    expect(sidebar.find('.sidebar-search-submit').exists()).toBe(false)
-    await input.setValue('Vue')
-    expect(sidebar.find('.sidebar-search-submit').exists()).toBe(true)
-    await vi.advanceTimersByTimeAsync(249)
-    expect(searchArticles).not.toHaveBeenCalled()
-
-    await advanceSidebarSearch()
-
-    expect(router.currentRoute.value.fullPath).toBe('/')
-    expect(searchArticles).toHaveBeenCalledWith({ keyword: 'Vue', page: 1, pageSize: 5 })
-    expect(sidebar.get('.sidebar-search-suggestion-title').text()).toBe('Vue 入门')
-    expect(sidebar.get('.sidebar-search-suggestion-meta').text()).toBe('前端')
-    expect(sidebar.get('.sidebar-search-view-all').text()).toContain('3')
-    expect(input.attributes('aria-haspopup')).toBe('listbox')
-    expect(sidebar.get('[role="listbox"]').find('.sidebar-search-view-all').exists()).toBe(false)
-    expect(sidebar.get('.sidebar-search-view-all').element.parentElement).toBe(
-      sidebar.get('.sidebar-search-suggestions').element
-    )
-  })
-
-  it('supports keyboard selection and clears the search after navigation', async () => {
-    vi.useFakeTimers()
-    const { router, wrapper: sidebar } = await mountSidebar({
-      searchArticles: () => ({
-        data: [{
-          id: 'article:keyboard',
-          kind: 'article',
-          title: '键盘导航',
-          to: '/article/keyboard'
-        }],
-        total: 1
-      })
-    })
-    const input = sidebar.get('.sidebar-search-input')
-
-    await input.setValue('键盘')
-    await advanceSidebarSearch()
-    await input.trigger('keydown', { key: 'ArrowDown' })
-    expect(input.attributes('aria-activedescendant')).toContain('option-0')
-
-    await input.trigger('keydown', { key: 'Enter' })
-    await flushPromises()
-
-    expect(router.currentRoute.value.fullPath).toBe('/article/keyboard')
-    expect(input.element.value).toBe('')
-    expect(sidebar.find('.sidebar-search-suggestions').exists()).toBe(false)
-  })
-
-  it('selects the last suggestion when ArrowUp is pressed before a selection', async () => {
-    vi.useFakeTimers()
-    const { wrapper: sidebar } = await mountSidebar({
-      searchArticles: () => ({
-        data: [
-          { id: 'first', title: 'First', to: '/article/first' },
-          { id: 'last', title: 'Last', to: '/article/last' }
-        ],
-        total: 2
-      })
-    })
-    const input = sidebar.get('.sidebar-search-input')
-
-    await input.setValue('article')
-    await advanceSidebarSearch()
-    await input.trigger('keydown', { key: 'ArrowUp' })
-
-    expect(input.attributes('aria-activedescendant')).toContain('option-1')
-    expect(sidebar.findAll('.sidebar-search-suggestion')[1].classes()).toContain('sidebar-search-suggestion-active')
-  })
-
-  it('ignores an older response that resolves after the latest suggestion request', async () => {
-    vi.useFakeTimers()
-    const requests = new Map()
-    const searchArticles = vi.fn(({ keyword }) => {
-      const deferred = createDeferred()
-      requests.set(keyword, deferred)
-      return deferred.promise
-    })
-    const { wrapper: sidebar } = await mountSidebar({ searchArticles })
-    const input = sidebar.get('.sidebar-search-input')
-
-    await input.setValue('old')
-    await advanceSidebarSearch()
-    await input.setValue('new')
-    await advanceSidebarSearch()
-
-    requests.get('new').resolve({
-      data: [{ id: 'new', title: 'New result', to: '/article/new' }],
-      total: 1
-    })
-    await flushPromises()
-    expect(sidebar.get('.sidebar-search-suggestion-title').text()).toBe('New result')
-
-    requests.get('old').resolve({
-      data: [{ id: 'old', title: 'Old result', to: '/article/old' }],
-      total: 1
-    })
-    await flushPromises()
-    expect(sidebar.get('.sidebar-search-suggestion-title').text()).toBe('New result')
-  })
 })
 
 describe('Sidebar data loading', () => {

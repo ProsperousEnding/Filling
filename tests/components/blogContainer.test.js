@@ -72,7 +72,7 @@ async function mountBlogContainer({ width = 1440, initialUrl = '/', site } = {})
   })
   await flushPromises()
 
-  return { configStore, wrapper }
+  return { configStore, router, wrapper }
 }
 
 afterEach(() => {
@@ -86,6 +86,25 @@ afterEach(() => {
 })
 
 describe('BlogContainer sidebar mounting', () => {
+  it('uses a focusable main landmark and skip link without viewport-width sizing', async () => {
+    const { wrapper: container } = await mountBlogContainer()
+
+    expect(container.get('.theme-shell').classes()).not.toContain('h-screen')
+    expect(container.get('.theme-shell').classes()).not.toContain('w-screen')
+    expect(container.get('.theme-skip-link').attributes('href')).toBe('#main-content')
+    expect(container.get('#main-content').attributes('tabindex')).toBe('-1')
+  })
+
+  it('moves focus to the main landmark after a route change', async () => {
+    const { router, wrapper: container } = await mountBlogContainer()
+
+    await router.push('/article/focus-target')
+    await flushPromises()
+    await nextTick()
+
+    expect(document.activeElement).toBe(container.get('#main-content').element)
+  })
+
   it('mounts only the desktop sidebar on desktop widths', async () => {
     const { wrapper: container } = await mountBlogContainer({ width: 1440 })
 

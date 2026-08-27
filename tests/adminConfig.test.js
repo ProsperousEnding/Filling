@@ -46,6 +46,15 @@ test('admin config overrides omit defaults without losing custom values', () => 
   })
 })
 
+test('admin cover model defaults to random MWM covers', () => {
+  const model = createAdminConfigModel('cover', {})
+
+  assert.equal(model.seeded_style, 'mwm-anime')
+  assert.equal(model.fixed, false)
+  assert.deepEqual(model.source_urls['mwm-anime'], [])
+  assert.deepEqual(createAdminConfigOverrides('cover', model), {})
+})
+
 test('admin config overrides preserve custom menu pages while pruning site defaults', () => {
   const model = createAdminConfigModel('site', {
     title: 'Filling',
@@ -159,12 +168,12 @@ test('admin form activation fields serialize values required by the runtime', ()
 
 test('guided site structure only serializes sidebar and layout changes', () => {
   const model = createAdminConfigModel('site', {})
-  model.sidebar.desktop_components = ['profile', 'search']
+  model.sidebar.desktop_components = ['profile', 'tags']
   model.page_layouts.home.allow_switch = true
 
   assert.deepEqual(createAdminConfigOverrides('site', model, {}), {
     sidebar: {
-      desktop_components: ['profile', 'search']
+      desktop_components: ['profile', 'tags']
     },
     page_layouts: {
       home: {
@@ -181,17 +190,33 @@ test('admin select options only expose values accepted by runtime validation', (
 })
 
 test('admin field metadata follows active configuration branches', () => {
-  assert.equal(isAdminFieldVisible('background.image', {
-    enabled: true,
-    mode: 'gradient'
-  }), false)
-  assert.equal(isAdminFieldVisible('background.gradient_light', {
-    enabled: true,
-    mode: 'gradient'
-  }), true)
   assert.equal(isAdminFieldVisible('comment.giscus', { provider: 'utterances' }), false)
   assert.equal(isAdminFieldVisible('comment.utterances', { provider: 'utterances' }), true)
   assert.equal(isAdminFieldVisible('analytics.umami', { provider: '' }), false)
+  assert.equal(isAdminFieldVisible('cover.fixed', {
+    enabled: true,
+    fallback: 'seeded',
+    seeded_style: 'mwm-anime',
+    fixed: false
+  }), true)
+  assert.equal(isAdminFieldVisible('cover.source_urls', {
+    enabled: true,
+    fallback: 'seeded',
+    seeded_style: 'mwm-anime',
+    fixed: false
+  }), true)
+  assert.equal(isAdminFieldVisible('cover.source_urls.mwm-anime', {
+    enabled: true,
+    fallback: 'seeded',
+    seeded_style: 'mwm-anime',
+    fixed: true
+  }), true)
+  assert.equal(isAdminFieldVisible('cover.source_urls.mwm-scenery', {
+    enabled: true,
+    fallback: 'seeded',
+    seeded_style: 'mwm-anime',
+    fixed: true
+  }), false)
   assert.equal(getFieldHint('site.seo.favicon').includes('public/'), true)
   assert.deepEqual(getAdminNumberBounds('cover.detail.watermark.opacity'), {
     min: 0,

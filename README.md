@@ -90,6 +90,7 @@ Filling 同时提供可直接部署的博客站点和可复用的前端框架层
 git clone https://github.com/ProsperousEnding/Filling.git
 cd Filling
 pnpm install
+pnpm exec playwright install chromium
 pnpm dev
 ```
 
@@ -116,8 +117,7 @@ public/                   # 图片、图标、字体和主题资源
 | --- | --- |
 | `site.toml` | 站点信息、首页文章策略、导航、功能开关和页脚 |
 | `profile.toml` | 侧边栏资料、头像、网站和社交链接 |
-| `theme.toml` | 当前主题及主题资源预设 |
-| `background.toml` | 渐变或图片形式的站点背景 |
+| `theme.toml` | 当前主题及主题资源预设，页面背景由主题统一管理 |
 | `cover.toml` | 文章封面图源、列表封面和详情页显示方式 |
 | `comment.toml` | giscus 或 utterances 评论服务 |
 | `links.toml` | 友情链接页面与链接数据 |
@@ -140,9 +140,10 @@ mode = "latest"
 enabled = true
 fallback = "seeded"
 seeded_style = "mwm-anime"
+fixed = false
 ```
 
-可选图源和所有字段说明见 [配置参考](./docs/configuration.md)。修改后可以单独检查配置：
+默认直接使用 MWM 随机二次元封面。在配置后台打开“固定文章封面”后，框架才会按文章从 `source_urls` 中稳定选择图片；关闭时固定图片不会接管随机图源。可选图源和所有字段说明见 [配置参考](./docs/configuration.md)。修改后可以单独检查配置：
 
 ```bash
 pnpm build:config
@@ -202,9 +203,11 @@ file = "about.md"
 | `pnpm build:config` | 解析、校验并生成站点配置 |
 | `pnpm build:content-index` | 重新生成内容和搜索索引 |
 | `pnpm test` | 运行单元测试与组件测试 |
+| `pnpm test:e2e` | 在 Chromium 中验证关键页面与响应式布局 |
+| `pnpm audit:prod` | 检查生产依赖的已知安全漏洞 |
 | `pnpm build` | 构建静态站点到 `dist/` |
 | `pnpm build:lib` | 构建可复用框架到 `dist-lib/` |
-| `pnpm check` | 运行 lint、测试、站点构建和组件库完整验证 |
+| `pnpm check` | 运行安全审计、全部测试、构建、组件库与 Worker 完整验证 |
 
 ## 构建与部署
 

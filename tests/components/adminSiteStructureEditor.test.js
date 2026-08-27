@@ -6,10 +6,10 @@ import AdminSiteStructureEditor from '../../src/site/admin/components/AdminSiteS
 let wrapper
 
 const sidebar = {
-  desktop_components: ['profile', 'search', 'latest-articles', 'categories', 'tags'],
-  article_desktop_components: ['profile', 'announcement', 'search'],
-  mobile_components: ['profile', 'search'],
-  article_mobile_components: ['profile', 'announcement', 'search']
+  desktop_components: ['profile', 'latest-articles', 'categories', 'tags'],
+  article_desktop_components: ['profile', 'announcement'],
+  mobile_components: ['profile'],
+  article_mobile_components: ['profile', 'announcement']
 }
 
 const pageLayouts = {
@@ -41,7 +41,6 @@ describe('AdminSiteStructureEditor', () => {
     const nextSidebar = wrapper.emitted('update:sidebar')[0][0]
     expect(nextSidebar.desktop_components).toEqual([
       'profile',
-      'search',
       'latest-articles',
       'categories',
       'tags',
@@ -58,8 +57,7 @@ describe('AdminSiteStructureEditor', () => {
     await wrapper.get('[aria-label="公告显示状态"]').trigger('click')
 
     expect(wrapper.emitted('update:sidebar')[0][0].article_mobile_components).toEqual([
-      'profile',
-      'search'
+      'profile'
     ])
   })
 

@@ -1,12 +1,4 @@
-import FriendLinksPage from './pageComponents/FriendLinksPage.vue'
-import GuestbookPage from './pageComponents/GuestbookPage.vue'
-import ArchiveTimelinePage from './pageComponents/ArchiveTimelinePage.vue'
-import MenuPageCardPage from './pageComponents/MenuPageCardPage.vue'
-import MenuPageContextPage from './pageComponents/MenuPageContextPage.vue'
-import MenuPageGridPage from './pageComponents/MenuPageGridPage.vue'
-import MenuPageListPage from './pageComponents/MenuPageListPage.vue'
-import MenuPageTimelinePage from './pageComponents/MenuPageTimelinePage.vue'
-import SponsorPage from './pageComponents/SponsorPage.vue'
+import { defineAsyncComponent } from 'vue'
 import {
   resolveBuiltInPageComponentKey,
   resolveMenuPageComponentKey
@@ -14,15 +6,26 @@ import {
 
 export { resolveBuiltInPageComponentKey, resolveMenuPageComponentKey }
 
+function createPageComponent(loader) {
+  return defineAsyncComponent({
+    loader,
+    delay: 0
+  })
+}
+
+const ArchiveTimelinePage = createPageComponent(() => import('./pageComponents/ArchiveTimelinePage.vue'))
+const MenuPageContextPage = createPageComponent(() => import('./pageComponents/MenuPageContextPage.vue'))
+const MenuPageListPage = createPageComponent(() => import('./pageComponents/MenuPageListPage.vue'))
+
 const MENU_PAGE_COMPONENTS = Object.freeze({
   context: MenuPageContextPage,
   list: MenuPageListPage,
-  card: MenuPageCardPage,
-  grid: MenuPageGridPage,
-  timeline: MenuPageTimelinePage,
-  friends: FriendLinksPage,
-  guestbook: GuestbookPage,
-  sponsor: SponsorPage
+  card: createPageComponent(() => import('./pageComponents/MenuPageCardPage.vue')),
+  grid: createPageComponent(() => import('./pageComponents/MenuPageGridPage.vue')),
+  timeline: createPageComponent(() => import('./pageComponents/MenuPageTimelinePage.vue')),
+  friends: createPageComponent(() => import('./pageComponents/FriendLinksPage.vue')),
+  guestbook: createPageComponent(() => import('./pageComponents/GuestbookPage.vue')),
+  sponsor: createPageComponent(() => import('./pageComponents/SponsorPage.vue'))
 })
 
 export function resolveBuiltInPageComponent(pageKey, requestedComponent) {

@@ -11,7 +11,7 @@ Filling 的用户配置位于 `blog/config/`。配置原则是：只写你要改
 3. `comment.toml`：评论服务。
 4. `links.toml`：友情链接。
 
-外观配置在 `theme.toml`、`background.toml` 和 `cover.toml`。统计、公告、留言板、赞助等低频功能在 `blog/config/optional/`。
+外观配置在 `theme.toml` 和 `cover.toml`。主题负责页面背景与组件视觉，封面配置只负责文章媒体。统计、公告、留言板、赞助等低频功能在 `blog/config/optional/`。
 
 最小 `site.toml` 示例：
 
@@ -136,7 +136,7 @@ folder = "projects"
 
 留言板和赞助页由各自的功能配置自动注册，不要再在 `site.toml` 写一份。
 
-## 主题、背景与封面
+## 主题与封面
 
 `theme.toml` 用一个名称选中主题：
 
@@ -145,32 +145,42 @@ current_preset = "default"
 
 [presets.default]
 css_file = "themes/default.css"
-js_file = "themes/default.js"
 ```
 
-`background.toml` 使用默认渐变只需：
+内置主题只需要 CSS；`js_file` 留给确实需要运行交互逻辑的自定义主题，不要为纯样式主题创建空脚本。
 
-```toml
-enabled = true
-mode = "gradient"
-```
+主题预设 CSS 可以覆盖侧边栏材质令牌：`--theme-sidebar-surface`、
+`--theme-sidebar-border`、`--theme-sidebar-highlight`、
+`--theme-sidebar-contact-shadow`、`--theme-sidebar-avatar-surface`、
+`--theme-sidebar-avatar-border`、`--theme-sidebar-tag-surface`、`--theme-sidebar-radius`、
+`--theme-sidebar-blur` 和 `--theme-sidebar-saturation`。内置主题会从各自的面板、
+边框和强调色自动派生这些值，因此切换 `current_preset` 时侧边栏会同步换肤；
+自定义主题只需在其 `css_file` 中覆盖需要调整的令牌。
 
-图片背景需额外填写 `image`：
+页面背景由主题 CSS 的 `--theme-body-background` 统一控制，切换 `current_preset`
+时会与文字、面板和控件一起换肤，不存在独立的全站背景配置。
 
-```toml
-enabled = true
-mode = "image"
-image = "backgrounds/site-light.webp"
-dark_image = "backgrounds/site-dark.webp"
-```
-
-`cover.toml` 默认已开启自动封面，普通用户只需选图源：
+`cover.toml` 默认已开启自动封面，并使用 MWM 随机二次元图源：
 
 ```toml
 seeded_style = "mwm-anime"
+fixed = false
 ```
 
-内置图源有 `picsum`、`cataas`、`mwm-anime`、`mwm-scenery`、`paugram-anime`、`dmoe-anime`、`loremflickr` 和 `paugram-bing`。站点统一使用这里配置的图源，不接受访客浏览器覆盖。默认使用 `mwm-anime`。详情页封面可进一步配置 `[detail].display_mode = "image" | "header-background" | "page-background"`。
+内置图源有 `picsum`、`cataas`、`mwm-anime`、`mwm-scenery`、`paugram-anime`、`dmoe-anime`、`loremflickr` 和 `paugram-bing`。MWM、保罗和 DMOE 属于随机接口，即使 URL 带有 `seed` 也不会返回固定图片。当前图源配置了图片池，因此默认的 `fixed = false` 会在每次访问时打乱图片池，并尽量避免同页重复。要让每篇文章稳定使用同一张图片，打开配置后台的“固定文章封面”：
+
+```toml
+seeded_style = "mwm-anime"
+fixed = true
+
+[source_urls]
+mwm-anime = [
+  "https://images.example.com/anime-cover-1.webp",
+  "https://images.example.com/anime-cover-2.webp",
+]
+```
+
+开启固定模式后，框架按文章 seed 固定选择池中的图片；关闭时则按访问随机分配。没有为当前图源配置图片池时，框架才直接使用远程接口。该选择属于站点配置，不接受访客浏览器覆盖。`image_proxy_url` 是可选优化地址，只应在图片服务已部署可用后填写。详情页封面可进一步配置 `[detail].display_mode = "image" | "header-background" | "page-background"`。
 
 ## 评论
 

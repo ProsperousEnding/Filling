@@ -8,14 +8,10 @@
         class="sidebar-nav-item sidebar-nav-item-article"
         :target="item.external ? '_blank' : undefined"
         :rel="item.external ? 'noreferrer' : undefined"
+        :active-class="item.external ? undefined : 'sidebar-nav-item-active'"
       >
         <div class="sidebar-nav-meta">
-          <MeasuredText
-            tag="h5"
-            class="sidebar-nav-title"
-            :text="item.label"
-            :lines="2"
-          />
+          <h5 class="sidebar-nav-title">{{ item.label }}</h5>
           <div class="sidebar-nav-submeta">
             <span class="sidebar-nav-submeta-item">
               <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-nav-submeta-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -33,7 +29,6 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import MeasuredText from '../../core/MeasuredText.vue'
 
 const props = defineProps({
   items: {
@@ -67,7 +62,7 @@ const normalizedItems = computed(() => (
 }
 
 .sidebar-nav-list-latest > li + li {
-  margin-top: 0.62rem;
+  margin-top: 0.14rem;
 }
 
 .sidebar-nav-item {
@@ -79,12 +74,44 @@ const normalizedItems = computed(() => (
 .sidebar-nav-item-article {
   display: block;
   min-height: auto;
-  padding: 0;
-  border-radius: 0;
+  margin-inline: -0.5rem;
+  padding: 0.34rem 0.5rem;
+  border-radius: 0.5rem;
 }
 
 .sidebar-nav-item:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-panel-strong) 88%, transparent),
+    color-mix(in srgb, var(--theme-panel-muted) 78%, transparent)
+  );
+  color: var(--theme-heading-color);
+  box-shadow:
+    inset 0 1px 0 var(--sidebar-inner-highlight, var(--theme-control-highlight)),
+    0 1px 2px var(--sidebar-contact-shadow, rgba(15, 23, 42, 0.06));
+}
+
+.sidebar-nav-item:focus-visible {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-panel-strong) 88%, transparent),
+    color-mix(in srgb, var(--theme-accent-softer) 82%, transparent)
+  );
+  color: var(--theme-heading-color);
+  outline: 2px solid rgba(var(--color-primary), 0.4);
+  outline-offset: 0.08rem;
+}
+
+.sidebar-nav-item-active {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-panel-strong) 88%, transparent),
+    color-mix(in srgb, var(--theme-accent-soft) 82%, transparent)
+  );
   color: var(--theme-link);
+  box-shadow:
+    inset 0 1px 0 var(--sidebar-inner-highlight, var(--theme-control-highlight)),
+    0 1px 2px var(--sidebar-contact-shadow, rgba(15, 23, 42, 0.06));
 }
 
 .sidebar-nav-meta {
@@ -92,8 +119,12 @@ const normalizedItems = computed(() => (
 }
 
 .sidebar-nav-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   margin: 0;
-  font-size: 0.94rem;
+  font-size: 0.875rem;
   line-height: 1.35;
   font-weight: 600;
   color: inherit;
@@ -106,7 +137,7 @@ const normalizedItems = computed(() => (
   gap: 0.18rem;
   margin-top: 0.18rem;
   color: var(--theme-text-soft);
-  font-size: 0.74rem;
+  font-size: 0.6875rem;
 }
 
 .sidebar-nav-submeta-item {
@@ -116,15 +147,15 @@ const normalizedItems = computed(() => (
 }
 
 .sidebar-nav-submeta-icon {
-  width: 0.78rem;
-  height: 0.78rem;
+  width: 0.6875rem;
+  height: 0.6875rem;
   flex-shrink: 0;
 }
 
 .sidebar-nav-date {
   display: block;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
 }
 
 </style>

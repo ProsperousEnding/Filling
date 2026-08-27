@@ -14,7 +14,7 @@ const searchIndex = {
       "category": null,
       "tags": [],
       "license": null,
-      "cover": "https://t.mwm.moe/pc?seed=666491",
+      "cover": "https://t.alcy.cc/pc/?seed=666491",
       "coverSource": "",
       "to": "/about",
       "sectionTitle": "",
@@ -55,7 +55,7 @@ const searchIndex = {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
-      "cover": "https://t.mwm.moe/pc?seed=132477470",
+      "cover": "https://t.alcy.cc/pc/?seed=132477470",
       "coverSource": "",
       "to": "/article/config-comments-and-analytics",
       "sectionTitle": "",
@@ -96,7 +96,7 @@ const searchIndex = {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
-      "cover": "https://t.mwm.moe/pc?seed=1411303983",
+      "cover": "https://t.alcy.cc/pc/?seed=1411303983",
       "coverSource": "",
       "to": "/article/config-content-and-pages",
       "sectionTitle": "",
@@ -137,7 +137,7 @@ const searchIndex = {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
-      "cover": "https://t.mwm.moe/pc?seed=143679937",
+      "cover": "https://t.alcy.cc/pc/?seed=143679937",
       "coverSource": "",
       "to": "/article/config-optional-features",
       "sectionTitle": "",
@@ -151,11 +151,11 @@ const searchIndex = {
       "id": "article:config-site-and-theme",
       "kind": "article",
       "iconKind": "article",
-      "title": "站点、外观与封面配置",
-      "description": "从站点信息到 MWM 自动封面，理清主题、背景和文章封面的配置边界。",
-      "excerpt": "从站点信息到 MWM 自动封面，理清主题、背景和文章封面的配置边界。",
+      "title": "站点、主题与封面配置",
+      "description": "从站点信息到 MWM 自动封面，理清主题和文章封面的配置边界。",
+      "excerpt": "从站点信息到 MWM 自动封面，理清主题和文章封面的配置边界。",
       "createdAt": "2026-05-13T00:00:00.000Z",
-      "updatedAt": "2026-08-21T00:00:00.000Z",
+      "updatedAt": "2026-08-25T00:00:00.000Z",
       "category": {
         "id": "配置",
         "name": "配置"
@@ -178,15 +178,15 @@ const searchIndex = {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
-      "cover": "https://t.mwm.moe/pc?seed=426469064",
+      "cover": "https://t.alcy.cc/pc/?seed=426469064",
       "coverSource": "",
       "to": "/article/config-site-and-theme",
       "sectionTitle": "",
       "sectionPath": "",
       "sourcePath": "/blog/content/articles/config-site-and-theme.md",
-      "plainText": "Filling 的配置遵循一个原则：只写需要修改的值，其余交给框架默认配置。常用配置放在 blog/config/ ，低频功能放在 blog/config/optional/ 。 先分清三个容易混淆的概念： theme.toml 选择界面主题预设。 background.toml 控制整个站点背后的渐变或壁纸。 cover.toml 只负责文章列表和文章详情页的封面。 站点背景与文章封面互不覆盖，也不需要选择两种封面模式。 配置文件分工 文件 主要职责 site.toml 站点信息、SEO、页头、首页文章、菜单、侧边栏和页脚 profile.toml 侧边栏个人资料与社交链接 theme.toml 当前主题和主题资源预设 background.toml 全站渐变或图片背景 cover.toml 自动封面图源、列表封面和详情页封面 完整文件说明可以直接查看 blog/config/README.md 。 先配置站点 site.toml 是站点入口。一个可用的最小配置如下： title = \"Filling\" description = \"一个基于 Vue 3 的静态博客与内容系统。\" site_url = \"https://filling.initzo.com\" [home_articles] mode = \"mixed\" 首页模式支持： latest ：显示全部可见文章。 featured ：只显示精选或手动指定的文章。 sticky ：只显示置顶或手动指定的文章。 mixed ：依次合并手动指定、置顶、精选和最新文章。 page_size 、 categories 、 tags 、 include_ids 和 exclude_ids 可进一步控制结果。 /articles 始终是全部文章页，不受首页筛选影响。 个人资料 profile.toml 控制侧边栏资料： display_name = \"Filling\" username = \"prosperousEnding\" tagline = \"记录前端工程化、静态博客和内容系统。\" avatar_url = \"icons/points.png\" website = \"https://filling.initzo.com\" [[social_links]] name = \"GitHub\" url = \"https://github.com/ProsperousEnding/Filling\" icon = \"github\" show_name = false 本地资源路径相对于 public/ ，因此写 icons/points.png ，不要写 public/icons/points.png 。 选择主题 theme.toml 选择主题预设： current_preset = \"default\" 预设中的 CSS 和 JS 资源位于 public/themes/ 。只切换现有主题时修改 current_preset 即可。 配置站点背景 当前站点使用渐变背景： enabled = true mode = \"gradient\" 需要全站壁纸时，将 background.toml 改为图片模式： enabled = true mode = \"image\" image = \"backgrounds/site-light.webp\" dark_image = \"backgrounds/site-dark.webp\" 图片放在 public/backgrounds/ ，配置中不写 public/ 前缀。没有单独的暗色图片时可以省略 dark_image 。 文章封面 cover.toml 是封面的唯一配置入口。当前站点使用 MWM 二次元图源，并在文章列表与详情页显示封面： enabled = true fallback = \"seeded\" seeded_style = \"mwm-anime\" [list] show_cover = true [detail] show_cover = true display_mode = \"image\" 可选图源： mwm-anime 、 paugram-anime 、 dmoe-anime ：二次元图片。 mwm-scenery 、 picsum 、 loremflickr 、 paugram-bing ：摄影或风景图片。 cataas ：猫咪图片。 所有自动封面统一使用 seeded_style 。站点不存在第二套浏览器本地选择，访客也不会覆盖站点配置。 详情页支持三种展示方式： image ：在正文上方显示独立封面，也是当前默认配置。 header-background ：封面延伸为文章头部背景。 page-background ：封面作为文章详情页背景。 例如需要沉浸式页面背景时： [detail] display_mode = \"page-background\" 单篇文章可以通过 frontmatter 的 cover 指定图片，也可以用 cover_display_mode 单独覆盖详情页展示方式。没有写 cover 时才使用自动封面。 修改后检查 pnpm build:config 该命令会检查 TOML 语法、未知字段、无效枚举和页面路由。完整字段见仓库中的 docs/configuration.md 。",
-      "titleHaystack": "站点、外观与封面配置",
-      "metaHaystack": "从站点信息到 mwm 自动封面，理清主题、背景和文章封面的配置边界。 从站点信息到 mwm 自动封面，理清主题、背景和文章封面的配置边界。 配置 cc by-nc-sa 4.0 配置 站点 外观"
+      "plainText": "Filling 的配置遵循一个原则：只写需要修改的值，其余交给框架默认配置。常用配置放在 blog/config/ ，低频功能放在 blog/config/optional/ 。 先分清两个外观概念： theme.toml 选择界面主题预设，并统一控制页面背景和组件视觉。 cover.toml 只负责文章列表和文章详情页的封面。 页面背景属于主题，文章封面属于内容展示，两者不使用重复配置。 配置文件分工 文件 主要职责 site.toml 站点信息、SEO、页头、首页文章、菜单、侧边栏和页脚 profile.toml 侧边栏个人资料与社交链接 theme.toml 当前主题、页面背景和主题资源预设 cover.toml 自动封面图源、列表封面和详情页封面 完整文件说明可以直接查看 blog/config/README.md 。 先配置站点 site.toml 是站点入口。一个可用的最小配置如下： title = \"Filling\" description = \"一个基于 Vue 3 的静态博客与内容系统。\" site_url = \"https://filling.initzo.com\" [home_articles] mode = \"mixed\" 首页模式支持： latest ：显示全部可见文章。 featured ：只显示精选或手动指定的文章。 sticky ：只显示置顶或手动指定的文章。 mixed ：依次合并手动指定、置顶、精选和最新文章。 page_size 、 categories 、 tags 、 include_ids 和 exclude_ids 可进一步控制结果。 /articles 始终是全部文章页，不受首页筛选影响。 个人资料 profile.toml 控制侧边栏资料： display_name = \"Filling\" username = \"prosperousEnding\" tagline = \"记录前端工程化、静态博客和内容系统。\" avatar_url = \"icons/points.png\" website = \"https://filling.initzo.com\" [[social_links]] name = \"GitHub\" url = \"https://github.com/ProsperousEnding/Filling\" icon = \"github\" show_name = false 本地资源路径相对于 public/ ，因此写 icons/points.png ，不要写 public/icons/points.png 。 选择主题 theme.toml 选择主题预设： current_preset = \"default\" 预设 CSS 位于 public/themes/ 。只切换现有主题时修改 current_preset 即可；内置主题不加载重复的 JavaScript。 页面背景由对应主题 CSS 的 --theme-body-background 提供，会和文字、面板、控件一起切换。 文章封面 cover.toml 是封面的唯一配置入口。当前站点使用 MWM 二次元图源，并在文章列表与详情页显示封面： enabled = true fallback = \"seeded\" seeded_style = \"mwm-anime\" fixed = false 默认会在每次访问时打乱 MWM 图片池，并尽量避免同页文章出现重复封面。希望每篇文章长期显示同一张图片时，在配置后台打开“固定文章封面”，或修改配置： fixed = true [source_urls] mwm-anime = [ \"https://images.example.com/anime-cover-1.webp\", \"https://images.example.com/anime-cover-2.webp\", ] [list] show_cover = true [detail] show_cover = true display_mode = \"image\" 可选图源： mwm-anime 、 paugram-anime 、 dmoe-anime ：二次元随机接口，直接使用时每次请求可能不同。 mwm-scenery 、 paugram-bing ：摄影或风景随机接口，也可以按需开启固定模式。 picsum 、 loremflickr ：原生支持稳定 seed 的摄影图源。 cataas ：猫咪图片。 所有自动封面统一使用 seeded_style 。 fixed = false 时随机打乱 source_urls 图片池；打开固定模式后，框架按文章标识稳定选择。没有配置图片池时才会直接使用随机接口。站点不存在第二套浏览器本地选择，访客也不会覆盖站点配置。当前图片池直接查看 blog/config/cover.toml ；可选的 image_proxy_url 只应在图片服务已经部署可用后填写。 详情页支持三种展示方式： image ：在正文上方显示独立封面，也是当前默认配置。 header-background ：封面延伸为文章头部背景。 page-background ：封面作为文章详情页背景。 例如需要沉浸式页面背景时： [detail] display_mode = \"page-background\" 单篇文章可以通过 frontmatter 的 cover 指定图片，也可以用 cover_display_mode 单独覆盖详情页展示方式。没有写 cover 时才使用自动封面。 修改后检查 pnpm build:config 该命令会检查 TOML 语法、未知字段、无效枚举和页面路由。完整字段见仓库中的 docs/configuration.md 。",
+      "titleHaystack": "站点、主题与封面配置",
+      "metaHaystack": "从站点信息到 mwm 自动封面，理清主题和文章封面的配置边界。 从站点信息到 mwm 自动封面，理清主题和文章封面的配置边界。 配置 cc by-nc-sa 4.0 配置 站点 外观"
     },
     {
       "id": "article:deploy-config-worker",
@@ -219,13 +219,13 @@ const searchIndex = {
         "name": "CC BY-NC-SA 4.0",
         "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
       },
-      "cover": "https://t.mwm.moe/pc?seed=1033711107",
+      "cover": "https://t.alcy.cc/pc/?seed=1033711107",
       "coverSource": "",
       "to": "/article/deploy-config-worker",
       "sectionTitle": "",
       "sectionPath": "",
       "sourcePath": "/blog/content/articles/deploy-config-worker.md",
-      "plainText": "Filling 已包含 /admin/config 管理页面和 worker/ 中的 Cloudflare Worker API。管理员通过 GitHub 登录，Worker 校验身份和配置内容，再将多个 TOML 修改合并为一次仓库提交。 整个链路由四部分组成： GitHub Pages 托管博客与管理页面。 GitHub App 提供 OAuth 登录和仓库授权。 Cloudflare Worker 保存服务端密钥并调用 GitHub API。 配置提交触发 GitHub Actions，重新构建并发布站点。 博客域名和 Worker 域名必须分开。例如博客使用 https://blog.example.com ，Worker 可以使用 https://filling-config-api.example.com 。 准备 GitHub App 在 GitHub 的 Developer settings 中创建 GitHub App，设置： Homepage URL: https://blog.example.com Callback URL: https://filling-config-api.example.com/auth/github/callback Webhook: Disabled 仓库权限只授予： Contents: Read and write ：读取并提交允许修改的配置文件。 Actions: Read-only ：在管理页显示最近的部署状态。 Metadata: Read-only ：GitHub App 的基础权限。 安装 App 时只选择博客所在仓库，不要授权全部仓库。记录 App 的 Client ID 和安装地址末尾的 Installation ID。 当前 Worker 使用管理员授权后的 GitHub user access token，不使用 installation token，因此不需要生成或保存 GitHub App 私钥。 配置 Worker 名称与域名 先修改 worker/wrangler.jsonc ： { \"name\": \"filling-config-api\", \"main\": \"src/index.js\", \"keep_vars\": true, \"routes\": [ { \"pattern\": \"filling-config-api.example.com\", \"custom_domain\": true } ] } 没有自定义域名时可以先使用 Cloudflare 提供的 workers.dev 地址，但 GitHub App Callback URL 和 GITHUB_CALLBACK_URL 必须同时使用该地址。 设置环境变量 在 Cloudflare Worker 的 Variables and Secrets 中添加普通变量： 变量 示例 用途 ADMIN_GITHUB_USER_ID 12345678 唯一允许登录的 GitHub 数字用户 ID ADMIN_ORIGIN https://blog.example.com 管理页面来源，只写协议和域名 GITHUB_BRANCH main 配置提交目标分支 GITHUB_CALLBACK_URL https://filling-config-api.example.com/auth/github/callback OAuth 回调完整地址 GITHUB_CLIENT_ID GitHub App Client ID OAuth 公开客户端标识 GITHUB_INSTALLATION_ID App 安装 ID 校验 App 是否安装到目标仓库 GITHUB_OWNER your-name 仓库所有者 GITHUB_REPO Filling 仓库名称 ADMIN_ORIGIN 不能包含路径或末尾 / 。 GITHUB_CALLBACK_URL 必须以 /auth/github/callback 结尾，并与 GitHub App 中的值完全一致。 以下两项必须使用 Secret 类型： Secret 用途 GITHUB_CLIENT_SECRET GitHub App OAuth Client Secret SESSION_SECRET 加密和签名管理会话 生成会话密钥： openssl rand -base64 32 Secret 只能写入 Cloudflare，不能放进 TOML、源码、截图或 Git 仓库。GitHub App 页面显示的 SHA-256 指纹也不是可用的私钥或 Secret。 部署 Worker 在项目根目录执行： pnpm install pnpm worker:check pnpm exec wrangler login pnpm worker:deploy worker:check 先执行 Wrangler dry run，确认入口、配置和打包结果有效。 keep_vars = true 会保留 Cloudflare Dashboard 中已经设置的变量和 Secret。 部署后检查健康接口： curl https://filling-config-api.example.com/health 正确响应应包含： { \"ok\": true, \"service\": \"filling-config-api\", \"configured\": true, \"missing\": [] } configured: false 表示仍有必填变量缺失， missing 会列出变量名，但不会暴露真实值。 连接管理页面 管理端默认 API 地址位于 src/site/admin/adminApi.js ，也可以在构建时通过环境变量覆盖： VITE_ADMIN_API_URL=https://filling-config-api.example.com pnpm build 使用 GitHub Pages 工作流时，需要把同一个变量传入构建步骤。完成站点发布后访问： https://blog.example.com/admin/config 登录后可以编辑受管理的 TOML、查看差异和校验结果，并将本次修改作为一个提交发布。远端分支已经变化时，Worker 会返回冲突而不是覆盖新提交。 本地联调 复制本地变量模板： cp worker/.dev.vars.example worker/.dev.vars 将其中的来源和回调改为本地地址，再分别启动 Worker 与站点： pnpm worker:dev VITE_ADMIN_API_URL=http://localhost:8787 pnpm dev worker/.dev.vars 已被 Git 忽略，但仍然不要把真实 Secret 粘贴到日志或截图中。本地 OAuth 回调也必须在用于测试的 GitHub App 中登记。 常见问题 /health 显示缺少变量：检查 Cloudflare 当前部署版本是否已经绑定最新变量。 登录后返回来源错误：确认 ADMIN_ORIGIN 与浏览器地址的协议、域名和端口完全一致。 OAuth 回调失败：同时核对 GitHub App Callback URL 与 GITHUB_CALLBACK_URL 。 登录后提示无权访问：检查 ADMIN_GITHUB_USER_ID 是否为数字 ID，以及 App 是否安装到目标仓库。 管理页请求了错误的域名：重新设置 VITE_ADMIN_API_URL 并构建站点。 发布时提示配置冲突：刷新管理页，基于最新提交重新修改。 Worker 只允许读写配置清单中的 TOML，不接受任意仓库路径，也不会修改源码和工作流。更完整的生产环境清单见仓库中的 docs/online-admin-setup.md 。",
+      "plainText": "Filling 已包含 /admin/config 管理页面和 worker/ 中的 Cloudflare Worker API。管理员通过 GitHub 登录，Worker 校验身份和配置内容，再将多个 TOML 修改合并为一次仓库提交。 整个链路由四部分组成： GitHub Pages 托管博客与管理页面。 GitHub App 提供 OAuth 登录和仓库授权。 Cloudflare Worker 保存服务端密钥并调用 GitHub API。 配置提交触发 GitHub Actions，重新构建并发布站点。 博客域名和 Worker 域名必须分开。例如博客使用 https://blog.example.com ，Worker 可以使用 https://filling-config-api.example.com 。 准备 GitHub App 在 GitHub 的 Developer settings 中创建 GitHub App，设置： Homepage URL: https://blog.example.com Callback URL: https://filling-config-api.example.com/auth/github/callback Webhook: Disabled 仓库权限只授予： Contents: Read and write ：读取并提交允许修改的配置文件。 Actions: Read-only ：在管理页显示最近的部署状态。 Metadata: Read-only ：GitHub App 的基础权限。 安装 App 时只选择博客所在仓库，不要授权全部仓库。记录 App 的 Client ID 和安装地址末尾的 Installation ID。 当前 Worker 使用管理员授权后的 GitHub user access token，不使用 installation token，因此不需要生成或保存 GitHub App 私钥。 配置 Worker 名称与域名 先修改 worker/wrangler.jsonc ： { \"name\": \"filling-config-api\", \"main\": \"src/index.js\", \"keep_vars\": true, \"images\": { \"binding\": \"IMAGES\" }, \"cache\": { \"enabled\": true }, \"routes\": [ { \"pattern\": \"filling-config-api.example.com\", \"custom_domain\": true } ] } images.binding 会在部署时直接为 Worker 注入 Cloudflare Images 能力，不需要先在 Dashboard 中创建图片库，也不依赖侧边栏是否显示 Images 入口。它只负责读取远程封面、按固定宽度压缩为 WebP 并缓存结果，不会把原图上传到 Cloudflare Images 图库。 没有自定义域名时可以先使用 Cloudflare 提供的 workers.dev 地址，但 GitHub App Callback URL 和 GITHUB_CALLBACK_URL 必须同时使用该地址。 设置环境变量 在 Cloudflare Worker 的 Variables and Secrets 中添加普通变量： 变量 示例 用途 ADMIN_GITHUB_USER_ID 12345678 唯一允许登录的 GitHub 数字用户 ID ADMIN_ORIGIN https://blog.example.com 管理页面来源，只写协议和域名 GITHUB_BRANCH main 配置提交目标分支 GITHUB_CALLBACK_URL https://filling-config-api.example.com/auth/github/callback OAuth 回调完整地址 GITHUB_CLIENT_ID GitHub App Client ID OAuth 公开客户端标识 GITHUB_INSTALLATION_ID App 安装 ID 校验 App 是否安装到目标仓库 GITHUB_OWNER your-name 仓库所有者 GITHUB_REPO Filling 仓库名称 ADMIN_ORIGIN 不能包含路径或末尾 / 。 GITHUB_CALLBACK_URL 必须以 /auth/github/callback 结尾，并与 GitHub App 中的值完全一致。 以下两项必须使用 Secret 类型： Secret 用途 GITHUB_CLIENT_SECRET GitHub App OAuth Client Secret SESSION_SECRET 加密和签名管理会话 生成会话密钥： openssl rand -base64 32 Secret 只能写入 Cloudflare，不能放进 TOML、源码、截图或 Git 仓库。GitHub App 页面显示的 SHA-256 指纹也不是可用的私钥或 Secret。 部署 Worker 在项目根目录执行： pnpm install pnpm worker:check pnpm exec wrangler login pnpm worker:deploy worker:check 先执行 Wrangler dry run，确认入口、配置和打包结果有效。 keep_vars = true 会保留 Cloudflare Dashboard 中已经设置的变量和 Secret。 部署后检查健康接口： curl https://filling-config-api.example.com/health 正确响应应包含： { \"ok\": true, \"service\": \"filling-config-api\", \"configured\": true, \"missing\": [] } configured: false 表示仍有必填变量缺失， missing 会列出变量名，但不会暴露真实值。 继续检查封面处理接口： curl --fail-with-body --output /dev/null \\ --write-out \"%{http_code} %{content_type}\\n\" \\ --get \\ --data-urlencode \"url=https://tc.alcy.cc/tc/20260429/66bb5763f4048e34959a028b3963bac2.webp\" \\ --data-urlencode \"width=800\" \\ https://filling-config-api.example.com/image/cover 接口部署成功后，再在 blog/config/cover.toml 顶层加入： image_proxy_url = \"https://filling-config-api.example.com/image/cover\" 先部署 Worker、确认接口不是 404 ，再启用该配置，避免每张封面都产生一次无效代理请求。Worker 仅接受 t.alcy.cc 与 tc.alcy.cc 来源，并把宽度限制为 480 、 800 或 1200 ；处理失败时会跳回原始封面。 连接管理页面 管理端默认 API 地址位于 src/site/admin/adminApi.js ，也可以在构建时通过环境变量覆盖： VITE_ADMIN_API_URL=https://filling-config-api.example.com pnpm build 使用 GitHub Pages 工作流时，需要把同一个变量传入构建步骤。完成站点发布后访问： https://blog.example.com/admin/config 登录后可以编辑受管理的 TOML、查看差异和校验结果，并将本次修改作为一个提交发布。远端分支已经变化时，Worker 会返回冲突而不是覆盖新提交。 本地联调 复制本地变量模板： cp worker/.dev.vars.example worker/.dev.vars 将其中的来源和回调改为本地地址，再分别启动 Worker 与站点： pnpm worker:dev VITE_ADMIN_API_URL=http://localhost:8787 pnpm dev worker/.dev.vars 已被 Git 忽略，但仍然不要把真实 Secret 粘贴到日志或截图中。本地 OAuth 回调也必须在用于测试的 GitHub App 中登记。 常见问题 /health 显示缺少变量：检查 Cloudflare 当前部署版本是否已经绑定最新变量。 登录后返回来源错误：确认 ADMIN_ORIGIN 与浏览器地址的协议、域名和端口完全一致。 OAuth 回调失败：同时核对 GitHub App Callback URL 与 GITHUB_CALLBACK_URL 。 登录后提示无权访问：检查 ADMIN_GITHUB_USER_ID 是否为数字 ID，以及 App 是否安装到目标仓库。 管理页请求了错误的域名：重新设置 VITE_ADMIN_API_URL 并构建站点。 /image/cover 返回 404：当前线上仍是旧 Worker，重新执行 pnpm worker:deploy 。 /image/cover 跳回原图：检查部署版本是否包含名为 IMAGES 的 Images Binding。 发布时提示配置冲突：刷新管理页，基于最新提交重新修改。 Worker 只允许读写配置清单中的 TOML，不接受任意仓库路径，也不会修改源码和工作流。更完整的生产环境清单见仓库中的 docs/online-admin-setup.md 。",
       "titleHaystack": "部署配置后台与 cloudflare worker",
       "metaHaystack": "配置 github app、cloudflare worker 和管理端 api，安全地在线修改并发布 toml。 配置 github app、cloudflare worker 和管理端 api，安全地在线修改并发布 toml。 部署 cc by-nc-sa 4.0 cloudflare worker github"
     }

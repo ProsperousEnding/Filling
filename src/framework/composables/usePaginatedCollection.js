@@ -1,5 +1,6 @@
 import { computed, nextTick, ref, unref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { scrollBlogViewport } from '../utils/blogScroll.js'
 
 function normalizePage(value) {
   const page = Number.parseInt(value, 10)
@@ -91,12 +92,7 @@ export function usePaginatedCollection(options) {
   async function scrollToTop() {
     await nextTick()
 
-    if (typeof window !== 'undefined') {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      })
-    }
+    scrollBlogViewport({ top: 0, behavior: 'smooth' })
   }
 
   async function navigateToPage(page, options = {}) {

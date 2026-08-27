@@ -4,6 +4,12 @@
   "main": "src/index.js",
   "compatibility_date": "2026-08-20",
   "keep_vars": true,
+  "images": {
+    "binding": "IMAGES"
+  },
+  "cache": {
+    "enabled": true
+  },
   "routes": [
     {
       "pattern": "filling-config-api.initzo.com",

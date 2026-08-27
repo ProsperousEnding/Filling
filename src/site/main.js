@@ -7,8 +7,10 @@ import { loadAllConfigs } from '@framework/config/configLoader'
 import { installBlogRuntimeContext } from '@framework/runtime/runtimeContext'
 import { useConfigStore } from '@framework/stores/config'
 import { createSiteContentAdapter } from './contentAdapter'
+import { prepareRuntimeHandoff } from './runtimeHandoff'
 
 async function bootstrap() {
+  const runtimeHandoff = prepareRuntimeHandoff()
   const app = createApp(App)
   const pinia = createPinia()
   let configStore = null
@@ -33,7 +35,9 @@ async function bootstrap() {
   })
 
   app.use(router)
-  app.mount('#app')
+  await router.isReady()
+  app.mount(runtimeHandoff.mountTarget)
+  await runtimeHandoff.complete()
 }
 
 bootstrap()

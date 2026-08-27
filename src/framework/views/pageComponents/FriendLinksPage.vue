@@ -397,7 +397,7 @@ function normalizeColumnCount(value, fallback, min, max) {
   font-size: 1.02rem;
   line-height: 1.35;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 
@@ -475,7 +475,7 @@ function normalizeColumnCount(value, fallback, min, max) {
   color: rgb(148 163 184);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -484,7 +484,7 @@ function normalizeColumnCount(value, fallback, min, max) {
   color: rgb(15 23 42);
   font-size: 1.2rem;
   line-height: 1.35;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .friend-links-application-description {
@@ -589,7 +589,7 @@ function normalizeColumnCount(value, fallback, min, max) {
   color: rgb(15 23 42);
   font-size: 1.15rem;
   line-height: 1.35;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .friend-links-footer-copy {

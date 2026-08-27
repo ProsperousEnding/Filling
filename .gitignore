@@ -15,6 +15,9 @@ dist-worker/
 .wrangler/
 .pnpm-store/
 coverage/
+playwright-report/
+test-results/
+blob-report/
 *.local
 
 # Environment variables

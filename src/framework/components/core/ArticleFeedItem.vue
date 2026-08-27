@@ -1,16 +1,19 @@
 <template>
   <div class="article-feed-item article-item">
     <div
-      class="article-feed-card relative h-52 sm:h-56 md:h-64 rounded-lg md:rounded-xl overflow-hidden transition-all duration-300 bg-cover bg-center"
+      class="article-feed-card relative h-52 sm:h-56 md:h-64 rounded-lg md:rounded-xl overflow-hidden transition-[border-color,box-shadow,transform] duration-200 bg-cover bg-center"
       :class="showArticleCover ? 'article-feed-card-with-cover' : 'article-feed-card-without-cover'"
       :style="articleCardStyle"
     >
-      <img
+      <DeferredImage
         v-if="showArticleCover"
         :src="articleCover"
+        :srcset="articleCoverSrcset || undefined"
         alt=""
         class="article-feed-cover-image absolute inset-0 h-full w-full"
         :loading="coverListConfig.loading"
+        sizes="(min-width: 1280px) 900px, (min-width: 768px) 70vw, 100vw"
+        fetchpriority="low"
         :style="articleCoverImageStyle"
         @error="coverLoadFailed = true"
       />
@@ -26,13 +29,13 @@
         </svg>
       </div>
 
-      <div class="article-feed-card-content absolute inset-0 flex flex-col justify-between p-4 sm:p-5 md:p-6 z-10">
+      <div class="article-feed-card-content absolute inset-0 flex flex-col justify-between p-4 sm:p-5 z-10">
         <div class="article-feed-head flex justify-between items-start">
           <div v-if="article.category">
             <component
               :is="categoryPageEnabled ? 'router-link' : 'span'"
               :to="categoryPageEnabled ? getCategoryRoute(article.category) : undefined"
-              class="article-feed-category inline-block px-2 py-0.5 md:px-3 md:py-1 text-xs font-medium rounded-full transition-colors duration-200"
+              class="article-feed-category inline-block px-2 py-0.5 text-[0.6875rem] font-medium rounded-md transition-colors duration-150"
             >
               {{ typeof article.category === 'string' ? article.category : article.category.name }}
             </component>
@@ -44,7 +47,7 @@
               :key="typeof tag === 'string' ? tag : tag.id"
               :is="tagPageEnabled ? 'router-link' : 'span'"
               :to="tagPageEnabled ? getTagRoute(tag) : undefined"
-              class="article-feed-tag ml-1 md:ml-2 mb-1 px-2 py-0.5 text-xs rounded-full transition-colors duration-200"
+              class="article-feed-tag ml-1 md:ml-1.5 mb-1 px-2 py-0.5 text-[0.6875rem] rounded-md transition-colors duration-150"
             >
               #{{ typeof tag === 'string' ? tag : tag.name }}
             </component>
@@ -54,26 +57,19 @@
           </div>
         </div>
 
-        <div ref="textBlockRef" class="article-feed-body mt-4 md:mt-6 mb-auto">
-          <h2 class="article-feed-title text-lg md:text-xl leading-[1.32] font-semibold transition-colors duration-200">
+        <div class="article-feed-body mt-4 md:mt-6 mb-auto">
+          <h2 class="article-feed-title text-lg md:text-xl leading-[1.32] font-semibold transition-colors duration-150">
             <router-link :to="getArticleRoute(article)" class="article-feed-title-link block">
-              <MeasuredText
-                tag="span"
-                class="block"
-                :text="article.title"
-                :lines="2"
-                :available-width="textBlockWidth"
-              />
+              <span class="block line-clamp-2">{{ article.title }}</span>
             </router-link>
           </h2>
 
-          <MeasuredText
-            tag="p"
+          <p
             class="article-feed-excerpt text-xs md:text-sm leading-relaxed mt-1 md:mt-2 mb-2 md:mb-3 max-w-3xl"
-            :text="article.excerpt"
-            :lines="isSmallScreen ? 1 : 2"
-            :available-width="textBlockWidth"
-          />
+            :class="isSmallScreen ? 'line-clamp-1' : 'line-clamp-2'"
+          >
+            {{ article.excerpt }}
+          </p>
         </div>
 
         <div class="article-feed-footer flex items-center justify-between gap-4">
@@ -91,7 +87,7 @@
             </div>
           </div>
 
-          <router-link :to="getArticleRoute(article)" class="article-feed-read-link px-3 py-1 md:px-4 md:py-1.5 text-xs font-medium rounded-full transition-colors duration-300 flex items-center">
+          <router-link :to="getArticleRoute(article)" class="article-feed-read-link px-2.5 py-1 text-xs font-medium rounded-lg transition-colors duration-150 flex items-center">
             阅读
             <span class="hidden sm:inline">全文</span>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-3.5 md:w-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,11 +102,10 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useElementWidth } from '../../composables/useElementWidth'
 import { useConfigStore } from '../../stores/config'
-import { resolveDisplayArticleCover } from '../../utils/articleCover'
+import { createArticleCoverSrcset, resolveDisplayArticleCover } from '../../utils/articleCover'
 import { getArticleRoute, getCategoryRoute, getTagRoute } from '../../utils/routeLinks'
-import MeasuredText from './MeasuredText.vue'
+import DeferredImage from './DeferredImage.vue'
 
 const props = defineProps({
   article: {
@@ -127,7 +122,6 @@ const configStore = useConfigStore()
 const coverLoadFailed = ref(false)
 const categoryPageEnabled = computed(() => Boolean(configStore.pageRegistry?.categories))
 const tagPageEnabled = computed(() => Boolean(configStore.pageRegistry?.tags))
-const { elementRef: textBlockRef, width: textBlockWidth } = useElementWidth()
 const coverListConfig = computed(() => {
   const list = configStore.coverConfig?.list || {}
 
@@ -148,6 +142,11 @@ const showCoverPlaceholder = computed(() => (
 const articleCover = computed(() => resolveDisplayArticleCover(props.article, {
   coverConfig: configStore.coverConfig,
   style: configStore.coverConfig?.seededStyle
+}))
+const articleCoverSrcset = computed(() => createArticleCoverSrcset(articleCover.value, {
+  imageProxyUrl: configStore.coverConfig?.imageProxyUrl,
+  sourceWidth: configStore.coverConfig?.seededWidth,
+  sourceHeight: configStore.coverConfig?.seededHeight
 }))
 
 watch(articleCover, () => {

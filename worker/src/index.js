@@ -10,6 +10,7 @@ import {
   updateConfigs,
   validateConfigs
 } from './config-api.js'
+import { getOptimizedCover } from './cover-image.js'
 import { getMissingEnvironmentKeys } from './env.js'
 import { HttpError, jsonResponse } from './http.js'
 
@@ -92,6 +93,10 @@ async function routeRequest(request, env) {
       configured: missing.length === 0,
       missing
     })
+  }
+
+  if (request.method === 'GET' && url.pathname === '/image/cover') {
+    return getOptimizedCover(request, env)
   }
 
   const handler = ROUTES.get(`${request.method} ${url.pathname}`)

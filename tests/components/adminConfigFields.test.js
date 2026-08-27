@@ -76,24 +76,33 @@ describe('AdminConfigFields', () => {
     expect(wrapper.find('#admin-field-analytics-plausible-domain').exists()).toBe(false)
   })
 
-  it('shows inactive feature details only after enabling the feature', async () => {
-    const model = { enabled: false, mode: 'gradient', gradient_light: '' }
+  it('shows the active cover image pool in random and fixed modes', async () => {
+    const model = {
+      enabled: true,
+      fallback: 'seeded',
+      seeded_style: 'mwm-anime',
+      fixed: false,
+      source_urls: {
+        'mwm-anime': []
+      }
+    }
     wrapper = mount(AdminConfigFields, {
       props: {
         modelValue: model,
         rootModel: model,
-        path: 'background'
+        path: 'cover'
       }
     })
 
-    expect(wrapper.text()).not.toContain('模式')
+    expect(wrapper.text()).toContain('固定文章封面')
+    expect(wrapper.text()).toContain('封面图片池')
+    expect(wrapper.text()).toContain('MWM 二次元图片')
 
-    await wrapper.get('[role="switch"]').trigger('click')
+    await wrapper.get('#admin-field-cover-fixed').trigger('click')
     const nextModel = wrapper.emitted('update:modelValue')[0][0]
     await wrapper.setProps({ modelValue: nextModel, rootModel: nextModel })
 
-    expect(wrapper.text()).toContain('模式')
-    expect(wrapper.text()).toContain('浅色渐变')
-    expect(wrapper.text()).not.toContain('浅色背景图')
+    expect(wrapper.text()).toContain('封面图片池')
+    expect(wrapper.text()).toContain('MWM 二次元图片')
   })
 })

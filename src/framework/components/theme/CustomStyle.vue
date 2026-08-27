@@ -14,6 +14,7 @@ const themeCSSFile = computed(() => configStore.themeCSSFile)
 const currentThemePreset = computed(() => String(configStore.currentThemePreset || '').trim())
 
 let styleElement = null
+let ownsStyleElement = false
 let warnedThemeStylePath = ''
 
 const updateCustomStyle = () => {
@@ -43,10 +44,17 @@ const updateCustomStyle = () => {
   }
 
   if (!styleElement) {
-    styleElement = document.createElement('link')
-    styleElement.rel = 'stylesheet'
-    styleElement.id = 'vue-blog-theme-css'
-    document.head.appendChild(styleElement)
+    const existingElement = document.getElementById('vue-blog-theme-css')
+
+    if (existingElement?.tagName === 'LINK') {
+      styleElement = existingElement
+    } else {
+      styleElement = document.createElement('link')
+      styleElement.rel = 'stylesheet'
+      styleElement.id = 'vue-blog-theme-css'
+      document.head.appendChild(styleElement)
+      ownsStyleElement = true
+    }
   }
 
   if (styleElement.getAttribute('href') !== href) {
@@ -62,9 +70,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (styleElement) {
+  if (styleElement && ownsStyleElement) {
     document.head.removeChild(styleElement)
-    styleElement = null
   }
+  styleElement = null
+  ownsStyleElement = false
 })
 </script> 

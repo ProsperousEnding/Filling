@@ -465,14 +465,12 @@ test('default sidebar order prioritizes recent content before taxonomy', () => {
   assert.deepEqual(resolveSidebarComponents({}), [
     'profile',
     'announcement',
-    'search',
     'latest-articles',
     'categories',
     'tags'
   ])
   assert.deepEqual(resolveSidebarComponents({}, { mobile: true }), [
     'profile',
-    'search',
     'latest-articles',
     'categories',
     'tags'
@@ -480,14 +478,13 @@ test('default sidebar order prioritizes recent content before taxonomy', () => {
   assert.deepEqual(resolveSidebarComponents({}, { mobile: true, article: true }), [
     'profile',
     'announcement',
-    'search',
     'latest-articles',
     'categories',
     'tags'
   ])
   assert.deepEqual(resolveSidebarComponents({
-    mobile_components: ['search', 'tags']
-  }, { mobile: true, article: true }), ['search', 'tags'])
+    mobile_components: ['profile', 'tags']
+  }, { mobile: true, article: true }), ['profile', 'tags'])
 })
 
 test('sidebar entries inherit defaults by key or source after reordering', () => {

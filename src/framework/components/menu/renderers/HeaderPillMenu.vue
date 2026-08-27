@@ -1,6 +1,6 @@
 <template>
   <nav ref="navElement" class="site-header-nav hidden min-w-0 items-center lg:flex" @keydown.esc="handleEscape">
-    <div class="site-header-nav-shell rounded-full px-1 py-1 flex items-center">
+    <div class="site-header-nav-shell px-1 py-1 flex items-center">
       <div
         v-for="(item, index) in normalizedItems"
         :key="item.key"
@@ -14,7 +14,7 @@
           :is="getItemComponent(item)"
           :to="getItemTo(item)"
           :href="getItemHref(item)"
-          class="site-header-nav-link relative px-4 py-1.5 text-sm rounded-full transition-all duration-200"
+          class="site-header-nav-link relative px-3 py-1 text-sm"
           :class="{ 'site-header-nav-link-active': isActive(item) }"
           :target="item.external ? '_blank' : undefined"
           :rel="item.external ? 'noreferrer' : undefined"
@@ -226,7 +226,9 @@ onBeforeUnmount(() => {
   max-width: 100%;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  border-radius: var(--theme-radius-item);
+  padding: 0.1875rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
 }
 
 .site-header-nav-link {
@@ -238,8 +240,13 @@ onBeforeUnmount(() => {
   color: rgb(71 85 105);
   white-space: nowrap;
   border: 0;
+  min-height: 1.625rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 0.4375rem;
   background: transparent;
   font: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.15;
 }
 
 .site-header-nav-label {
@@ -257,7 +264,7 @@ onBeforeUnmount(() => {
 .site-header-nav-link-active {
   color: rgb(15 23 42);
   background: rgb(255 255 255);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .site-header-nav-caret {

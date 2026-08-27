@@ -72,14 +72,14 @@ defineProps({
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.72rem;
+  margin-bottom: 0.62rem;
 }
 
 .sidebar-section-title {
   margin: 0;
-  font-size: 0.88rem;
-  line-height: 1;
-  font-weight: 700;
+  font-size: 0.84375rem;
+  line-height: 1.25;
+  font-weight: 650;
   letter-spacing: 0;
   text-transform: none;
   color: var(--theme-heading-color);
@@ -95,7 +95,7 @@ defineProps({
   border: 0;
   background: transparent;
   color: var(--theme-text-faint);
-  font-size: 0.72rem;
+  font-size: 0.6875rem;
   line-height: 1;
   font-weight: 600;
   font-variant-numeric: tabular-nums;

@@ -1,4 +1,8 @@
-import { SEEDED_COVER_STYLES, normalizeSeededCoverStyle } from './articleCover.js'
+import {
+  RANDOM_COVER_STYLES,
+  SEEDED_COVER_STYLES,
+  normalizeSeededCoverStyle
+} from './articleCover.js'
 import { normalizeAnalyticsProvider } from './analyticsConfig.js'
 import { BUILT_IN_FONT_PRESETS } from './fontConfig.js'
 
@@ -43,14 +47,9 @@ const CONFIG_KEYS = Object.freeze({
     'mark_diff_lines', 'languages'
   ]),
   markdown: new Set(['enabled', 'callouts', 'mermaid', 'math']),
-  background: new Set([
-    'enabled', 'mode', 'gradient_light', 'gradient_dark', 'image', 'dark_image',
-    'image_dark', 'overlay_light', 'overlay_dark', 'position', 'size', 'repeat',
-    'attachment', 'opacity'
-  ]),
   cover: new Set([
-    'enabled', 'fallback', 'fallback_image', 'image', 'seeded_width', 'seeded_height',
-    'seeded_format', 'seeded_style', 'seeded_anime_url', 'source_urls', 'style_urls',
+    'enabled', 'fallback', 'fallback_image', 'image', 'image_proxy_url', 'seeded_width', 'seeded_height',
+    'seeded_format', 'seeded_style', 'seeded_anime_url', 'fixed', 'source_urls', 'style_urls',
     'list', 'detail'
   ]),
   guestbook: new Set([
@@ -256,13 +255,6 @@ function validateAnalyticsConfig(analytics, diagnostics) {
   })
 }
 
-function validateBackgroundConfig(background, diagnostics) {
-  validateEnum(background?.mode, ['none', 'gradient', 'image'], 'background.mode', diagnostics)
-  if (background?.enabled === true && background?.mode === 'image' && !hasValue(background.image)) {
-    requireFields(background, ['image'], 'background', diagnostics)
-  }
-}
-
 function validateCoverConfig(cover, diagnostics) {
   validateEnum(cover?.fallback, ['none', 'seeded', 'image'], 'cover.fallback', diagnostics)
   validateEnum(cover?.detail?.display_mode, ['image', 'header-background', 'page-background'], 'cover.detail.display_mode', diagnostics)
@@ -274,10 +266,17 @@ function validateCoverConfig(cover, diagnostics) {
 
   if (hasValue(cover?.seeded_style)) {
     const style = normalizeSeededCoverStyle(cover.seeded_style, '')
-    const customStyles = new Set([
-      ...Object.keys(isPlainObject(cover.source_urls) ? cover.source_urls : {}),
-      ...Object.keys(isPlainObject(cover.style_urls) ? cover.style_urls : {})
-    ].map(value => normalizeSeededCoverStyle(value, '')))
+    const configuredSources = {
+      ...(isPlainObject(cover.source_urls) ? cover.source_urls : {}),
+      ...(isPlainObject(cover.style_urls) ? cover.style_urls : {})
+    }
+    const customStyles = new Set(Object.entries(configuredSources)
+      .filter(([, value]) => (
+        Array.isArray(value)
+          ? value.some(item => hasValue(item))
+          : hasValue(value)
+      ))
+      .map(([key]) => normalizeSeededCoverStyle(key, '')))
 
     if (!SEEDED_COVER_STYLES.includes(style) && !customStyles.has(style)) {
       diagnostics.push(createDiagnostic(
@@ -285,6 +284,15 @@ function validateCoverConfig(cover, diagnostics) {
         'unknown-cover-style',
         'cover.seeded_style',
         `Cover style "${cover.seeded_style}" has no built-in or configured source.`
+      ))
+    }
+
+    if (cover?.fixed === true && RANDOM_COVER_STYLES.includes(style) && !customStyles.has(style)) {
+      diagnostics.push(createDiagnostic(
+        'error',
+        'missing-fixed-cover-source',
+        'cover.source_urls',
+        `Cover style "${cover.seeded_style}" needs a fixed source URL or pool when fixed covers are enabled.`
       ))
     }
   }
@@ -342,7 +350,6 @@ export function getConfigDiagnostics(configs = {}) {
   validateFontConfig(source.font, diagnostics)
   validateCommentConfig(source.comment, diagnostics)
   validateAnalyticsConfig(source.analytics, diagnostics)
-  validateBackgroundConfig(source.background, diagnostics)
   validateCoverConfig(source.cover, diagnostics)
   validateMarkdownConfig(source.markdown, diagnostics)
   validateCodeBlockConfig(source.code_block, diagnostics)

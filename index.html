@@ -3,6 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      try {
+        const theme = localStorage.getItem('vue-blog-theme')
+
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.classList.toggle('dark', theme === 'dark')
+          document.documentElement.dataset.theme = theme
+          document.documentElement.style.colorScheme = theme
+        }
+      } catch {}
+    </script>
     <title>Vue博客框架</title>
   </head>
   <body>

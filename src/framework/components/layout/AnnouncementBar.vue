@@ -164,7 +164,7 @@ watch(
   color: rgb(37 99 235);
   font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
 }
 
 .announcement-shell[data-variant='success'] .announcement-badge {

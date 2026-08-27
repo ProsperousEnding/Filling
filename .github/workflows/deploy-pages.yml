@@ -90,8 +90,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run unit tests
-        run: pnpm lint && pnpm test
+      - name: Install browser for end-to-end tests
+        run: pnpm exec playwright install --with-deps chromium webkit
+
+      - name: Run tests and production dependency audit
+        env:
+          PLAYWRIGHT_BASE_PATH: ${{ steps.pages_env.outputs.base_path }}
+          VITE_BASE_PATH: ${{ steps.pages_env.outputs.base_path }}
+          VITE_SITE_URL: ${{ steps.pages_env.outputs.site_url }}
+        run: pnpm lint && pnpm audit:prod && pnpm test && pnpm test:e2e
 
       - name: Build and verify library package
         run: pnpm build:lib && pnpm test:package
@@ -100,7 +107,10 @@ jobs:
         env:
           VITE_BASE_PATH: ${{ steps.pages_env.outputs.base_path }}
           VITE_SITE_URL: ${{ steps.pages_env.outputs.site_url }}
-        run: pnpm build && pnpm test:site
+        run: pnpm build && pnpm test:site && pnpm test:bundle
+
+      - name: Verify Worker bundle
+        run: pnpm worker:check
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4

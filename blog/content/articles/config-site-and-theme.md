@@ -1,8 +1,8 @@
 ---
-title: 站点、外观与封面配置
-description: 从站点信息到 MWM 自动封面，理清主题、背景和文章封面的配置边界。
+title: 站点、主题与封面配置
+description: 从站点信息到 MWM 自动封面，理清主题和文章封面的配置边界。
 date: 2026-05-13
-updated: 2026-08-21
+updated: 2026-08-25
 category: 配置
 cover_display_mode: page-background
 sticky: true
@@ -15,13 +15,12 @@ tags:
 
 Filling 的配置遵循一个原则：只写需要修改的值，其余交给框架默认配置。常用配置放在 `blog/config/`，低频功能放在 `blog/config/optional/`。
 
-先分清三个容易混淆的概念：
+先分清两个外观概念：
 
-- `theme.toml` 选择界面主题预设。
-- `background.toml` 控制整个站点背后的渐变或壁纸。
+- `theme.toml` 选择界面主题预设，并统一控制页面背景和组件视觉。
 - `cover.toml` 只负责文章列表和文章详情页的封面。
 
-站点背景与文章封面互不覆盖，也不需要选择两种封面模式。
+页面背景属于主题，文章封面属于内容展示，两者不使用重复配置。
 
 ## 配置文件分工
 
@@ -29,8 +28,7 @@ Filling 的配置遵循一个原则：只写需要修改的值，其余交给框
 | --- | --- |
 | `site.toml` | 站点信息、SEO、页头、首页文章、菜单、侧边栏和页脚 |
 | `profile.toml` | 侧边栏个人资料与社交链接 |
-| `theme.toml` | 当前主题和主题资源预设 |
-| `background.toml` | 全站渐变或图片背景 |
+| `theme.toml` | 当前主题、页面背景和主题资源预设 |
 | `cover.toml` | 自动封面图源、列表封面和详情页封面 |
 
 完整文件说明可以直接查看 `blog/config/README.md`。
@@ -85,27 +83,8 @@ show_name = false
 current_preset = "default"
 ```
 
-预设中的 CSS 和 JS 资源位于 `public/themes/`。只切换现有主题时修改 `current_preset` 即可。
-
-## 配置站点背景
-
-当前站点使用渐变背景：
-
-```toml
-enabled = true
-mode = "gradient"
-```
-
-需要全站壁纸时，将 `background.toml` 改为图片模式：
-
-```toml
-enabled = true
-mode = "image"
-image = "backgrounds/site-light.webp"
-dark_image = "backgrounds/site-dark.webp"
-```
-
-图片放在 `public/backgrounds/`，配置中不写 `public/` 前缀。没有单独的暗色图片时可以省略 `dark_image`。
+预设 CSS 位于 `public/themes/`。只切换现有主题时修改 `current_preset` 即可；内置主题不加载重复的 JavaScript。
+页面背景由对应主题 CSS 的 `--theme-body-background` 提供，会和文字、面板、控件一起切换。
 
 ## 文章封面
 
@@ -115,6 +94,19 @@ dark_image = "backgrounds/site-dark.webp"
 enabled = true
 fallback = "seeded"
 seeded_style = "mwm-anime"
+fixed = false
+```
+
+默认会在每次访问时打乱 MWM 图片池，并尽量避免同页文章出现重复封面。希望每篇文章长期显示同一张图片时，在配置后台打开“固定文章封面”，或修改配置：
+
+```toml
+fixed = true
+
+[source_urls]
+mwm-anime = [
+  "https://images.example.com/anime-cover-1.webp",
+  "https://images.example.com/anime-cover-2.webp",
+]
 
 [list]
 show_cover = true
@@ -126,11 +118,12 @@ display_mode = "image"
 
 可选图源：
 
-- `mwm-anime`、`paugram-anime`、`dmoe-anime`：二次元图片。
-- `mwm-scenery`、`picsum`、`loremflickr`、`paugram-bing`：摄影或风景图片。
+- `mwm-anime`、`paugram-anime`、`dmoe-anime`：二次元随机接口，直接使用时每次请求可能不同。
+- `mwm-scenery`、`paugram-bing`：摄影或风景随机接口，也可以按需开启固定模式。
+- `picsum`、`loremflickr`：原生支持稳定 seed 的摄影图源。
 - `cataas`：猫咪图片。
 
-所有自动封面统一使用 `seeded_style`。站点不存在第二套浏览器本地选择，访客也不会覆盖站点配置。
+所有自动封面统一使用 `seeded_style`。`fixed = false` 时随机打乱 `source_urls` 图片池；打开固定模式后，框架按文章标识稳定选择。没有配置图片池时才会直接使用随机接口。站点不存在第二套浏览器本地选择，访客也不会覆盖站点配置。当前图片池直接查看 `blog/config/cover.toml`；可选的 `image_proxy_url` 只应在图片服务已经部署可用后填写。
 
 详情页支持三种展示方式：
 

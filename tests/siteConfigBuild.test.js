@@ -4,7 +4,10 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 
-import { getMenuPageSourceDiagnostics } from '../scripts/build-site-config.mjs'
+import {
+  getMenuPageSourceDiagnostics,
+  getUnsupportedConfigPaths
+} from '../scripts/build-site-config.mjs'
 
 const temporaryDirectories = []
 
@@ -57,4 +60,17 @@ test('menu page source diagnostics match the runtime Markdown loader', async () 
   )
   assert.equal(diagnostics.some(diagnostic => diagnostic.path.includes('about.file')), false)
   assert.equal(diagnostics.some(diagnostic => diagnostic.path.includes('projects.folder')), false)
+})
+
+test('site config generation rejects files outside the managed config manifest', () => {
+  const rootDirectory = path.join(path.sep, 'project')
+  const configFiles = [
+    path.join(rootDirectory, 'blog/config/theme.toml'),
+    path.join(rootDirectory, 'blog/config/background.toml')
+  ]
+
+  assert.deepEqual(
+    getUnsupportedConfigPaths(configFiles, rootDirectory),
+    ['blog/config/background.toml']
+  )
 })

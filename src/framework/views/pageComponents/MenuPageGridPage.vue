@@ -16,11 +16,14 @@
           class="menu-page-grid-cover h-40 overflow-hidden md:h-44"
           :style="coverShellStyle"
         >
-          <img
+          <DeferredImage
             :src="getItemCover(item)"
+            :srcset="getItemCoverSrcset(item) || undefined"
             :alt="item.title"
             class="h-full w-full transition-transform duration-500"
             :loading="coverListConfig.loading"
+            sizes="(min-width: 1280px) 360px, (min-width: 768px) 50vw, 100vw"
+            fetchpriority="low"
             :style="coverImageStyle"
           />
         </div>
@@ -172,7 +175,9 @@
 
 <script setup>
 import { computed } from 'vue'
+import DeferredImage from '../../components/core/DeferredImage.vue'
 import { useConfigStore } from '../../stores/config'
+import { createArticleCoverSrcset } from '../../utils/articleCover'
 import {
   getMenuItemActionLabel,
   getMenuItemCover,
@@ -254,6 +259,14 @@ function showItemCover(item) {
 
 function getItemCover(item) {
   return getMenuItemCover(item, coverResolveOptions.value)
+}
+
+function getItemCoverSrcset(item) {
+  return createArticleCoverSrcset(getItemCover(item), {
+    imageProxyUrl: configStore.coverConfig?.imageProxyUrl,
+    sourceWidth: configStore.coverConfig?.seededWidth,
+    sourceHeight: configStore.coverConfig?.seededHeight
+  })
 }
 
 function usesArticleCard(item) {

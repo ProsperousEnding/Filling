@@ -12,6 +12,13 @@ export const SEEDED_COVER_STYLES = Object.freeze([
   'loremflickr',
   'paugram-bing'
 ])
+export const RANDOM_COVER_STYLES = Object.freeze([
+  'mwm-anime',
+  'mwm-scenery',
+  'paugram-anime',
+  'dmoe-anime',
+  'paugram-bing'
+])
 export const SEEDED_COVER_STYLE_LABELS = Object.freeze({
   picsum: 'Picsum 摄影',
   cataas: 'Cataas 猫咪',
@@ -25,13 +32,15 @@ export const SEEDED_COVER_STYLE_LABELS = Object.freeze({
 export const DEFAULT_SEEDED_COVER_URLS = Object.freeze({
   picsum: 'https://picsum.photos/seed/{seed}/{width}/{height}.{format}',
   cataas: 'https://cataas.com/cat?width={width}&height={height}&seed={hash}',
-  'mwm-anime': 'https://t.mwm.moe/pc?seed={hash}',
-  'mwm-scenery': 'https://t.mwm.moe/fj?seed={hash}',
+  'mwm-anime': 'https://t.alcy.cc/pc/?seed={hash}',
+  'mwm-scenery': 'https://t.alcy.cc/fj/?seed={hash}',
   'paugram-anime': 'https://api.paugram.com/wallpaper/?seed={hash}',
   'dmoe-anime': 'https://www.dmoe.cc/random.php?seed={hash}',
   loremflickr: 'https://loremflickr.com/{width}/{height}/landscape?lock={hash}',
   'paugram-bing': 'https://api.paugram.com/bing/?seed={hash}'
 })
+
+const runtimeRandomCoverPools = new Map()
 
 function normalizeString(value) {
   return String(value || '').trim()
@@ -195,6 +204,86 @@ function createNumericHash(value) {
   return String(Math.abs(hash) || 1)
 }
 
+function shuffleCoverSources(sources) {
+  const shuffledSources = [...sources]
+
+  for (let index = shuffledSources.length - 1; index > 0; index -= 1) {
+    const targetIndex = Math.floor(Math.random() * (index + 1))
+    const currentSource = shuffledSources[index]
+    shuffledSources[index] = shuffledSources[targetIndex]
+    shuffledSources[targetIndex] = currentSource
+  }
+
+  return shuffledSources
+}
+
+function selectRuntimeRandomCoverSource(sources, seedInput) {
+  const poolKey = sources.join('\u0000')
+  let poolState = runtimeRandomCoverPools.get(poolKey)
+
+  if (!poolState) {
+    poolState = {
+      assignments: new Map(),
+      cursor: 0,
+      sources: shuffleCoverSources(sources)
+    }
+    runtimeRandomCoverPools.set(poolKey, poolState)
+  }
+
+  const seed = normalizeCoverSeed(seedInput)
+  const assignedSource = poolState.assignments.get(seed)
+
+  if (assignedSource) {
+    return assignedSource
+  }
+
+  const source = poolState.sources[poolState.cursor % poolState.sources.length]
+  poolState.assignments.set(seed, source)
+  poolState.cursor += 1
+  return source
+}
+
+function selectSeededCoverSource(source, seedInput, options = {}) {
+  if (!Array.isArray(source)) {
+    return {
+      pooled: false,
+      value: normalizeString(source)
+    }
+  }
+
+  const sources = source
+    .map(value => normalizeString(value))
+    .filter(Boolean)
+
+  if (sources.length === 0) {
+    return {
+      pooled: true,
+      value: ''
+    }
+  }
+
+  if (options.randomizePool === true) {
+    return {
+      pooled: true,
+      value: selectRuntimeRandomCoverSource(sources, seedInput)
+    }
+  }
+
+  if (options.fixed !== true) {
+    return {
+      pooled: false,
+      value: ''
+    }
+  }
+
+  const sourceIndex = Number.parseInt(createNumericHash(seedInput), 10) % sources.length
+
+  return {
+    pooled: true,
+    value: sources[sourceIndex]
+  }
+}
+
 function appendQueryParam(url, name, value) {
   const normalizedUrl = normalizeString(url)
   const normalizedName = encodeURIComponent(normalizeString(name))
@@ -226,7 +315,7 @@ function resolveCoverUrlTemplate(template, seedInput, options = {}) {
     return resolvedTemplate
   }
 
-  return resolvedTemplate === template
+  return resolvedTemplate === template && options.appendSeed !== false
     ? appendQueryParam(resolvedTemplate, 'seed', seed)
     : resolvedTemplate
 }
@@ -243,15 +332,153 @@ export function createAnimeArticleCover(seedInput, options = {}) {
   return createTemplateArticleCover(seedInput, options.animeUrl || DEFAULT_SEEDED_COVER_URLS['mwm-anime'], options)
 }
 
+function normalizeResponsiveWidths(widths = []) {
+  return Array.from(new Set((Array.isArray(widths) ? widths : [])
+    .map(width => Number.parseInt(width, 10))
+    .filter(width => Number.isFinite(width) && width >= 160 && width <= 3840)))
+    .sort((left, right) => left - right)
+}
+
+function isProxyOptimizableCover(source) {
+  try {
+    const url = new URL(normalizeString(source))
+    return url.protocol === 'https:' && ['t.alcy.cc', 'tc.alcy.cc'].includes(url.hostname)
+  } catch {
+    return false
+  }
+}
+
+export function resolveOptimizedArticleCoverSource(source) {
+  try {
+    const proxyUrl = new URL(normalizeString(source))
+    const originalSource = normalizeString(proxyUrl.searchParams.get('url'))
+    return isProxyOptimizableCover(originalSource) ? originalSource : ''
+  } catch {
+    return ''
+  }
+}
+
+export function createOptimizedArticleCoverUrl(source, options = {}) {
+  const normalizedSource = normalizeString(source)
+  const imageProxyUrl = normalizeString(options.imageProxyUrl)
+  const width = Number.parseInt(options.width, 10)
+
+  if (!normalizedSource || !imageProxyUrl || !isProxyOptimizableCover(normalizedSource)) {
+    return normalizedSource
+  }
+
+  try {
+    const proxyUrl = new URL(imageProxyUrl)
+    proxyUrl.searchParams.set('url', normalizedSource)
+    proxyUrl.searchParams.set('width', String(width || DEFAULT_PICSUM_WIDTH))
+    return proxyUrl.toString()
+  } catch {
+    return normalizedSource
+  }
+}
+
+function resizeProxyCoverUrl(source, width, imageProxyUrl) {
+  const normalizedProxyUrl = normalizeString(imageProxyUrl)
+
+  if (!normalizedProxyUrl) {
+    return ''
+  }
+
+  try {
+    const sourceUrl = new URL(normalizeString(source))
+    const proxyUrl = new URL(normalizedProxyUrl)
+
+    if (sourceUrl.origin !== proxyUrl.origin || sourceUrl.pathname !== proxyUrl.pathname) {
+      return ''
+    }
+
+    sourceUrl.searchParams.set('width', String(width))
+    return sourceUrl.toString()
+  } catch {
+    return ''
+  }
+}
+
+function resizeKnownCoverUrl(source, width, aspectRatio) {
+  const normalizedSource = normalizeString(source)
+  const height = Math.max(1, Math.round(width / aspectRatio))
+
+  if (/^https?:\/\/picsum\.photos\/seed\//i.test(normalizedSource)) {
+    return normalizedSource.replace(
+      /(\/seed\/[^/]+\/)\d+\/\d+(\.[a-z0-9]+)([?#].*)?$/i,
+      `$1${width}/${height}$2$3`
+    )
+  }
+
+  if (/^https?:\/\/loremflickr\.com\/\d+\/\d+\//i.test(normalizedSource)) {
+    return normalizedSource.replace(
+      /^(https?:\/\/loremflickr\.com\/)\d+\/\d+(\/)/i,
+      `$1${width}/${height}$2`
+    )
+  }
+
+  if (/^https?:\/\/cataas\.com\/cat(?:[?#]|$)/i.test(normalizedSource)) {
+    try {
+      const url = new URL(normalizedSource)
+      url.searchParams.set('width', String(width))
+      url.searchParams.set('height', String(height))
+      return url.toString()
+    } catch {
+      return ''
+    }
+  }
+
+  return ''
+}
+
+export function createArticleCoverSrcset(source, options = {}) {
+  const sourceWidth = Number.parseInt(options.sourceWidth, 10) || DEFAULT_PICSUM_WIDTH
+  const sourceHeight = Number.parseInt(options.sourceHeight, 10) || DEFAULT_PICSUM_HEIGHT
+  const aspectRatio = sourceWidth / sourceHeight
+  const widths = normalizeResponsiveWidths(options.widths || [480, 800, 1200])
+
+  if (!normalizeString(source) || !Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+    return ''
+  }
+
+  const candidates = widths
+    .map(width => ({
+      width,
+      url: resizeKnownCoverUrl(source, width, aspectRatio)
+        || resizeProxyCoverUrl(source, width, options.imageProxyUrl)
+        || (normalizeString(options.imageProxyUrl)
+          ? createOptimizedArticleCoverUrl(source, {
+            imageProxyUrl: options.imageProxyUrl,
+            width
+          })
+          : '')
+    }))
+    .filter(candidate => candidate.url)
+
+  return candidates.length > 1
+    ? candidates.map(candidate => `${candidate.url} ${candidate.width}w`).join(', ')
+    : ''
+}
+
 export function createSeededArticleCover(seedInput, options = {}) {
   const styleUrls = options.styleUrls && typeof options.styleUrls === 'object'
     ? options.styleUrls
     : DEFAULT_SEEDED_COVER_URLS
   const style = normalizeSeededCoverStyle(options.style || options.seededStyle)
-  const styleUrl = normalizeString(styleUrls[style] || DEFAULT_SEEDED_COVER_URLS[style])
+  const configuredSource = styleUrls[style]
+  const hasConfiguredSources = Array.isArray(configuredSource)
+    && configuredSource.some(source => normalizeString(source))
+  const useConfiguredPool = options.fixed === true || options.randomizePool === true
+  const source = Array.isArray(configuredSource) && (!useConfiguredPool || !hasConfiguredSources)
+    ? DEFAULT_SEEDED_COVER_URLS[style]
+    : configuredSource || DEFAULT_SEEDED_COVER_URLS[style]
+  const styleSource = selectSeededCoverSource(source, seedInput, options)
 
-  if (styleUrl) {
-    return createTemplateArticleCover(seedInput, styleUrl, options)
+  if (styleSource.value) {
+    return createTemplateArticleCover(seedInput, styleSource.value, {
+      ...options,
+      appendSeed: !styleSource.pooled
+    })
   }
 
   if (style === 'anime') {
@@ -279,6 +506,7 @@ function isGeneratedSeededCoverUrl(value) {
     || /^https?:\/\/img\.paulzzh\.tech\/touhou\/random/i.test(normalizedValue)
     || /^https?:\/\/api\.dujin\.org\/bing\/1920\.php\?/i.test(normalizedValue)
     || /^https?:\/\/t\.mwm\.moe\//i.test(normalizedValue)
+    || /^https?:\/\/t\.alcy\.cc\/(?:pc|fj)\//i.test(normalizedValue)
     || /^https?:\/\/www\.loliapi\.com\/acg\//i.test(normalizedValue)
     || /^https?:\/\/img\.xjh\.me\/random_img\.php\?/i.test(normalizedValue)
     || /^https?:\/\/bing\.img\.run\/rand\.php\?/i.test(normalizedValue)
@@ -339,6 +567,7 @@ export function resolveArticleCover(cover, seedInput, options = {}) {
     height: coverConfig.seededHeight || options.height,
     format: coverConfig.seededFormat || options.format,
     style: coverConfig.seededStyle || options.style,
+    fixed: coverConfig.fixed === true,
     animeUrl: coverConfig.seededAnimeUrl || options.animeUrl,
     styleUrls: coverConfig.styleUrls || options.styleUrls
   })
@@ -377,12 +606,19 @@ export function resolveDisplayArticleCover(article = {}, options = {}) {
     return ''
   }
 
-  return createSeededArticleCover(getArticleCoverSeed(article), {
+  const generatedCover = createSeededArticleCover(getArticleCoverSeed(article), {
     width: coverConfig.seededWidth,
     height: coverConfig.seededHeight,
     format: coverConfig.seededFormat,
     style: options.style || coverConfig.seededStyle,
+    fixed: coverConfig.fixed === true,
+    randomizePool: coverConfig.fixed !== true,
     animeUrl: coverConfig.seededAnimeUrl || options.animeUrl,
     styleUrls: coverConfig.styleUrls || options.styleUrls
+  })
+
+  return createOptimizedArticleCoverUrl(generatedCover, {
+    imageProxyUrl: coverConfig.imageProxyUrl,
+    width: coverConfig.seededWidth
   })
 }

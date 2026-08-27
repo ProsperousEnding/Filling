@@ -21,12 +21,15 @@
             :style="showItemCover(item) ? coverShellStyle : undefined"
           ></div>
 
-          <img
+          <DeferredImage
             v-if="showItemCover(item)"
             :src="getItemCover(item)"
+            :srcset="getItemCoverSrcset(item) || undefined"
             :alt="item.title"
-            class="absolute inset-0 h-full w-full transition-transform duration-500"
+            class="absolute inset-0 h-full w-full transition-transform duration-200"
             :loading="coverListConfig.loading"
+            sizes="(min-width: 1280px) 420px, (min-width: 768px) 50vw, 100vw"
+            fetchpriority="low"
             :style="coverImageStyle"
           />
 
@@ -40,11 +43,11 @@
             </svg>
           </div>
 
-          <div class="relative z-10 flex flex-col px-6 pt-6 pb-2">
-            <div class="menu-page-card-meta-row article-card-meta mb-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div class="relative z-10 flex flex-col px-5 pt-5 pb-2">
+            <div class="menu-page-card-meta-row article-card-meta mb-2 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span
                 v-if="getPrimaryBadge(item)"
-                class="article-card-category inline-block px-3 py-1 text-xs font-medium rounded-full transition-colors duration-200"
+                class="article-card-category inline-block px-2 py-0.5 text-[0.6875rem] font-medium rounded-md transition-colors duration-150"
               >
                 {{ getPrimaryBadge(item) }}
               </span>
@@ -58,15 +61,15 @@
 
         <div
           class="article-card-body flex flex-col flex-grow"
-          :class="showCoverSurface(item) ? 'px-6 pb-6' : 'p-6'"
+          :class="showCoverSurface(item) ? 'px-5 pb-5' : 'p-5'"
         >
           <div
             v-if="!showCoverSurface(item)"
-            class="menu-page-card-meta-row article-card-meta mb-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between"
+            class="menu-page-card-meta-row article-card-meta mb-2 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between"
           >
             <span
               v-if="getPrimaryBadge(item)"
-              class="article-card-category inline-block px-3 py-1 text-xs font-medium rounded-full transition-colors duration-200"
+              class="article-card-category inline-block px-2 py-0.5 text-[0.6875rem] font-medium rounded-md transition-colors duration-150"
             >
               {{ getPrimaryBadge(item) }}
             </span>
@@ -77,30 +80,30 @@
           </div>
 
           <div class="article-card-copy">
-            <h2 class="menu-page-card-article-title article-card-title text-lg leading-[1.35] font-medium mb-3 transition-colors duration-200">
+            <h2 class="menu-page-card-article-title article-card-title text-lg leading-[1.35] font-medium mb-2 transition-colors duration-150">
               <span class="article-card-title-link block">{{ item.title }}</span>
             </h2>
 
             <p
               v-if="item.description"
-              class="menu-page-card-article-description article-card-excerpt text-sm mb-4 flex-grow leading-relaxed"
+              class="menu-page-card-article-description article-card-excerpt text-sm mb-3 flex-grow leading-relaxed"
             >
               {{ item.description }}
             </p>
           </div>
 
           <div class="mt-auto">
-            <div v-if="getTags(item).length > 0" class="article-card-tags flex flex-wrap gap-2 mb-4">
+            <div v-if="getTags(item).length > 0" class="article-card-tags flex flex-wrap gap-1.5 mb-3">
               <span
                 v-for="tag in getTags(item)"
                 :key="`${item.key}-${tag.label}`"
-                class="article-card-tag inline-block px-2 py-0.5 text-xs rounded-full transition-colors duration-200"
+                class="article-card-tag inline-block px-2 py-0.5 text-xs rounded-md transition-colors duration-150"
               >
                 #{{ tag.label }}
               </span>
             </div>
 
-            <ul v-if="getDetailLines(item).length > 0" class="space-y-2 mb-4">
+            <ul v-if="getDetailLines(item).length > 0" class="space-y-2 mb-3">
               <li
                 v-for="detail in getDetailLines(item)"
                 :key="`${item.key}-${detail}`"
@@ -115,7 +118,7 @@
                 {{ item.footer }}
               </span>
 
-              <span class="article-card-read-link inline-flex items-center self-start text-sm font-medium transition-colors duration-200 rounded-lg px-3 py-1">
+              <span class="article-card-read-link inline-flex items-center self-start text-[0.8125rem] font-medium transition-colors duration-150 rounded-md px-2.5 py-1">
                 {{ getActionLabel(item) }}
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -191,7 +194,9 @@
 
 <script setup>
 import { computed } from 'vue'
+import DeferredImage from '../../components/core/DeferredImage.vue'
 import { useConfigStore } from '../../stores/config'
+import { createArticleCoverSrcset } from '../../utils/articleCover'
 import {
   getMenuItemActionLabel,
   getMenuItemCover,
@@ -279,6 +284,14 @@ function getItemCover(item) {
   return getMenuItemCover(item, coverResolveOptions.value)
 }
 
+function getItemCoverSrcset(item) {
+  return createArticleCoverSrcset(getItemCover(item), {
+    imageProxyUrl: configStore.coverConfig?.imageProxyUrl,
+    sourceWidth: configStore.coverConfig?.seededWidth,
+    sourceHeight: configStore.coverConfig?.seededHeight
+  })
+}
+
 function usesArticleCard(item) {
   return isArticleLikeMenuItem(item, coverResolveOptions.value)
 }
@@ -307,10 +320,10 @@ function getCardItemClass(item) {
   return [
     'menu-page-card-item',
     usesArticleCard(item) ? 'article-card-shell' : 'theme-grid-card',
-    'rounded-2xl',
+    'rounded-xl',
     'overflow-hidden',
-    'transition-all',
-    'duration-300',
+    'transition-[border-color,box-shadow,transform]',
+    'duration-200',
     'flex',
     'flex-col'
   ]
@@ -331,7 +344,7 @@ function getCardItemClass(item) {
   border: 1px solid rgba(255, 255, 255, 0.24);
   background: rgba(15, 23, 42, 0.5) !important;
   color: rgba(255, 255, 255, 0.96) !important;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.14);
+  box-shadow: none;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -339,13 +352,13 @@ function getCardItemClass(item) {
 .menu-page-card-cover-with-image .article-card-date {
   display: inline-flex;
   align-items: center;
-  min-height: 1.75rem;
-  padding: 0.3rem 0.65rem;
+  min-height: 1.375rem;
+  padding: 0.15rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 9999px;
+  border-radius: 0.375rem;
   background: rgba(15, 23, 42, 0.44);
   color: rgba(255, 255, 255, 0.94) !important;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+  box-shadow: none;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -378,6 +391,14 @@ function getCardItemClass(item) {
 .menu-page-card-cover-placeholder[data-placeholder='icon'] {
   background: rgba(248, 250, 252, 0.96);
   color: rgb(148 163 184);
+}
+
+@supports (font: -apple-system-body) {
+  .menu-page-card-cover-with-image .article-card-category,
+  .menu-page-card-cover-with-image .article-card-date {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 @media (max-width: 640px) {

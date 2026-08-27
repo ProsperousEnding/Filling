@@ -2,10 +2,25 @@ import assert from 'node:assert/strict'
 import { access, readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import siteConfig from '../src/framework/generated/siteConfig.generated.js'
+import { resolveThemePresetAssetPath } from '../src/framework/utils/themeAsset.js'
 
 const rootDir = fileURLToPath(new URL('..', import.meta.url))
 const distDir = path.join(rootDir, 'dist')
 const indexHtml = await readFile(path.join(distDir, 'index.html'), 'utf8')
+const configuredThemeCssFile = resolveThemePresetAssetPath(siteConfig.theme, 'css')
+const themeStylesheetMatch = indexHtml.match(/<link id="vue-blog-theme-css" rel="stylesheet" href="([^"]+)" \/>/u)
+
+if (configuredThemeCssFile) {
+  assert.ok(themeStylesheetMatch, 'Site index must preload the configured theme stylesheet.')
+  assert.equal(
+    themeStylesheetMatch[1].endsWith(`/${configuredThemeCssFile}`),
+    true,
+    `Site index theme stylesheet must match ${configuredThemeCssFile}.`
+  )
+} else {
+  assert.equal(themeStylesheetMatch, null, 'Site index must not inject an unconfigured theme stylesheet.')
+}
 
 for (const expectedText of [
   '<link rel="canonical"',
@@ -43,5 +58,21 @@ const articleHtml = await readFile(
 )
 assert.equal(articleHtml.includes('<meta property="og:type" content="article"'), true)
 assert.equal(articleHtml.includes('<link rel="canonical"'), true)
+assert.equal(articleHtml.includes('data-static-preview="true"'), true)
+assert.equal(articleHtml.includes('class="ssg-article-content article-content"'), true)
+assert.equal(/<div id="app">\s*<\/div>/u.test(articleHtml), false)
+
+const articlesHtml = await readFile(path.join(distDir, 'articles', 'index.html'), 'utf8')
+assert.equal(articlesHtml.includes('class="ssg-list"'), true)
+assert.equal(articlesHtml.includes('/article/'), true)
+assert.match(
+  articlesHtml,
+  /href="[^"]*\/article\/[^"]+\/"/u,
+  'Static article links must target their generated index.html directories.'
+)
+
+const notFoundHtml = await readFile(path.join(distDir, '404.html'), 'utf8')
+assert.equal(notFoundHtml.includes('页面未找到'), true)
+assert.equal(notFoundHtml.includes('data-static-preview="true"'), true)
 
 console.log('Static site routes, metadata, and deployment files verified.')

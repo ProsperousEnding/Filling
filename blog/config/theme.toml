@@ -4,12 +4,9 @@ current_preset = "default"
 
 [presets.default]
 css_file = "themes/default.css"
-js_file = "themes/default.js"
 
 [presets.ocean]
 css_file = "themes/ocean.css"
-js_file = "themes/ocean.js"
 
 [presets.forest]
 css_file = "themes/forest.css"
-js_file = "themes/forest.js"

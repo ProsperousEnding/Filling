@@ -10,11 +10,14 @@
       class="search-result-cover"
       :aria-label="article.title"
     >
-      <img
+      <DeferredImage
         :src="displayCover"
+        :srcset="displayCoverSrcset || undefined"
         :alt="article.title"
         class="search-result-cover-image"
         :loading="coverListConfig.loading"
+        sizes="(min-width: 768px) 12rem, 100vw"
+        fetchpriority="low"
         :style="coverImageStyle"
         @error="coverLoadFailed = true"
       />
@@ -103,8 +106,9 @@ import { Image as ImageIcon } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useElementWidth } from '../../composables/useElementWidth'
 import { useConfigStore } from '../../stores/config'
-import { resolveDisplayArticleCover } from '../../utils/articleCover'
+import { createArticleCoverSrcset, resolveDisplayArticleCover } from '../../utils/articleCover'
 import { getArticleRoute, getCategoryRoute, getTagRoute } from '../../utils/routeLinks'
+import DeferredImage from './DeferredImage.vue'
 import MeasuredHighlightedText from './MeasuredHighlightedText.vue'
 import MeasuredText from './MeasuredText.vue'
 
@@ -194,6 +198,11 @@ const displayCover = computed(() => {
     style: configStore.coverConfig?.seededStyle
   })
 })
+const displayCoverSrcset = computed(() => createArticleCoverSrcset(displayCover.value, {
+  imageProxyUrl: configStore.coverConfig?.imageProxyUrl,
+  sourceWidth: configStore.coverConfig?.seededWidth,
+  sourceHeight: configStore.coverConfig?.seededHeight
+}))
 watch(displayCover, () => {
   coverLoadFailed.value = false
 })

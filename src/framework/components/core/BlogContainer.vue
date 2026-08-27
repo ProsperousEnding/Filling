@@ -1,8 +1,7 @@
 ﻿<template>
   <div
-    class="vue-blog-framework theme-shell flex flex-col h-screen w-screen overflow-hidden fixed inset-0"
+    class="vue-blog-framework theme-shell flex flex-col w-full overflow-hidden fixed inset-0"
     :class="shellClass"
-    :style="backgroundShellStyle"
     :data-sidebar-position="configState.sidebarPosition"
     :data-sidebar-visible="configState.sidebarVisible ? 'true' : 'false'"
   >
@@ -40,16 +39,18 @@
       :inert="showMobileSidebar || undefined"
       :aria-hidden="showMobileSidebar ? 'true' : undefined"
     >
+      <a class="theme-skip-link" href="#main-content">跳到正文</a>
+
       <!-- 头部 -->
       <Header />
       <AnnouncementBar />
       <AnalyticsScripts />
       <FontAssets />
-      <CodeBlockEnhancer />
+      <CodeBlockEnhancer v-if="shouldEnhanceMarkdown" />
 
       <!-- 主体部分 -->
       <div class="theme-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col">
-        <main class="blog-container theme-main-container py-4">
+        <main id="main-content" class="blog-container theme-main-container py-4" tabindex="-1">
           <div class="theme-layout flex flex-col lg:flex-row gap-8 min-h-0">
             <!-- 主内容区域 -->
             <div class="theme-content-column flex-1 order-2 min-w-0" :class="[isSidebarLeft ? 'lg:order-2' : 'lg:order-1']">
@@ -58,7 +59,7 @@
             
             <!-- 侧边栏 -->
             <div 
-              class="theme-sidebar-column hidden lg:sticky lg:top-4 lg:self-start lg:block lg:w-72 xl:w-80 order-1"
+              class="theme-sidebar-column hidden lg:sticky lg:top-4 lg:self-start lg:block lg:w-72 order-1"
               :class="[isSidebarLeft ? 'lg:order-1' : 'lg:order-2']"
               v-if="showDesktopSidebar"
             >
@@ -75,18 +76,15 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AnalyticsScripts from './AnalyticsScripts.vue'
-import CodeBlockEnhancer from './CodeBlockEnhancer.vue'
 import FontAssets from './FontAssets.vue'
 import Header from '../layout/Header.vue'
 import AnnouncementBar from '../layout/AnnouncementBar.vue'
 import Footer from '../layout/Footer.vue'
 import Sidebar from '../layout/Sidebar.vue'
 import { useConfigStore } from '../../stores/config'
-import { useBlogBaseUrl } from '../../runtime/runtimeContext'
-import { buildBackgroundCssVars } from '../../utils/backgroundConfig'
 import { BLOG_ROUTE_NAMES } from '../../router/routeManifest'
 import { usesSidebarDrawer } from '../../utils/sidebarViewport'
 
@@ -97,8 +95,9 @@ const props = defineProps({
   }
 })
 
+const CodeBlockEnhancer = defineAsyncComponent(() => import('./CodeBlockEnhancer.vue'))
+
 const configStore = useConfigStore()
-const baseUrl = useBlogBaseUrl()
 const configState = configStore
 const route = useRoute()
 const mobileSidebarDrawer = ref(null)
@@ -108,22 +107,14 @@ const isMobileViewport = ref(
 let mobileSidebarReturnFocus = null
 let previousBodyOverflow = ''
 let mobileSidebarFocusRequestId = 0
-const hasBackgroundLayer = computed(() => (
-  configState.backgroundConfig?.enabled === true
-  && configState.backgroundConfig?.mode !== 'none'
-))
-const backgroundShellStyle = computed(() => (
-  buildBackgroundCssVars(
-    configState.backgroundConfig,
-    baseUrl
-  )
-))
 const shellClass = computed(() => ({
-  dark: configState.theme === 'dark',
-  'theme-shell-has-background': hasBackgroundLayer.value
+  dark: configState.theme === 'dark'
 }))
 const isSidebarLeft = computed(() => configState.sidebarPosition === 'left')
 const isArticleRoute = computed(() => route.name === BLOG_ROUTE_NAMES.articleDetail)
+const shouldEnhanceMarkdown = computed(() => (
+  isArticleRoute.value || String(route.name || '').startsWith('MenuPage')
+))
 const canShowSidebarOnCurrentRoute = computed(() => (
   configState.sidebarVisible
   && (!isArticleRoute.value || configState.showSidebarOnArticles !== false)
@@ -210,8 +201,15 @@ watch(() => props.config, (config) => {
   }
 }, { deep: true, immediate: true })
 
-watch(() => route.fullPath, () => {
+watch(() => route.fullPath, async (nextPath, previousPath) => {
   closeMobileSidebar()
+
+  if (!previousPath || nextPath === previousPath || typeof document === 'undefined') {
+    return
+  }
+
+  await nextTick()
+  document.getElementById('main-content')?.focus({ preventScroll: true })
 })
 
 watch(showMobileSidebar, async (visible) => {
@@ -265,6 +263,31 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.theme-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.theme-skip-link {
+  position: fixed;
+  top: max(0.5rem, env(safe-area-inset-top));
+  left: max(0.5rem, env(safe-area-inset-left));
+  z-index: 1600;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--theme-border-strong, rgba(100, 116, 139, 0.34));
+  border-radius: 0.5rem;
+  color: var(--theme-heading-color, #0f172a);
+  background: var(--theme-panel-background, rgba(255, 255, 255, 0.96));
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  transform: translateY(calc(-100% - 1rem));
+}
+
+.theme-skip-link:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+  transform: translateY(0);
+}
+
 .sidebar-overlay-enter-active,
 .sidebar-overlay-leave-active {
   transition: opacity 0.24s ease;

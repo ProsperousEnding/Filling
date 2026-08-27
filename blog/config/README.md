@@ -19,8 +19,7 @@
 | `site.toml` | 站点名称、SEO、页头、首页文章、菜单、侧边栏、页脚和分页 |
 | `profile.toml` | 侧边栏资料、头像、网站和社交链接 |
 | `links.toml` | 友情链接数据 |
-| `theme.toml` | 当前主题和主题资源预设 |
-| `background.toml` | 站点渐变或图片背景 |
+| `theme.toml` | 当前主题、页面背景和主题资源预设 |
 | `cover.toml` | 自动封面图源、列表封面和文章详情封面 |
 | `comment.toml` | giscus 或 utterances 评论服务 |
 
@@ -34,13 +33,29 @@
 enabled = true
 fallback = "seeded"
 seeded_style = "mwm-anime"
+fixed = false
+```
+
+默认的随机模式会在每次访问时打乱 `source_urls` 图片池，并尽量避免同页文章使用重复封面。需要让每篇文章长期使用同一张封面时，在配置后台打开“固定文章封面”，或将 `fixed` 改为 `true`：
+
+```toml
+fixed = true
+
+[source_urls]
+mwm-anime = [
+  "https://images.example.com/anime-cover-1.webp",
+  "https://images.example.com/anime-cover-2.webp",
+]
 ```
 
 当前内置图源包括：
 
-- `mwm-anime`、`paugram-anime`、`dmoe-anime`：二次元图片。
-- `mwm-scenery`、`picsum`、`loremflickr`、`paugram-bing`：摄影或风景图片。
+- `mwm-anime`、`paugram-anime`、`dmoe-anime`：二次元随机接口，可按需切换到固定模式。
+- `mwm-scenery`、`paugram-bing`：摄影或风景随机接口，也支持固定模式。
+- `picsum`、`loremflickr`：原生支持稳定 seed 的摄影图源。
 - `cataas`：猫咪图片。
+
+`source_urls` 的值既可以是一个 URL 模板，也可以是 URL 数组。随机模式按访问打乱数组，固定模式按文章 seed 稳定选择；没有配置图片池时才直接使用对应远程图源。这个开关是全站配置，不使用访客的浏览器本地状态。当前站点的 MWM 图片池见 [`cover.toml`](./cover.toml)。`image_proxy_url` 是可选的图片优化服务地址，只应在对应服务已经部署可用后填写。
 
 单篇文章仍可通过 frontmatter 的 `cover` 指定图片，或通过 `cover_display_mode` 选择 `image`、`header-background`、`page-background`。
 

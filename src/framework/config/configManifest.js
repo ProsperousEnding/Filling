@@ -28,13 +28,6 @@ export const CONFIG_FILE_DEFINITIONS = Object.freeze([
     description: '站点主题预设及其静态资源。'
   },
   {
-    key: 'background',
-    path: 'blog/config/background.toml',
-    title: '背景',
-    group: 'appearance',
-    description: '浅色和深色模式下的站点背景。'
-  },
-  {
     key: 'cover',
     path: 'blog/config/cover.toml',
     title: '文章封面',

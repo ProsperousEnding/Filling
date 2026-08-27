@@ -53,6 +53,12 @@ Webhook: Disabled
   "name": "filling-config-api",
   "main": "src/index.js",
   "keep_vars": true,
+  "images": {
+    "binding": "IMAGES"
+  },
+  "cache": {
+    "enabled": true
+  },
   "routes": [
     {
       "pattern": "filling-config-api.example.com",
@@ -61,6 +67,8 @@ Webhook: Disabled
   ]
 }
 ```
+
+`images.binding` 会在部署时直接为 Worker 注入 Cloudflare Images 能力，不需要先在 Dashboard 中创建图片库，也不依赖侧边栏是否显示 `Images` 入口。它只负责读取远程封面、按固定宽度压缩为 WebP 并缓存结果，不会把原图上传到 Cloudflare Images 图库。
 
 没有自定义域名时可以先使用 Cloudflare 提供的 `workers.dev` 地址，但 GitHub App Callback URL 和 `GITHUB_CALLBACK_URL` 必须同时使用该地址。
 
@@ -128,6 +136,25 @@ curl https://filling-config-api.example.com/health
 
 `configured: false` 表示仍有必填变量缺失，`missing` 会列出变量名，但不会暴露真实值。
 
+继续检查封面处理接口：
+
+```bash
+curl --fail-with-body --output /dev/null \
+  --write-out "%{http_code} %{content_type}\n" \
+  --get \
+  --data-urlencode "url=https://tc.alcy.cc/tc/20260429/66bb5763f4048e34959a028b3963bac2.webp" \
+  --data-urlencode "width=800" \
+  https://filling-config-api.example.com/image/cover
+```
+
+接口部署成功后，再在 `blog/config/cover.toml` 顶层加入：
+
+```toml
+image_proxy_url = "https://filling-config-api.example.com/image/cover"
+```
+
+先部署 Worker、确认接口不是 `404`，再启用该配置，避免每张封面都产生一次无效代理请求。Worker 仅接受 `t.alcy.cc` 与 `tc.alcy.cc` 来源，并把宽度限制为 `480`、`800` 或 `1200`；处理失败时会跳回原始封面。
+
 ## 连接管理页面
 
 管理端默认 API 地址位于 `src/site/admin/adminApi.js`，也可以在构建时通过环境变量覆盖：
@@ -171,6 +198,8 @@ VITE_ADMIN_API_URL=http://localhost:8787 pnpm dev
 - OAuth 回调失败：同时核对 GitHub App Callback URL 与 `GITHUB_CALLBACK_URL`。
 - 登录后提示无权访问：检查 `ADMIN_GITHUB_USER_ID` 是否为数字 ID，以及 App 是否安装到目标仓库。
 - 管理页请求了错误的域名：重新设置 `VITE_ADMIN_API_URL` 并构建站点。
+- `/image/cover` 返回 404：当前线上仍是旧 Worker，重新执行 `pnpm worker:deploy`。
+- `/image/cover` 跳回原图：检查部署版本是否包含名为 `IMAGES` 的 Images Binding。
 - 发布时提示配置冲突：刷新管理页，基于最新提交重新修改。
 
 Worker 只允许读写配置清单中的 TOML，不接受任意仓库路径，也不会修改源码和工作流。更完整的生产环境清单见仓库中的 `docs/online-admin-setup.md`。

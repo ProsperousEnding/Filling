@@ -1,6 +1,19 @@
 enabled = true
 fallback = "seeded"
 seeded_style = "mwm-anime"
+fixed = false
+
+[source_urls]
+mwm-anime = [
+  "https://tc.alcy.cc/tc/20260429/66bb5763f4048e34959a028b3963bac2.webp",
+  "https://tc.alcy.cc/tc/20260429/8c89ba0b7d358f5d04310176f7ca15bc.webp",
+  "https://tc.alcy.cc/tc/20260121/c4e7d5c98b5cce51e11231ca67223475.webp",
+  "https://tc.alcy.cc/tc/20260323/369e3a79a7a4b60024e2af11880db579.webp",
+  "https://tc.alcy.cc/tc/20260121/3603d1b8b8a432eed51bb5baa3c2fcc0.webp",
+  "https://tc.alcy.cc/tc/20260429/1e79275465eb178fc0f4c47e2f60b5b6.webp",
+  "https://tc.alcy.cc/tc/20260429/8842dda0cd34cea12ddb305460555c6a.webp",
+  "https://tc.alcy.cc/tc/20260429/e631dea21cf177ce2f8753e490bb94b8.webp",
+]
 
 [list]
 show_cover = true

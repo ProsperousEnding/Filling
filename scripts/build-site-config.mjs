@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { readFirstTomlConfig } from './read-toml-config.mjs'
+import { CONFIG_FILE_DEFINITIONS } from '../src/framework/config/configManifest.js'
 import { normalizeBlogRoutePatterns } from '../src/framework/router/routeManifest.js'
 import {
   getMenuConfigDiagnostics,
@@ -26,6 +27,19 @@ export const SITE_CONFIG_OUTPUT_FILE = path.join(
   'generated',
   'siteConfig.generated.js'
 )
+const MANAGED_CONFIG_PATHS = new Set(
+  CONFIG_FILE_DEFINITIONS.map(definition => definition.path)
+)
+
+function normalizeRelativePath(filePath, rootDirectory) {
+  return path.relative(rootDirectory, filePath).split(path.sep).join('/')
+}
+
+export function getUnsupportedConfigPaths(configFiles, rootDirectory = ROOT_DIR) {
+  return configFiles
+    .map(filePath => normalizeRelativePath(filePath, rootDirectory))
+    .filter(filePath => !MANAGED_CONFIG_PATHS.has(filePath))
+}
 
 async function collectTomlFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -141,6 +155,16 @@ async function validateSiteNavigation(configs = {}) {
 
 export async function generateSiteConfig() {
   const configFiles = await collectTomlFiles(SITE_CONFIG_DIR)
+  const unsupportedConfigPaths = getUnsupportedConfigPaths(configFiles)
+
+  if (unsupportedConfigPaths.length > 0) {
+    throw new Error([
+      'Unsupported TOML configuration files:',
+      ...unsupportedConfigPaths.map(filePath => `- ${filePath}`),
+      'Add supported configuration through src/framework/config/configManifest.js.'
+    ].join('\n'))
+  }
+
   const configs = {}
   const sourceByName = new Map()
 

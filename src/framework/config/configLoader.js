@@ -1,10 +1,9 @@
-﻿import { applyConfigEnvOverrides } from './configEnvOverrides.js'
+﻿import configs from '../generated/siteConfig.generated.js'
+import { applyConfigEnvOverrides } from './configEnvOverrides.js'
 
 /**
  * 加载所有配置文件
  */
-export async function loadAllConfigs() {
-  const { default: configs } = await import('../generated/siteConfig.generated.js')
-
+export function loadAllConfigs() {
   return applyConfigEnvOverrides(configs, import.meta.env)
 }

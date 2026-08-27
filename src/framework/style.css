@@ -79,9 +79,9 @@
   --transition-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --transition-ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --transition-ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);
-  --transition-fast: 250ms var(--transition-ease-out-quint);
-  --transition-normal: 350ms var(--transition-ease-out-quint);
-  --transition-slow: 500ms var(--transition-ease-out-quint);
+  --transition-fast: 120ms var(--transition-ease-out-quint);
+  --transition-normal: 180ms var(--transition-ease-out-quint);
+  --transition-slow: 240ms var(--transition-ease-out-quint);
   
   /* 圆角 - 苹果精确圆角 */
   --radius-xs: 6px;
@@ -149,56 +149,6 @@
   scroll-behavior: smooth;
 }
 
-.theme-shell {
-  --site-background-layer-light: none;
-  --site-background-layer-dark: none;
-  --site-background-overlay-light: none;
-  --site-background-overlay-dark: none;
-  --site-background-position: center top;
-  --site-background-size: cover;
-  --site-background-repeat: no-repeat;
-  --site-background-attachment: scroll;
-  --site-background-opacity: 0;
-  isolation: isolate;
-}
-
-.theme-shell::before,
-.theme-shell::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  transition: opacity 0.28s ease;
-}
-
-.theme-shell::before {
-  z-index: 0;
-  opacity: var(--site-background-opacity);
-  background-image: var(--site-background-layer-light);
-  background-position: var(--site-background-position);
-  background-size: var(--site-background-size);
-  background-repeat: var(--site-background-repeat);
-  background-attachment: var(--site-background-attachment);
-}
-
-.theme-shell.dark::before {
-  background-image: var(--site-background-layer-dark);
-}
-
-.theme-shell::after {
-  z-index: 0;
-  background: var(--site-background-overlay-light);
-}
-
-.theme-shell.dark::after {
-  background: var(--site-background-overlay-dark);
-}
-
-.theme-shell.theme-shell-has-background .theme-app {
-  position: relative;
-  z-index: 1;
-}
-
 /* 滚动条美化 */
 ::-webkit-scrollbar {
   width: 8px;
@@ -229,21 +179,21 @@
 
   .theme-page-header {
     display: grid;
-    gap: 0.85rem;
-    margin-bottom: 2rem;
+    gap: 0.65rem;
+    margin-bottom: 1.5rem;
   }
 
   .theme-page-title {
     margin: 0;
-    line-height: 1.08;
-    letter-spacing: -0.035em;
+    line-height: 1.18;
+    letter-spacing: 0;
     text-wrap: balance;
   }
 
   .theme-page-description {
     margin: 0;
     max-width: 40rem;
-    line-height: 1.72;
+    line-height: 1.6;
     color: rgb(100 116 139);
   }
 
@@ -312,7 +262,7 @@
     margin-bottom: var(--spacing-xs);
     color: var(--color-gray-900);
     transition: color var(--transition-fast);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     line-height: 1.3;
   }
   
@@ -327,7 +277,7 @@
     font-weight: var(--font-weight-regular);
     line-height: 1.6;
     margin-bottom: var(--spacing-md);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
   
   .article-meta {
@@ -378,7 +328,7 @@
     border-radius: var(--radius-full);
     background-color: var(--color-gray-100);
     color: var(--color-gray-700);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     transition: all var(--transition-fast);
     display: inline-flex;
     align-items: center;
@@ -399,7 +349,7 @@
     border-radius: var(--radius-full);
     background-color: var(--color-blue);
     color: var(--color-white);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     transition: all var(--transition-fast);
     position: absolute;
     top: var(--spacing-md);
@@ -423,7 +373,7 @@
     font-weight: var(--font-weight-medium);
     border-radius: var(--radius-md);
     transition: all var(--transition-fast);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     overflow: hidden;
   }
   
@@ -576,6 +526,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background-color: var(--color-gray-50);
@@ -588,7 +539,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: var(--spacing-xl);
   margin-bottom: var(--spacing-md);
   color: var(--color-gray-900);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 h1 {
@@ -620,7 +571,7 @@ p {
   margin-top: 0;
   margin-bottom: var(--spacing-md);
   line-height: 1.6;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 a {
@@ -658,7 +609,7 @@ button {
   color: var(--color-gray-800);
   cursor: pointer;
   transition: all var(--transition-fast);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   position: relative;
   overflow: hidden;
 }
@@ -762,7 +713,7 @@ label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-gray-800);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 /* 网格布局 */
@@ -1096,7 +1047,7 @@ label {
 .article-content h6 {
   scroll-margin-top: 6rem;
   line-height: 1.14;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 
@@ -1341,7 +1292,7 @@ label {
   color: var(--code-block-chip-fg, rgb(191 219 254));
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 
 .article-content .markdown-code-block__filename {
@@ -1978,7 +1929,7 @@ label {
 
 .menu-page-card-item:hover img,
 .menu-page-grid-item:hover img {
-  transform: scale(1.04);
+  transform: scale(1.02);
 }
 
 .menu-page-grid-item:hover .menu-page-grid-action {
@@ -2047,7 +1998,7 @@ label {
   text-align: center;
   font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   white-space: nowrap;
   transform: translateX(-50%);
 }
@@ -2209,7 +2160,7 @@ label {
   font-size: clamp(4.4rem, 9vw, 6rem);
   line-height: 0.9;
   font-weight: 800;
-  letter-spacing: -0.06em;
+  letter-spacing: 0;
   color: rgba(var(--color-primary), 0.08);
   pointer-events: none;
 }
@@ -2248,7 +2199,7 @@ label {
   color: var(--theme-text-soft);
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0;
 }
 
 .menu-page-timeline-archive-count {
@@ -2269,7 +2220,7 @@ label {
   font-size: 1.85rem;
   line-height: 1.02;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .menu-page-timeline-archive-description {
@@ -2478,7 +2429,7 @@ label {
   font-size: 1.08rem;
   font-weight: 700;
   line-height: 1.35;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .menu-page-item-description {

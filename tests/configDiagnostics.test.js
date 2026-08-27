@@ -35,10 +35,6 @@ test('config diagnostics reports invalid values and dependent fields', () => {
     site: {
       home_articles: { mode: 'random', page_size: 0 }
     },
-    background: {
-      enabled: true,
-      mode: 'image'
-    },
     analytics: {
       provider: 'clarity',
       clarity: {}
@@ -51,7 +47,6 @@ test('config diagnostics reports invalid values and dependent fields', () => {
 
   assert.equal(paths.includes('site.home_articles.mode'), true)
   assert.equal(paths.includes('site.home_articles.page_size'), true)
-  assert.equal(paths.includes('background.image'), true)
   assert.equal(paths.includes('analytics.clarity.project_id'), true)
   assert.equal(paths.includes('sponsor.show[0]'), true)
   assert.equal(diagnostics.every(diagnostic => diagnostic.level === 'error'), true)
@@ -88,4 +83,47 @@ test('config diagnostics reports the removed visitor cover source switch', () =>
     path: 'cover.source_switch',
     message: 'Unknown field "source_switch"; check the spelling or remove it.'
   }])
+})
+
+test('config diagnostics only requires a pool when fixed random covers are enabled', () => {
+  const randomDiagnostics = getConfigDiagnostics({
+    cover: {
+      fallback: 'seeded',
+      seeded_style: 'mwm-anime',
+      fixed: false
+    }
+  })
+  const missingPoolDiagnostics = getConfigDiagnostics({
+    cover: {
+      fallback: 'seeded',
+      seeded_style: 'mwm-anime',
+      fixed: true
+    }
+  })
+  const fixedDiagnostics = getConfigDiagnostics({
+    cover: {
+      fallback: 'seeded',
+      seeded_style: 'mwm-anime',
+      fixed: true,
+      source_urls: {
+        'mwm-anime': [
+          'https://images.example.com/one.webp',
+          'https://images.example.com/two.webp'
+        ]
+      }
+    }
+  })
+
+  assert.equal(
+    randomDiagnostics.some(diagnostic => diagnostic.code === 'missing-fixed-cover-source'),
+    false
+  )
+  assert.equal(
+    missingPoolDiagnostics.some(diagnostic => diagnostic.code === 'missing-fixed-cover-source'),
+    true
+  )
+  assert.equal(
+    fixedDiagnostics.some(diagnostic => diagnostic.code === 'missing-fixed-cover-source'),
+    false
+  )
 })

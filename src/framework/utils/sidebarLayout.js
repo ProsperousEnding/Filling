@@ -9,7 +9,6 @@ const SIDEBAR_MENU_COMPONENTS = Object.freeze([
 const SIDEBAR_COMPONENT_KEYS = Object.freeze([
   'profile',
   'announcement',
-  'search',
   ...SIDEBAR_MENU_COMPONENTS
 ])
 
@@ -17,10 +16,10 @@ const SIDEBAR_COMPONENT_KEY_SET = new Set(SIDEBAR_COMPONENT_KEYS)
 const SIDEBAR_MENU_COMPONENT_KEY_SET = new Set(SIDEBAR_MENU_COMPONENTS)
 
 export const DEFAULT_SIDEBAR_LAYOUT = Object.freeze({
-  desktopComponents: Object.freeze(['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags']),
-  articleDesktopComponents: Object.freeze(['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags']),
-  mobileComponents: Object.freeze(['profile', 'search', 'latest-articles', 'categories', 'tags']),
-  articleMobileComponents: Object.freeze(['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags'])
+  desktopComponents: Object.freeze(['profile', 'announcement', 'latest-articles', 'categories', 'tags']),
+  articleDesktopComponents: Object.freeze(['profile', 'announcement', 'latest-articles', 'categories', 'tags']),
+  mobileComponents: Object.freeze(['profile', 'latest-articles', 'categories', 'tags']),
+  articleMobileComponents: Object.freeze(['profile', 'announcement', 'latest-articles', 'categories', 'tags'])
 })
 
 function isPlainObject(value) {

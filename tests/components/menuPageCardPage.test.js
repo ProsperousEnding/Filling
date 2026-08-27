@@ -59,7 +59,7 @@ describe('menu page card cover boundary', () => {
     expect(metadata.text()).toContain('2026-08-21')
     expect(metadata.classes()).toEqual(expect.arrayContaining([
       'article-card-meta',
-      'mb-3',
+      'mb-2',
       'gap-2'
     ]))
     expect(cover.find('.menu-page-card-article-title').exists()).toBe(false)

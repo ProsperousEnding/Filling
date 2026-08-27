@@ -1,12 +1,3 @@
-import {
-  isMenuSourcePathInFolder,
-  normalizeMenuCollectionItemId,
-  parseMenuCollectionDetail,
-  parseMenuContextSource,
-  resolveMenuContentFolderPrefix,
-  resolveMenuContentSourcePath,
-  sortMenuCollectionItems
-} from './menuPageSourceParser.js'
 import { useConfigStore } from '../../stores/config'
 import {
   menuPageUsesFileSource,
@@ -19,6 +10,15 @@ const menuFileLoaders = import.meta.glob('/blog/content/**/*.md', {
   import: 'default'
 })
 const menuCollectionCache = new Map()
+let menuPageSourceParserPromise = null
+
+function loadMenuPageSourceParser() {
+  if (!menuPageSourceParserPromise) {
+    menuPageSourceParserPromise = import('./menuPageSourceParser.js')
+  }
+
+  return menuPageSourceParserPromise
+}
 
 function getRuntimeConfig(context) {
   return typeof context?.getConfig === 'function'
@@ -31,7 +31,8 @@ function serializeConfigCacheKey(config = {}) {
 }
 
 async function loadMenuContextSource(page, context) {
-  const sourcePath = resolveMenuContentSourcePath(page?.file)
+  const parser = await loadMenuPageSourceParser()
+  const sourcePath = parser.resolveMenuContentSourcePath(page?.file)
   const sourceLoader = menuFileLoaders[sourcePath]
 
   if (!sourcePath || typeof sourceLoader !== 'function') {
@@ -45,7 +46,7 @@ async function loadMenuContextSource(page, context) {
 
   const rawContent = await sourceLoader()
   const configStore = getRuntimeConfig(context)
-  return parseMenuContextSource(rawContent, sourcePath, {
+  return parser.parseMenuContextSource(rawContent, sourcePath, {
     codeBlockConfig: configStore.codeBlockConfig,
     markdownConfig: configStore.markdownConfig,
     coverConfig: configStore.coverConfig
@@ -61,7 +62,8 @@ async function loadMenuCollectionSource(page, context) {
 }
 
 async function loadMenuCollectionRecords(page, context) {
-  const folderPrefix = resolveMenuContentFolderPrefix(page?.folder)
+  const parser = await loadMenuPageSourceParser()
+  const folderPrefix = parser.resolveMenuContentFolderPrefix(page?.folder)
   const pagePath = String(page?.path || '').trim()
   const configStore = getRuntimeConfig(context)
   const cacheKey = [
@@ -81,7 +83,7 @@ async function loadMenuCollectionRecords(page, context) {
   }
 
   const matchingEntries = Object.entries(menuFileLoaders)
-    .filter(([sourcePath]) => isMenuSourcePathInFolder(sourcePath, folderPrefix))
+    .filter(([sourcePath]) => parser.isMenuSourcePathInFolder(sourcePath, folderPrefix))
     .sort(([leftPath], [rightPath]) => leftPath.localeCompare(rightPath, 'en'))
 
   if (matchingEntries.length === 0) {
@@ -95,7 +97,7 @@ async function loadMenuCollectionRecords(page, context) {
     }
 
     const rawContent = await sourceLoader()
-    return parseMenuCollectionDetail(rawContent, sourcePath, {
+    return parser.parseMenuCollectionDetail(rawContent, sourcePath, {
       pagePath,
       codeBlockConfig: configStore.codeBlockConfig,
       markdownConfig: configStore.markdownConfig,
@@ -103,7 +105,7 @@ async function loadMenuCollectionRecords(page, context) {
     })
   }))
 
-  const sortedItems = sortMenuCollectionItems(items.filter(Boolean))
+  const sortedItems = parser.sortMenuCollectionItems(items.filter(Boolean))
   menuCollectionCache.set(cacheKey, sortedItems)
   return sortedItems
 }
@@ -131,6 +133,7 @@ export async function loadMenuPageItemDetail(page, itemId) {
     return null
   }
 
+  const { normalizeMenuCollectionItemId } = await loadMenuPageSourceParser()
   const normalizedItemId = normalizeMenuCollectionItemId(itemId)
 
   if (!normalizedItemId) {

@@ -12,12 +12,15 @@
       :rel="item.external ? 'noreferrer' : undefined"
     >
       <template v-if="usesHeroSurface(item)">
-        <img
+        <DeferredImage
           v-if="showItemCover(item)"
           :src="getItemCover(item)"
+          :srcset="getItemCoverSrcset(item) || undefined"
           :alt="item.title"
           class="absolute inset-0 h-full w-full"
           :loading="coverListConfig.loading"
+          sizes="(min-width: 1280px) 900px, (min-width: 768px) 70vw, 100vw"
+          fetchpriority="low"
           :style="coverImageStyle"
         />
 
@@ -33,11 +36,11 @@
 
         <div class="article-feed-card-overlay absolute inset-0"></div>
 
-        <div class="absolute inset-0 z-10 flex flex-col p-4 sm:p-5 md:p-6">
+        <div class="article-feed-card-content absolute inset-0 z-10 flex flex-col p-4 sm:p-5">
           <div class="flex flex-col items-start gap-2.5 sm:flex-row sm:justify-between">
             <span
               v-if="getPrimaryBadge(item)"
-              class="article-feed-category inline-block px-2 py-0.5 md:px-3 md:py-1 text-xs font-medium rounded-full transition-colors duration-200"
+              class="article-feed-category inline-block px-2 py-0.5 text-[0.6875rem] font-medium rounded-md transition-colors duration-150"
             >
               {{ getPrimaryBadge(item) }}
             </span>
@@ -46,7 +49,7 @@
               <span
                 v-for="tag in getHeroTags(item)"
                 :key="`${item.key}-${tag.label}`"
-                class="article-feed-tag px-2 py-0.5 text-xs rounded-full transition-colors duration-200"
+                class="article-feed-tag px-2 py-0.5 text-[0.6875rem] rounded-md transition-colors duration-150"
               >
                 #{{ tag.label }}
               </span>
@@ -61,7 +64,7 @@
 
           <div class="article-feed-content-stack mt-5 md:mt-6 flex flex-1 flex-col gap-4 md:gap-5">
             <div class="article-feed-copy max-w-3xl">
-              <h2 class="article-feed-title text-base sm:text-lg md:text-[1.45rem] leading-[1.28] font-semibold transition-colors duration-200">
+              <h2 class="article-feed-title text-base sm:text-lg md:text-xl leading-[1.3] font-semibold transition-colors duration-150">
                 <span class="article-feed-title-link block">{{ item.title }}</span>
               </h2>
 
@@ -74,7 +77,7 @@
               </p>
             </div>
 
-            <div class="article-feed-footer mt-auto flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div class="article-feed-footer mt-auto flex items-end justify-between gap-2">
               <div class="flex flex-col">
                 <div v-if="item.meta" class="article-feed-date-row flex items-center text-xs">
                   {{ item.meta }}
@@ -84,7 +87,7 @@
                 </div>
               </div>
 
-              <span class="article-feed-read-link self-start px-3 py-1 md:px-4 md:py-1.5 text-xs font-medium rounded-full transition-colors duration-300 flex items-center">
+              <span class="article-feed-read-link self-end px-2.5 py-1 text-xs font-medium rounded-lg transition-colors duration-150 flex items-center">
                 {{ getActionLabel(item) }}
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-3.5 md:w-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -157,7 +160,9 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import DeferredImage from '../../components/core/DeferredImage.vue'
 import { useConfigStore } from '../../stores/config'
+import { createArticleCoverSrcset } from '../../utils/articleCover'
 import {
   getMenuItemActionLabel,
   getMenuItemCover,
@@ -232,6 +237,14 @@ function getItemCover(item) {
   return getMenuItemCover(item, coverResolveOptions.value)
 }
 
+function getItemCoverSrcset(item) {
+  return createArticleCoverSrcset(getItemCover(item), {
+    imageProxyUrl: configStore.coverConfig?.imageProxyUrl,
+    sourceWidth: configStore.coverConfig?.seededWidth,
+    sourceHeight: configStore.coverConfig?.seededHeight
+  })
+}
+
 function usesHeroSurface(item) {
   return isArticleLikeMenuItem(item, coverResolveOptions.value)
 }
@@ -266,14 +279,14 @@ function getListItemClass(item) {
       'menu-page-list-item',
       'article-feed-card',
       'relative',
-      'h-56',
+      'h-60',
       'sm:h-60',
       'md:h-64',
       'rounded-lg',
       'md:rounded-xl',
       'overflow-hidden',
-      'transition-all',
-      'duration-300',
+      'transition-[border-color,box-shadow,transform]',
+      'duration-200',
       !showItemCover(item) ? 'article-feed-card-without-cover' : ''
     ]
   }

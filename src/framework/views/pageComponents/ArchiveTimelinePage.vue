@@ -122,18 +122,18 @@ const groupedDays = computed(() => {
 
 <style scoped>
 .archive-timeline-page {
-  max-width: 64rem;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
 .archive-timeline {
-  --archive-axis-x: 50%;
+  --archive-axis-x: 6.125rem;
   position: relative;
   isolation: isolate;
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
-  padding: 0.5rem 0;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
 }
 
 .archive-timeline::before {
@@ -160,57 +160,57 @@ const groupedDays = computed(() => {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 5.2rem minmax(0, 1fr);
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 1rem;
   align-items: start;
-  min-height: 7.2rem;
+  min-height: 0;
 }
 
-.archive-day:nth-child(odd) .archive-day-panel {
-  grid-column: 1;
-  justify-self: end;
-}
-
+.archive-day:nth-child(odd) .archive-day-panel,
 .archive-day:nth-child(even) .archive-day-panel {
-  grid-column: 3;
-  justify-self: start;
+  grid-column: 2;
+  justify-self: stretch;
 }
 
+.archive-day:nth-child(odd) .archive-day-stamp,
 .archive-day:nth-child(even) .archive-day-stamp {
-  grid-column: 2;
+  grid-column: 1;
 }
 
 .archive-day:nth-child(odd) .archive-day-panel::after,
 .archive-day:nth-child(even) .archive-day-panel::after {
   content: '';
   position: absolute;
-  top: 1.72rem;
-  width: 2.65rem;
+  top: 1.55rem;
+  width: 1rem;
   height: 1px;
   background: linear-gradient(90deg, rgba(148, 163, 184, 0.08), rgba(148, 163, 184, 0.46));
 }
 
 .archive-day:nth-child(odd) .archive-day-panel::after {
-  right: -2.65rem;
+  left: -1rem;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.46), rgba(148, 163, 184, 0.08));
 }
 
 .archive-day:nth-child(even) .archive-day-panel::after {
-  left: -2.65rem;
+  left: -1rem;
   background: linear-gradient(90deg, rgba(148, 163, 184, 0.46), rgba(148, 163, 184, 0.08));
 }
 
 .archive-day + .archive-day {
-  margin-top: -0.15rem;
+  margin-top: 0;
 }
 
 .archive-day-stamp {
   position: relative;
   z-index: 2;
-  grid-column: 2;
+  grid-column: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 0.56rem;
-  padding-top: 0.82rem;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  padding-top: 1.05rem;
 }
 
 .archive-day-date {
@@ -218,47 +218,40 @@ const groupedDays = computed(() => {
   align-items: center;
   justify-content: center;
   min-width: max-content;
-  height: 1.82rem;
-  padding: 0 0.72rem;
-  border: 1px solid rgba(226, 232, 240, 0.86);
-  border-radius: 9999px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.86)),
-    rgba(255, 255, 255, 0.82);
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: rgb(100 116 139);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   line-height: 1;
   font-weight: 750;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   white-space: nowrap;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(14px) saturate(1.06);
-  -webkit-backdrop-filter: blur(14px) saturate(1.06);
+  box-shadow: none;
 }
 
 .archive-day-dot {
-  width: 0.74rem;
-  height: 0.74rem;
-  border: 3px solid rgba(219, 234, 254, 0.96);
+  width: 0.625rem;
+  height: 0.625rem;
+  border: 2px solid rgba(219, 234, 254, 0.96);
   border-radius: 9999px;
   background: rgb(var(--theme-primary-rgb));
   box-shadow:
-    0 0 0 4px rgba(var(--theme-primary-rgb), 0.1),
-    0 8px 18px rgba(var(--theme-primary-rgb), 0.16);
+    0 0 0 3px rgba(var(--theme-primary-rgb), 0.08);
 }
 
 .archive-day-panel {
   position: relative;
-  width: min(100%, 28rem);
+  width: 100%;
   overflow: hidden;
-  border: 1px solid rgba(226, 232, 240, 0.82);
-  border-radius: 1.22rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.72)),
-    rgba(255, 255, 255, 0.76);
-  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(18px) saturate(1.06);
-  -webkit-backdrop-filter: blur(18px) saturate(1.06);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-panel);
+  background: var(--theme-panel-background);
+  box-shadow: var(--theme-shadow-xs);
+  backdrop-filter: blur(18px) saturate(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(1.04);
 }
 
 .archive-day-panel::before {
@@ -273,10 +266,10 @@ const groupedDays = computed(() => {
 .archive-article-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.9rem;
+  gap: 0.75rem;
   align-items: center;
-  min-height: 4.05rem;
-  padding: 0.86rem 0.95rem;
+  min-height: 3.5rem;
+  padding: 0.625rem 0.75rem;
   color: inherit;
   text-decoration: none;
   transition:
@@ -306,10 +299,10 @@ const groupedDays = computed(() => {
   display: block;
   overflow-wrap: anywhere;
   color: rgb(15 23 42);
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1.35;
-  font-weight: 780;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .archive-article-description {
@@ -317,7 +310,7 @@ const groupedDays = computed(() => {
   margin-top: 0.34rem;
   overflow: hidden;
   color: rgb(100 116 139);
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   line-height: 1.5;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
@@ -339,7 +332,7 @@ const groupedDays = computed(() => {
   min-height: 1.38rem;
   padding: 0.14rem 0.5rem;
   border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 9999px;
+  border-radius: 0.375rem;
   background: rgba(248, 250, 252, 0.82);
   color: rgb(100 116 139);
   font-size: 0.72rem;
@@ -392,6 +385,11 @@ const groupedDays = computed(() => {
   color: rgb(203 213 225);
 }
 
+:global(.dark .archive-day-date) {
+  border: 0;
+  background: transparent;
+}
+
 :global(.dark .archive-day-dot) {
   border-color: rgba(30, 41, 59, 0.96);
 }
@@ -401,7 +399,7 @@ const groupedDays = computed(() => {
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.62)),
     rgba(15, 23, 42, 0.72);
-  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--theme-shadow-xs);
 }
 
 :global(.dark .archive-day-panel::before) {

@@ -366,7 +366,7 @@ function updateTheme(theme) {
   color: rgb(148 163 184);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -375,7 +375,7 @@ function updateTheme(theme) {
   color: rgb(15 23 42);
   font-size: 1.35rem;
   line-height: 1.3;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .article-comment-description {

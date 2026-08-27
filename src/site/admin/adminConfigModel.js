@@ -68,10 +68,10 @@ const CONFIG_DEFAULTS = Object.freeze({
       pages: []
     },
     sidebar: {
-      desktop_components: ['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags'],
-      article_desktop_components: ['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags'],
-      mobile_components: ['profile', 'search', 'latest-articles', 'categories', 'tags'],
-      article_mobile_components: ['profile', 'announcement', 'search', 'latest-articles', 'categories', 'tags']
+      desktop_components: ['profile', 'announcement', 'latest-articles', 'categories', 'tags'],
+      article_desktop_components: ['profile', 'announcement', 'latest-articles', 'categories', 'tags'],
+      mobile_components: ['profile', 'latest-articles', 'categories', 'tags'],
+      article_mobile_components: ['profile', 'announcement', 'latest-articles', 'categories', 'tags']
     },
     page_layouts: {
       persist: true,
@@ -144,29 +144,23 @@ const CONFIG_DEFAULTS = Object.freeze({
     current_preset: 'default',
     presets: {}
   },
-  background: {
-    enabled: false,
-    mode: 'gradient',
-    gradient_light: '',
-    gradient_dark: '',
-    image: '',
-    dark_image: '',
-    overlay_light: 'none',
-    overlay_dark: 'none',
-    position: 'center top',
-    size: 'cover',
-    repeat: 'no-repeat',
-    attachment: 'scroll',
-    opacity: 1
-  },
   cover: {
     enabled: true,
     fallback: 'seeded',
     fallback_image: '',
+    image_proxy_url: '',
     seeded_width: 1200,
     seeded_height: 630,
     seeded_format: 'webp',
     seeded_style: 'mwm-anime',
+    fixed: false,
+    source_urls: {
+      'mwm-anime': [],
+      'mwm-scenery': [],
+      'paugram-anime': [],
+      'dmoe-anime': [],
+      'paugram-bing': []
+    },
     list: {
       show_cover: true,
       loading: 'lazy',
@@ -464,23 +458,22 @@ const FIELD_LABELS = Object.freeze({
   presets: '主题预设',
   css_file: 'CSS 文件',
   js_file: 'JavaScript 文件',
-  gradient_light: '浅色渐变',
-  gradient_dark: '深色渐变',
-  image: '浅色背景图',
-  dark_image: '深色背景图',
-  overlay_light: '浅色遮罩',
-  overlay_dark: '深色遮罩',
-  position: '背景位置',
-  size: '背景尺寸',
-  repeat: '背景重复',
-  attachment: '滚动方式',
+  position: '位置',
   opacity: '透明度',
   fallback: '无封面回退',
   fallback_image: '默认封面图',
+  image_proxy_url: '封面优化服务',
+  fixed: '固定文章封面',
   seeded_width: '生成宽度',
   seeded_height: '生成高度',
   seeded_format: '图片格式',
   seeded_style: '默认图源',
+  source_urls: '封面图片池',
+  'mwm-anime': 'MWM 二次元图片',
+  'mwm-scenery': 'MWM 风景图片',
+  'paugram-anime': '保罗二次元图片',
+  'dmoe-anime': 'DMOE 二次元图片',
+  'paugram-bing': 'Bing 壁纸图片',
   sources: '可选图源',
   labels: '图源名称',
   list: '列表封面',
@@ -579,9 +572,6 @@ const SELECT_OPTIONS = Object.freeze({
   'site.home_articles.mode': ['latest', 'featured', 'sticky', 'mixed'],
   'site.menus.pages.*.component': ['context', 'list', 'card', 'grid', 'timeline', 'friends'],
   'site.menus.pages.*.menu_group': ['auto', 'primary', 'more'],
-  'background.mode': ['none', 'gradient', 'image'],
-  'background.repeat': ['no-repeat', 'repeat', 'repeat-x', 'repeat-y'],
-  'background.attachment': ['scroll', 'fixed', 'local'],
   'cover.fallback': ['none', 'seeded', 'image'],
   'cover.seeded_format': ['webp', 'jpg', 'png'],
   'cover.seeded_style': [
@@ -626,11 +616,10 @@ const FIELD_HINTS = Object.freeze({
   'site.home_articles.exclude_ids': '这里的文章始终不会出现在首页。',
   'profile.avatar_url': '填写 public/ 下的相对路径或完整 HTTPS 地址。',
   'profile.social_links.*.icon': '推荐使用 github、link、mail 等 Lucide 图标名称。',
-  'background.gradient_light': '填写完整 CSS background 值；留空使用内置浅色渐变。',
-  'background.gradient_dark': '填写完整 CSS background 值；留空沿用浅色或内置深色渐变。',
-  'background.image': '填写 public/ 下的相对路径或完整图片地址。',
-  'background.dark_image': '留空时深色模式继续使用浅色背景图。',
   'cover.fallback_image': '填写 public/ 下的相对路径或完整图片地址。',
+  'cover.image_proxy_url': '可选。用于压缩 MWM 封面，填写受信任的图片优化接口。',
+  'cover.fixed': '关闭时每次访问随机打乱图片池；开启后按文章稳定选择。',
+  'cover.source_urls': '每行填写一个可直接访问的图片地址；随机模式会打乱分配并尽量避免重复。',
   'cover.list.aspect_ratio': '可选，例如 16 / 9；留空使用主题默认比例。',
   'cover.detail.aspect_ratio': '可选，例如 16 / 9；留空使用主题默认比例。',
   'comment.provider': '选择服务商即启用评论；选择关闭会保留已填写参数。',
@@ -656,6 +645,7 @@ const URL_FIELD_PATHS = new Set([
   'sponsor.supporters.*.url',
   'analytics.umami.script_url',
   'analytics.plausible.script_url',
+  'cover.image_proxy_url',
   'license.url'
 ])
 
@@ -815,31 +805,22 @@ export function isAdminFieldVisible(path, rootModel = {}) {
     }
   }
 
-  if (rootKey === 'background') {
-    if (normalizedPath === 'background.enabled') return true
-    if (localValue('enabled') !== true) return false
-    if (normalizedPath === 'background.mode') return true
-    const mode = localValue('mode')
-    if (['background.gradient_light', 'background.gradient_dark'].includes(normalizedPath)) {
-      return mode === 'gradient'
-    }
-    if ([
-      'background.image',
-      'background.dark_image',
-      'background.position',
-      'background.size',
-      'background.repeat',
-      'background.attachment'
-    ].includes(normalizedPath)) {
-      return mode === 'image'
-    }
-    return mode !== 'none'
-  }
-
   if (rootKey === 'cover') {
     if (normalizedPath === 'cover.enabled') return true
     if (localValue('enabled') !== true) return false
     if (normalizedPath === 'cover.fallback_image') return localValue('fallback') === 'image'
+    if (normalizedPath === 'cover.fixed') {
+      return localValue('fallback') === 'seeded'
+        && ['mwm-anime', 'mwm-scenery', 'paugram-anime', 'dmoe-anime', 'paugram-bing']
+          .includes(localValue('seeded_style'))
+    }
+    if (normalizedPath === 'cover.source_urls') {
+      return localValue('fallback') === 'seeded'
+    }
+    if (normalizedPath.startsWith('cover.source_urls.')) {
+      return localValue('fallback') === 'seeded'
+        && normalizedPath === `cover.source_urls.${localValue('seeded_style')}`
+    }
     if (/^cover\.seeded_/u.test(normalizedPath)) {
       return localValue('fallback') === 'seeded'
     }
@@ -921,8 +902,6 @@ export function isMultilineField(key, value) {
     'content',
     'description',
     'footer_content',
-    'gradient_dark',
-    'gradient_light',
     'note',
     'not_ready_text',
     'page_description',

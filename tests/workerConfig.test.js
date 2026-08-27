@@ -44,9 +44,9 @@ async function createAdminCookie() {
 }
 
 test('the managed config manifest is an exact path allowlist', () => {
-  assert.equal(CONFIG_FILE_DEFINITIONS.length, 15)
-  assert.equal(new Set(CONFIG_FILE_DEFINITIONS.map(file => file.key)).size, 15)
-  assert.equal(new Set(CONFIG_FILE_DEFINITIONS.map(file => file.path)).size, 15)
+  assert.equal(CONFIG_FILE_DEFINITIONS.length, 14)
+  assert.equal(new Set(CONFIG_FILE_DEFINITIONS.map(file => file.key)).size, 14)
+  assert.equal(new Set(CONFIG_FILE_DEFINITIONS.map(file => file.path)).size, 14)
   assert.ok(CONFIG_FILE_DEFINITIONS.every(file => (
     file.path.startsWith('blog/config/') && file.path.endsWith('.toml')
   )))
@@ -95,6 +95,10 @@ test('the Worker rejects menu pages that reference missing repository content', 
 test('the Worker rejects unknown, duplicate and malformed configuration input', () => {
   assert.throws(
     () => normalizeRequestedFiles([{ key: '../site', content: 'title = "bad"' }]),
+    /unknown or duplicate|未知或重复/u
+  )
+  assert.throws(
+    () => normalizeRequestedFiles([{ key: 'background', content: 'enabled = true' }]),
     /unknown or duplicate|未知或重复/u
   )
   assert.throws(
@@ -170,7 +174,7 @@ test('publishing creates one atomic commit containing only changed allowlisted f
 
     throw new Error(`Unexpected GitHub request: ${normalizedUrl}`)
   }
-  const background = fileByPath.get('blog/config/background.toml')
+  const theme = fileByPath.get('blog/config/theme.toml')
   const request = new Request('https://filling-config-api.initzo.com/api/config', {
     method: 'PUT',
     headers: {
@@ -181,8 +185,11 @@ test('publishing creates one atomic commit containing only changed allowlisted f
     body: JSON.stringify({
       expectedHeadOid: HEAD_OID,
       files: [{
-        key: 'background',
-        content: `${background.content.trim()}\nopacity = 0.8\n`
+        key: 'theme',
+        content: theme.content.replace(
+          'current_preset = "default"',
+          'current_preset = "forest"'
+        )
       }]
     })
   })
@@ -200,5 +207,5 @@ test('publishing creates one atomic commit containing only changed allowlisted f
     branchName: 'main'
   })
   assert.equal(input.fileChanges.additions.length, 1)
-  assert.equal(input.fileChanges.additions[0].path, 'blog/config/background.toml')
+  assert.equal(input.fileChanges.additions[0].path, 'blog/config/theme.toml')
 })

@@ -430,6 +430,7 @@ const DIAGNOSTIC_MESSAGES = Object.freeze({
   'missing-font-preset': '当前字体预设不存在，请选择内置预设或补充字体配置。',
   'missing-analytics-provider': '统计功能已开启，请选择一个统计服务。',
   'unknown-cover-style': '当前封面图源不存在，请选择已有图源。',
+  'missing-fixed-cover-source': '固定封面已开启，请至少填写一张当前图源的固定图片。',
   'invalid-sponsor-targets': '赞助展示位置格式无效，请重新选择展示页面。',
   'duplicate-menu-page-key': '页面标识重复，每个页面都需要唯一标识。',
   'missing-menu-page-key': '请填写页面标识。',
@@ -527,6 +528,7 @@ const coverPreviews = computed(() => {
       width: 420,
       height: 236,
       format: model.seeded_format || 'webp',
+      fixed: model.fixed === true,
       styleUrls
     })
   }))

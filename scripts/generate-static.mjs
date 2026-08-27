@@ -35,12 +35,12 @@ import { stripMenuCollectionDetail } from '../src/framework/utils/menuPageSource
 import {
   resolveMenuPageComponentKey
 } from '../src/framework/utils/pageComponentConfig.js'
-import { buildBackgroundCssText, normalizeBackgroundConfig } from '../src/framework/utils/backgroundConfig.js'
 import { normalizeCodeBlockConfig } from '../src/framework/utils/codeBlockConfig.js'
 import { normalizeCoverConfig } from '../src/framework/utils/coverConfig.js'
 import { createSeededArticleCover } from '../src/framework/utils/articleCover.js'
 import { normalizeAnalyticsConfig } from '../src/framework/utils/analyticsConfig.js'
 import { resolveFeatureMenuConfig } from '../src/framework/utils/featurePageConfig.js'
+import { selectHomeArticles } from '../src/framework/utils/homeArticleSelection.js'
 import { buildFontConfigCss, normalizeFontConfig, resolveFontPreloadLinks } from '../src/framework/utils/fontConfig.js'
 import { normalizeMarkdownConfig } from '../src/framework/utils/markdownConfig.js'
 import {
@@ -49,6 +49,7 @@ import {
   resolveShareImageUrl as resolveMetadataShareImageUrl
 } from '../src/framework/utils/pageMetadataModel.js'
 import { applyConfigEnvOverrides } from '../src/framework/config/configEnvOverrides.js'
+import { resolveThemePresetAssetPath } from '../src/framework/utils/themeAsset.js'
 import contentIndexData from '../src/framework/generated/contentIndex.generated.js'
 import { readFirstTomlConfig } from './read-toml-config.mjs'
 import { resolveStaticRouteOutputFile } from './static-route-output.mjs'
@@ -107,6 +108,22 @@ function withBasePath(basePath, value) {
   return `${normalizedBase}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
 }
 
+function withStaticRoutePath(context, value) {
+  const routePath = toTrimmedString(value)
+  const href = withBasePath(context.basePath, routePath)
+
+  if (
+    !href
+    || href.endsWith('/')
+    || routePath === '/'
+    || !context.staticRoutePaths?.has(routePath)
+  ) {
+    return href
+  }
+
+  return `${href}/`
+}
+
 function formatDateIso(value) {
   const date = new Date(value)
 
@@ -157,8 +174,8 @@ async function loadConfigs() {
     font,
     code_block,
     markdown,
-    background,
     cover,
+    theme,
     guestbook,
     sponsor
   ] = await Promise.all([
@@ -169,8 +186,8 @@ async function loadConfigs() {
     loadTomlConfig('font'),
     loadTomlConfig('code_block'),
     loadTomlConfig('markdown'),
-    loadTomlConfig('background'),
     loadTomlConfig('cover'),
+    loadTomlConfig('theme'),
     loadTomlConfig('guestbook'),
     loadTomlConfig('sponsor')
   ])
@@ -183,8 +200,8 @@ async function loadConfigs() {
     font,
     code_block,
     markdown,
-    background,
     cover,
+    theme,
     guestbook,
     sponsor
   }, process.env)
@@ -658,7 +675,7 @@ function injectHead(template, {
   twitterCard,
   analyticsHeadTags,
   fontHeadTags,
-  backgroundHeadTags
+  themeHeadTags,
 }) {
   const headTags = [
     description ? `<meta name="description" content="${escapeAttribute(description)}" />` : '',
@@ -685,8 +702,8 @@ function injectHead(template, {
     faviconHref ? `<link rel="icon" href="${escapeAttribute(faviconHref)}" />` : '',
     appleTouchIconHref ? `<link rel="apple-touch-icon" href="${escapeAttribute(appleTouchIconHref)}" />` : '',
     maskIconHref ? `<link rel="mask-icon" href="${escapeAttribute(maskIconHref)}"${maskIconColor ? ` color="${escapeAttribute(maskIconColor)}"` : ''} />` : '',
+    themeHeadTags || '',
     fontHeadTags || '',
-    backgroundHeadTags || '',
     analyticsHeadTags || ''
   ].filter(Boolean).join('\n    ')
 
@@ -698,6 +715,156 @@ function injectHead(template, {
 
 function replaceAppRoot(template, markup) {
   return template.replace('<div id="app"></div>', `<div id="app">${markup}</div>`)
+}
+
+const STATIC_PREVIEW_STYLE = `<style id="vue-blog-static-preview-style">
+  .ssg-shell{min-height:100vh;min-height:100dvh;background:var(--theme-body-background,#f8fafc);color:var(--theme-body-color,#0f172a);font-family:var(--font-sans,ui-sans-serif,system-ui,sans-serif)}
+  .ssg-header{border-bottom:1px solid var(--theme-header-border,rgba(148,163,184,.2));background:var(--theme-header-bg,rgba(255,255,255,.9))}
+  .ssg-header-inner,.ssg-main,.ssg-footer-inner{width:min(72rem,calc(100% - 2rem));margin:0 auto}
+  .ssg-header-inner{min-height:3.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+  .ssg-brand{color:var(--theme-heading-color,#0f172a);font-size:1.05rem;font-weight:700;text-decoration:none}
+  .ssg-nav{display:flex;flex-wrap:wrap;gap:.35rem}
+  .ssg-nav a{padding:.35rem .55rem;border-radius:.45rem;color:var(--theme-text-soft,#64748b);font-size:.875rem;text-decoration:none}
+  .ssg-nav a:hover,.ssg-nav a:focus-visible{background:var(--theme-chip-surface,#f1f5f9);color:var(--theme-heading-color,#0f172a)}
+  .ssg-main{padding:2.25rem 0 4rem}
+  .ssg-page-header{margin-bottom:1.75rem}
+  .ssg-page-title{margin:0;color:var(--theme-heading-color,#0f172a);font-size:clamp(1.75rem,4vw,2.35rem);line-height:1.2}
+  .ssg-page-description{max-width:48rem;margin:.7rem 0 0;color:var(--theme-text-soft,#64748b);line-height:1.75}
+  .ssg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem;margin:0;padding:0;list-style:none}
+  .ssg-list-item{height:100%;padding:1rem 1.1rem;border:1px solid var(--theme-border,rgba(148,163,184,.2));border-radius:.65rem;background:var(--theme-panel-background,rgba(255,255,255,.82));box-sizing:border-box}
+  .ssg-list-title{margin:0;font-size:1rem;line-height:1.45}
+  .ssg-list-title a{color:var(--theme-heading-color,#0f172a);text-decoration:none}
+  .ssg-list-meta{margin:.45rem 0 0;color:var(--theme-text-faint,#94a3b8);font-size:.75rem}
+  .ssg-list-description{margin:.55rem 0 0;color:var(--theme-text-soft,#64748b);font-size:.9rem;line-height:1.65}
+  .ssg-article{max-width:52rem;margin:0 auto}
+  .ssg-article-meta{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:.75rem;color:var(--theme-text-soft,#64748b);font-size:.82rem}
+  .ssg-article-content{margin-top:2rem;color:var(--theme-body-color,#0f172a);line-height:1.8}
+  .ssg-article-content img{max-width:100%;height:auto}
+  .ssg-article-content pre{max-width:100%;overflow:auto}
+  .ssg-article-content table{display:block;max-width:100%;overflow:auto;border-collapse:collapse}
+  .ssg-article-content th,.ssg-article-content td{padding:.6rem;border:1px solid var(--theme-border,rgba(148,163,184,.25))}
+  .ssg-empty{padding:1rem 1.1rem;border:1px solid var(--theme-border,rgba(148,163,184,.2));border-radius:.65rem;background:var(--theme-panel-background,rgba(255,255,255,.82));color:var(--theme-text-soft,#64748b)}
+  .ssg-footer{border-top:1px solid var(--theme-border,rgba(148,163,184,.2));color:var(--theme-text-soft,#64748b);font-size:.8rem}
+  .ssg-footer-inner{padding:1rem 0}
+  @media(max-width:640px){.ssg-header-inner{align-items:flex-start;flex-direction:column;padding:.75rem 0}.ssg-list{grid-template-columns:1fr}.ssg-main{padding-top:1.5rem}}
+</style>`
+
+function formatStaticDate(value) {
+  const date = resolveValidDate(value)
+  return date ? date.toISOString().slice(0, 10) : ''
+}
+
+function resolveStaticItemPath(item) {
+  const directPath = toTrimmedString(item?.to || item?.path)
+  return directPath || getArticlePath(item)
+}
+
+function renderStaticItemList(items = [], context) {
+  const renderedItems = (Array.isArray(items) ? items : [])
+    .map((item) => {
+      const title = toTrimmedString(item?.title || item?.label)
+      const itemPath = resolveStaticItemPath(item)
+
+      if (!title || !itemPath) return ''
+
+      const description = toTrimmedString(item?.description || item?.summary || item?.excerpt)
+      const date = formatStaticDate(item?.createdAt || item?.date)
+      const category = toTrimmedString(item?.category?.name || item?.category?.label || item?.category)
+      const meta = [category, date].filter(Boolean).join(' · ')
+
+      return `<li><article class="ssg-list-item">
+        <h2 class="ssg-list-title"><a href="${escapeAttribute(withStaticRoutePath(context, itemPath))}">${escapeHtml(title)}</a></h2>
+        ${meta ? `<p class="ssg-list-meta">${escapeHtml(meta)}</p>` : ''}
+        ${description ? `<p class="ssg-list-description">${escapeHtml(description)}</p>` : ''}
+      </article></li>`
+    })
+    .filter(Boolean)
+    .join('\n')
+
+  return renderedItems
+    ? `<ul class="ssg-list">${renderedItems}</ul>`
+    : '<div class="ssg-empty">当前页面还没有内容。</div>'
+}
+
+function renderStaticLinkList(items = [], context) {
+  const normalizedItems = (Array.isArray(items) ? items : []).map(item => ({
+    title: item?.title || item?.label || item?.name || item?.year,
+    description: item?.description || (Number.isFinite(Number(item?.count)) ? `共 ${Number(item.count)} 项内容` : ''),
+    to: item?.to || item?.path
+  }))
+
+  return renderStaticItemList(normalizedItems, context)
+}
+
+function renderStaticNavigation(context) {
+  const routePaths = context.staticRoutePaths || new Set()
+  const navigation = [
+    { label: '首页', path: getHomePath() },
+    { label: '文章', path: getArticlesPath() },
+    { label: '分类', path: getCategoriesPath() },
+    { label: '标签', path: getTagsPath() },
+    { label: '归档', path: getArchivePath() }
+  ].filter(item => routePaths.has(item.path))
+
+  return navigation
+    .map(item => `<a href="${escapeAttribute(withStaticRoutePath(context, item.path))}">${escapeHtml(item.label)}</a>`)
+    .join('')
+}
+
+function renderStaticPageContent(route, context) {
+  if (route.staticArticle) {
+    const article = route.staticArticle
+    const articleMeta = [
+      toTrimmedString(article.category?.name || article.category),
+      formatStaticDate(article.createdAt || article.date),
+      article.readTime ? `约 ${article.readTime} 分钟阅读` : ''
+    ].filter(Boolean)
+
+    return `<article class="ssg-article">
+      <header class="ssg-page-header">
+        <h1 class="ssg-page-title">${escapeHtml(article.title)}</h1>
+        ${articleMeta.length > 0 ? `<div class="ssg-article-meta">${articleMeta.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+        ${route.description ? `<p class="ssg-page-description">${escapeHtml(route.description)}</p>` : ''}
+      </header>
+      <div class="ssg-article-content article-content">${article.content || ''}</div>
+    </article>`
+  }
+
+  const pageHeader = `<header class="ssg-page-header">
+    <h1 class="ssg-page-title">${escapeHtml(route.pageTitle || '页面')}</h1>
+    ${route.description ? `<p class="ssg-page-description">${escapeHtml(route.description)}</p>` : ''}
+  </header>`
+
+  if (route.staticContentHtml) {
+    return `${pageHeader}<div class="ssg-article-content article-content">${route.staticContentHtml}</div>`
+  }
+
+  if (route.staticItems) {
+    return `${pageHeader}${renderStaticItemList(route.staticItems, context)}`
+  }
+
+  if (route.staticLinks) {
+    return `${pageHeader}${renderStaticLinkList(route.staticLinks, context)}`
+  }
+
+  return `${pageHeader}${route.content || '<div class="ssg-empty">完整内容将在页面脚本加载后显示。</div>'}`
+}
+
+function renderStaticPreview(route, context) {
+  const siteTitle = toTrimmedString(context.site?.title) || toTrimmedString(context.profile?.display_name) || 'Blog'
+  const footerText = toTrimmedString(context.site?.footer?.text || context.site?.footer_text)
+
+  return `${STATIC_PREVIEW_STYLE}
+    <div class="ssg-shell" data-static-preview="true">
+      <header class="ssg-header">
+        <div class="ssg-header-inner">
+          <a class="ssg-brand" href="${escapeAttribute(withStaticRoutePath(context, getHomePath()))}">${escapeHtml(siteTitle)}</a>
+          <nav class="ssg-nav" aria-label="主要导航">${renderStaticNavigation(context)}</nav>
+        </div>
+      </header>
+      <main class="ssg-main" id="main-content">${renderStaticPageContent(route, context)}</main>
+      <footer class="ssg-footer"><div class="ssg-footer-inner">${escapeHtml(footerText || siteTitle)}</div></footer>
+    </div>`
 }
 
 function renderFontHeadTags(fontConfig, basePath) {
@@ -717,12 +884,14 @@ function renderFontHeadTags(fontConfig, basePath) {
   return [preloadTags, styleTag].filter(Boolean).join('\n    ')
 }
 
-function renderBackgroundHeadTags(backgroundConfig, basePath) {
-  const cssText = buildBackgroundCssText(backgroundConfig, basePath)
+function renderThemeHeadTags(themeConfig, basePath) {
+  const cssFile = resolveThemePresetAssetPath(themeConfig, 'css')
 
-  return cssText
-    ? `<style id="vue-blog-static-background">:root { ${cssText} }</style>`
-    : ''
+  if (!cssFile) {
+    return ''
+  }
+
+  return `<link id="vue-blog-theme-css" rel="stylesheet" href="${escapeAttribute(withBasePath(basePath, cssFile))}" />`
 }
 
 function buildSeededShareImage(seed, shareImageConfig = {}) {
@@ -766,7 +935,7 @@ function renderPage(route, context) {
   const seo = normalizeSeoConfig(site.seo)
   const analyticsHeadTags = renderAnalyticsHeadTags(context.analytics)
   const fontHeadTags = renderFontHeadTags(context.font, basePath)
-  const backgroundHeadTags = renderBackgroundHeadTags(context.background, basePath)
+  const themeHeadTags = renderThemeHeadTags(context.theme, basePath)
   const siteTitle = toTrimmedString(site.title) || toTrimmedString(profile.display_name) || 'Blog'
   const siteSubtitle = toTrimmedString(site.subtitle)
   const pageTitle = route.pageTitle ? `${route.pageTitle} - ${siteTitle}` : siteTitle
@@ -803,10 +972,23 @@ function renderPage(route, context) {
     twitterCard: twitterImageUrl || imageUrl ? seo.shareImage?.twitterCard || 'summary_large_image' : 'summary',
     analyticsHeadTags,
     fontHeadTags,
-    backgroundHeadTags
+    themeHeadTags
   })
 
-  return replaceAppRoot(withHead, '')
+  return replaceAppRoot(withHead, renderStaticPreview(route, context))
+}
+
+function normalizeStaticHomeArticleConfig(source = {}) {
+  return {
+    ...source,
+    includeIds: source.includeIds || source.include_ids,
+    excludeIds: source.excludeIds || source.exclude_ids,
+    excludeCategories: source.excludeCategories || source.exclude_categories,
+    excludeTags: source.excludeTags || source.exclude_tags,
+    includeSticky: source.includeSticky ?? source.include_sticky,
+    stickyFirst: source.stickyFirst ?? source.sticky_first,
+    fallbackToLatest: source.fallbackToLatest ?? source.fallback_to_latest
+  }
 }
 
 async function createPageRoutes(context) {
@@ -819,12 +1001,16 @@ async function createPageRoutes(context) {
   const tagsPage = resolveMenuPage('tags', menus, routePatterns)
   const archivePage = resolveMenuPage('archive', menus, routePatterns)
   const searchPage = resolveMenuPage('search', menus, routePatterns)
+  const homeArticleConfig = normalizeStaticHomeArticleConfig(context.site?.home_articles || context.site?.homeArticles)
+  const homePageSize = normalizePositiveInteger(homeArticleConfig.pageSize || homeArticleConfig.page_size, 8)
+  const homeArticles = selectHomeArticles(articles, homeArticleConfig).slice(0, homePageSize)
 
   if (homePage) {
     routes.push({
       path: getHomePath(),
       pageTitle: homePage.title || '最新文章',
-      description: homePage.description || '浏览站点最新发布的文章内容。'
+      description: homePage.description || '浏览站点最新发布的文章内容。',
+      staticItems: homeArticles
     })
   }
 
@@ -832,14 +1018,16 @@ async function createPageRoutes(context) {
     routes.push({
       path: getArticlesPath(),
       pageTitle: articlesPageConfig.title || '所有文章',
-      description: articlesPageConfig.description || '浏览站点全部文章列表。'
+      description: articlesPageConfig.description || '浏览站点全部文章列表。',
+      staticItems: articlePages[0]?.items || []
     })
 
     articlePages.slice(1).forEach((pageGroup) => {
       routes.push({
         path: getArticlesPagePath(pageGroup.page),
         pageTitle: `${articlesPageConfig.title || '所有文章'} - 第 ${pageGroup.page} 页`,
-        description: `${articlesPageConfig.description || '浏览站点全部文章列表。'} 第 ${pageGroup.page} 页。`
+        description: `${articlesPageConfig.description || '浏览站点全部文章列表。'} 第 ${pageGroup.page} 页。`,
+        staticItems: pageGroup.items
       })
     })
   }
@@ -848,7 +1036,12 @@ async function createPageRoutes(context) {
     routes.push({
       path: getCategoriesPath(),
       pageTitle: categoriesPage.title || '内容分类',
-      description: categoriesPage.description || '浏览站点所有内容分类。'
+      description: categoriesPage.description || '浏览站点所有内容分类。',
+      staticLinks: categories.map(category => ({
+        title: category.name,
+        count: category.articleCount,
+        path: getCategoryPath(category)
+      }))
     })
 
     categories.forEach((category) => {
@@ -858,7 +1051,8 @@ async function createPageRoutes(context) {
         path: getCategoryPath(category),
         pageTitle: `分类：${category.name}`,
         description: `浏览分类 ${category.name} 下的内容。`,
-        keywords: [category.name, '分类']
+        keywords: [category.name, '分类'],
+        staticItems: categoryPages[0]?.items || []
       })
 
       categoryPages.slice(1).forEach((pageGroup) => {
@@ -866,7 +1060,8 @@ async function createPageRoutes(context) {
           path: getCategoryPagePath(category, pageGroup.page),
           pageTitle: `分类：${category.name} - 第 ${pageGroup.page} 页`,
           description: `浏览分类 ${category.name} 下的内容，第 ${pageGroup.page} 页。`,
-          keywords: [category.name, '分类']
+          keywords: [category.name, '分类'],
+          staticItems: pageGroup.items
         })
       })
     })
@@ -876,7 +1071,12 @@ async function createPageRoutes(context) {
     routes.push({
       path: getTagsPath(),
       pageTitle: tagsPage.title || '内容标签',
-      description: tagsPage.description || '浏览站点所有内容标签。'
+      description: tagsPage.description || '浏览站点所有内容标签。',
+      staticLinks: tags.map(tag => ({
+        title: tag.name,
+        count: tag.articleCount,
+        path: getTagPath(tag)
+      }))
     })
 
     tags.forEach((tag) => {
@@ -886,7 +1086,8 @@ async function createPageRoutes(context) {
         path: getTagPath(tag),
         pageTitle: `标签：${tag.name}`,
         description: `浏览标签 ${tag.name} 下的内容。`,
-        keywords: [tag.name, '标签']
+        keywords: [tag.name, '标签'],
+        staticItems: tagPages[0]?.items || []
       })
 
       tagPages.slice(1).forEach((pageGroup) => {
@@ -894,7 +1095,8 @@ async function createPageRoutes(context) {
           path: getTagPagePath(tag, pageGroup.page),
           pageTitle: `标签：${tag.name} - 第 ${pageGroup.page} 页`,
           description: `浏览标签 ${tag.name} 下的内容，第 ${pageGroup.page} 页。`,
-          keywords: [tag.name, '标签']
+          keywords: [tag.name, '标签'],
+          staticItems: pageGroup.items
         })
       })
     })
@@ -904,7 +1106,12 @@ async function createPageRoutes(context) {
     routes.push({
       path: getArchivePath(),
       pageTitle: archivePage.title || '内容归档',
-      description: archivePage.description || '按年份浏览站点归档内容。'
+      description: archivePage.description || '按年份浏览站点归档内容。',
+      staticLinks: archive.map(group => ({
+        title: `${group.year} 年`,
+        count: group.count,
+        path: getArchiveYearPath(group.year)
+      }))
     })
 
     archive.forEach((group) => {
@@ -919,7 +1126,8 @@ async function createPageRoutes(context) {
         path: getArchiveYearPath(year),
         pageTitle: `${year} 年归档`,
         description: `浏览 ${year} 年发布的归档内容，共 ${articleCount} 项。`,
-        keywords: [String(year), '归档']
+        keywords: [String(year), '归档'],
+        staticItems: group.articles || []
       })
     })
   }
@@ -954,7 +1162,8 @@ async function createPageRoutes(context) {
         article.category?.name || '',
         ...((Array.isArray(article.tags) ? article.tags : []).map(tag => tag?.name || ''))
       ],
-      lastmod: article.updatedAt || article.createdAt || article.date
+      lastmod: article.updatedAt || article.createdAt || article.date,
+      staticArticle: article
     })
   })
 
@@ -980,12 +1189,18 @@ async function createPageRoutes(context) {
     }
   }))
 
-  customPages.forEach(({ page, records, description, imageUrl }) => {
+  customPages.forEach(({ page, loadedSource, records, description, imageUrl }) => {
+    const pageContentBlocks = splitMenuPageContent(page.content || '')
+    const staticContentHtml = loadedSource.contentHtml
+      || pageContentBlocks.map(block => `<p>${escapeHtml(block)}</p>`).join('')
+
     routes.push({
       path: page.path,
       pageTitle: page.title,
       description,
-      imageUrl
+      imageUrl,
+      staticContentHtml,
+      staticItems: records.length > 0 ? records : undefined
     })
 
     records.forEach((item) => {
@@ -993,7 +1208,8 @@ async function createPageRoutes(context) {
         path: item.to,
         pageTitle: item.title,
         description: item.detailDescription || item.description || `${item.title} - ${page.title}`,
-        imageUrl: item.cover || item.imageUrl || item.image || ''
+        imageUrl: item.cover || item.imageUrl || item.image || '',
+        staticContentHtml: item.contentHtml || ''
       })
     })
   })
@@ -1122,7 +1338,6 @@ async function main() {
   const defaultLicense = normalizeDefaultLicenseConfig(configs.license)
   const codeBlock = normalizeCodeBlockConfig(configs.code_block)
   const markdown = normalizeMarkdownConfig(configs.markdown)
-  const background = normalizeBackgroundConfig(configs.background)
   const cover = normalizeCoverConfig(configs.cover)
   const articles = await loadArticles(defaultLicense, codeBlock, markdown, cover)
   const contentEntries = loadContentEntries()
@@ -1136,9 +1351,9 @@ async function main() {
     template,
     site: configs.site,
     profile: configs.profile,
+    theme: configs.theme,
     font,
     markdown,
-    background,
     cover,
     codeBlock,
     analytics: normalizeAnalyticsConfig(configs.analytics),
@@ -1154,6 +1369,7 @@ async function main() {
     pageSize: Number(configs.site?.pagination?.page_size) || 10
   }
   const routes = await createPageRoutes(context)
+  context.staticRoutePaths = new Set(routes.map(route => route.path))
 
   await Promise.all(routes.map(async (route) => {
     const html = renderPage(route, context)

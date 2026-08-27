@@ -160,6 +160,7 @@ import SearchResultCard from '../components/core/SearchResultCard.vue'
 import TagCloud from '../components/core/TagCloud.vue'
 import Pagination from '../components/core/Pagination.vue'
 import { usePageMetadata } from '../composables/usePageMetadata'
+import { scrollBlogViewport } from '../utils/blogScroll'
 import { getSearchRoute } from '../utils/routeLinks'
 
 // 获取路由参数
@@ -404,10 +405,7 @@ const handlePageChange = (page) => {
   }))
 
   // 滚动到顶部
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  })
+  scrollBlogViewport({ top: 0, behavior: 'smooth' })
 }
 
 onBeforeUnmount(() => {

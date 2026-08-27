@@ -13,12 +13,14 @@
             class="article-detail-page-background"
             aria-hidden="true"
         >
-            <img
+            <DeferredImage
                 :src="articleCover"
+                :srcset="articleCoverSrcset || undefined"
                 alt=""
                 class="article-detail-page-background-image"
                 :loading="articleCoverLoading"
-                decoding="async"
+                sizes="100vw"
+                fetchpriority="high"
                 @error="articleCoverLoadFailed = true"
             />
         </div>
@@ -201,10 +203,13 @@
                 "
                 :style="articleCoverShellStyle"
             >
-                <img
+                <DeferredImage
                     :src="articleCover"
+                    :srcset="articleCoverSrcset || undefined"
                     :alt="article.title"
                     :loading="articleCoverLoading"
+                    sizes="(min-width: 1280px) 64rem, (min-width: 768px) 80vw, 100vw"
+                    fetchpriority="high"
                     class="article-detail-cover-image w-full rounded-lg"
                     :class="
                         articleCoverAspectRatio
@@ -330,14 +335,20 @@
                             :to="articleRoute(related)"
                             class="article-detail-related-link"
                         >
-                            <img
+                            <DeferredImage
                                 v-if="
                                     showRelatedCover &&
                                     hasRelatedArticleCover(related)
                                 "
                                 :src="getRelatedArticleCover(related)"
+                                :srcset="
+                                    getRelatedArticleCoverSrcset(related) ||
+                                    undefined
+                                "
                                 :alt="related.title"
                                 :loading="relatedCoverLoading"
+                                sizes="(min-width: 1024px) 18rem, (min-width: 640px) 50vw, 100vw"
+                                fetchpriority="low"
                                 class="article-detail-related-image"
                                 :style="relatedCoverImageStyle"
                                 @error="markRelatedCoverFailed(related)"
@@ -428,6 +439,7 @@
 import { ref, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import CommentSection from "../components/core/CommentSection.vue";
+import DeferredImage from "../components/core/DeferredImage.vue";
 import SponsorSection from "../components/core/SponsorSection.vue";
 import { useArticleStore } from "../stores/article";
 import { useConfigStore } from "../stores/config";
@@ -435,7 +447,10 @@ import {
     resolveOutdatedNotice,
     shouldShowUpdatedAt,
 } from "../utils/articleMeta";
-import { resolveDisplayArticleCover } from "../utils/articleCover";
+import {
+    createArticleCoverSrcset,
+    resolveDisplayArticleCover,
+} from "../utils/articleCover";
 import {
     getArticleRoute,
     getCategoryRoute,
@@ -443,6 +458,7 @@ import {
     getTagRoute,
 } from "../utils/routeLinks";
 import { usePageMetadata } from "../composables/usePageMetadata";
+import { scrollBlogViewport } from "../utils/blogScroll";
 
 // 获取路由参数
 const route = useRoute();
@@ -550,6 +566,13 @@ const articleCover = computed(() =>
         style: configStore.coverConfig?.seededStyle,
     }),
 );
+const articleCoverSrcset = computed(() =>
+    createArticleCoverSrcset(articleCover.value, {
+        imageProxyUrl: configStore.coverConfig?.imageProxyUrl,
+        sourceWidth: configStore.coverConfig?.seededWidth,
+        sourceHeight: configStore.coverConfig?.seededHeight,
+    }),
+);
 
 watch(articleCover, () => {
     articleCoverLoadFailed.value = false;
@@ -646,6 +669,12 @@ const getRelatedArticleCover = (target) =>
     resolveDisplayArticleCover(target, {
         coverConfig: configStore.coverConfig,
         style: configStore.coverConfig?.seededStyle,
+    });
+const getRelatedArticleCoverSrcset = (target) =>
+    createArticleCoverSrcset(getRelatedArticleCover(target), {
+        imageProxyUrl: configStore.coverConfig?.imageProxyUrl,
+        sourceWidth: configStore.coverConfig?.seededWidth,
+        sourceHeight: configStore.coverConfig?.seededHeight,
     });
 const getRelatedCoverKey = (target) =>
     String(target?.id || getRelatedArticleCover(target));
@@ -744,8 +773,8 @@ watch(
 
         await fetchArticleDetail(String(newId));
 
-        if (oldId && newId !== oldId && typeof window !== "undefined") {
-            window.scrollTo({ top: 0, behavior: "smooth" });
+        if (oldId && newId !== oldId) {
+            scrollBlogViewport({ top: 0, behavior: "smooth" });
         }
     },
     { immediate: true },
@@ -1046,6 +1075,75 @@ function normalizeCoverWatermark(watermark = {}) {
     mix-blend-mode: var(--article-page-background-text-blend-mode, normal);
 }
 
+.article-detail-view-with-page-background .article-detail-content :deep(table) {
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    border-radius: 0.75rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: rgba(248, 250, 252, 0.88);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.84),
+        0 14px 38px rgba(15, 23, 42, 0.16);
+    text-shadow: none;
+    backdrop-filter: blur(14px) saturate(1.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.08);
+}
+
+.article-detail-view-with-page-background .article-detail-content :deep(th),
+.article-detail-view-with-page-background .article-detail-content :deep(td) {
+    border-width: 0 1px 1px 0;
+    border-color: rgba(100, 116, 139, 0.22);
+    background: rgba(255, 255, 255, 0.36);
+    color: rgb(30, 41, 59) !important;
+    text-shadow: none;
+}
+
+.article-detail-view-with-page-background .article-detail-content :deep(th) {
+    background: rgba(226, 232, 240, 0.92);
+    color: rgb(15, 23, 42) !important;
+}
+
+.article-detail-view-with-page-background
+    .article-detail-content
+    :deep(tbody tr:nth-child(even) td) {
+    background: rgba(241, 245, 249, 0.62);
+}
+
+.article-detail-view-with-page-background
+    .article-detail-content
+    :deep(tr > :last-child) {
+    border-right-width: 0;
+}
+
+.article-detail-view-with-page-background
+    .article-detail-content
+    :deep(tbody tr:last-child td) {
+    border-bottom-width: 0;
+}
+
+.article-detail-view-with-page-background
+    .article-detail-content
+    :deep(table code:not(pre code)) {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    color: rgb(51, 65, 85) !important;
+    font-size: 0.94em;
+    font-weight: 650;
+    box-shadow: none;
+    white-space: nowrap;
+}
+
+.article-detail-view-with-page-background
+    .article-detail-content
+    :deep(table code::before),
+.article-detail-view-with-page-background
+    .article-detail-content
+    :deep(table code::after) {
+    content: none;
+}
+
 .article-detail-view-with-page-background .article-detail-content :deep(a) {
     color: var(
         --article-page-background-link-color,
@@ -1183,6 +1281,49 @@ function normalizeCoverWatermark(watermark = {}) {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
         0 24px 90px rgba(0, 0, 0, 0.22);
+}
+
+:global(.dark .article-detail-view-with-page-background .article-detail-content table) {
+    border-color: rgba(255, 255, 255, 0.26);
+    background: rgba(15, 23, 42, 0.68);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 14px 38px rgba(2, 6, 23, 0.18);
+}
+
+:global(.dark .article-detail-view-with-page-background .article-detail-content th),
+:global(.dark .article-detail-view-with-page-background .article-detail-content td) {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(15, 23, 42, 0.34);
+    color: rgba(255, 255, 255, 0.92) !important;
+}
+
+:global(.dark .article-detail-view-with-page-background .article-detail-content th) {
+    background: rgba(30, 41, 59, 0.88);
+    color: #fff !important;
+}
+
+:global(
+    .dark
+        .article-detail-view-with-page-background
+        .article-detail-content
+        tbody
+        tr:nth-child(even)
+        td
+) {
+    background: rgba(30, 41, 59, 0.42);
+}
+
+:global(
+    .dark
+        .article-detail-view-with-page-background
+        .article-detail-content
+        table
+        code:not(pre code)
+) {
+    border: 0;
+    background: transparent !important;
+    color: rgba(219, 234, 254, 0.98) !important;
 }
 
 :global(.dark .article-detail-view-with-page-background .article-detail-content)
@@ -1418,7 +1559,7 @@ function normalizeCoverWatermark(watermark = {}) {
     color: rgb(148 163 184);
     font-size: 0.72rem;
     font-weight: 760;
-    letter-spacing: 0.18em;
+    letter-spacing: 0;
     text-transform: uppercase;
 }
 
@@ -1428,7 +1569,7 @@ function normalizeCoverWatermark(watermark = {}) {
     font-size: clamp(1.18rem, 2vw, 1.45rem);
     font-weight: 780;
     line-height: 1.25;
-    letter-spacing: -0.03em;
+    letter-spacing: 0;
 }
 
 .article-detail-related-grid {
@@ -1548,7 +1689,7 @@ function normalizeCoverWatermark(watermark = {}) {
     font-size: 1rem;
     font-weight: 760;
     line-height: 1.42;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
 }
@@ -1651,7 +1792,7 @@ function normalizeCoverWatermark(watermark = {}) {
     font-size: 0.78rem;
     font-weight: 700;
     line-height: 1.35;
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
     backdrop-filter: blur(10px);
     pointer-events: none;
 }
@@ -1674,5 +1815,26 @@ function normalizeCoverWatermark(watermark = {}) {
 .article-detail-cover-watermark-bottom-right {
     right: 1rem;
     bottom: 1rem;
+}
+
+@supports (font: -apple-system-body) {
+    .article-detail-view-with-page-background
+        :deep(.article-detail-category),
+    .article-detail-header-with-background :deep(.article-detail-category),
+    .article-detail-view-with-page-background
+        .article-detail-content
+        :deep(table),
+    .article-detail-view-with-page-background .article-detail-license,
+    .article-detail-view-with-page-background .article-detail-related,
+    .article-detail-view-with-page-background
+        :deep(.article-sponsor-section),
+    .article-detail-view-with-page-background
+        :deep(.article-comment-section),
+    .article-detail-view-page-background-glass .article-detail-content,
+    .article-detail-cover-watermark {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
 }
 </style>

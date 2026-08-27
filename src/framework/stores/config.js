@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { loadStoreConfigs } from '../runtime/runtimeContext.js'
-import { normalizeBackgroundConfig } from '../utils/backgroundConfig'
 import { normalizeCodeBlockConfig } from '../utils/codeBlockConfig'
 import { normalizeCoverConfig } from '../utils/coverConfig'
 import { normalizeFontConfig } from '../utils/fontConfig'
@@ -376,34 +375,15 @@ const RAW_MARKDOWN_CONFIG_KEYS = new Set([
   'mermaid',
   'math'
 ])
-const RAW_BACKGROUND_CONFIG_KEYS = new Set([
-  'enabled',
-  'mode',
-  'gradient_light',
-  'gradientLight',
-  'gradient_dark',
-  'gradientDark',
-  'image',
-  'dark_image',
-  'darkImage',
-  'image_dark',
-  'imageDark',
-  'overlay_light',
-  'overlayLight',
-  'overlay_dark',
-  'overlayDark',
-  'position',
-  'size',
-  'repeat',
-  'attachment',
-  'opacity'
-])
 const RAW_COVER_CONFIG_KEYS = new Set([
   'enabled',
   'fallback',
   'fallback_image',
   'fallbackImage',
   'image',
+  'image_proxy_url',
+  'imageProxyUrl',
+  'fixed',
   'seeded_width',
   'seededWidth',
   'seeded_height',
@@ -456,7 +436,6 @@ const CONFIG_NAMESPACE_KEYS = Object.freeze([
   'codeBlock',
   'code_block',
   'markdown',
-  'background',
   'cover',
   'guestbook'
 ])
@@ -1418,7 +1397,6 @@ function normalizeConfigState({
   font = {},
   codeBlock = {},
   markdown = {},
-  background = {},
   cover = {},
   guestbook = {}
 } = {}) {
@@ -1524,7 +1502,6 @@ function normalizeConfigState({
     fontConfig: normalizeFontConfig(font),
     codeBlockConfig: normalizeCodeBlockConfig(codeBlock),
     markdownConfig: normalizeMarkdownConfig(markdown),
-    backgroundConfig: normalizeBackgroundConfig(background),
     coverConfig: normalizeCoverConfig(cover),
     guestbookConfig: normalizeGuestbookConfig(guestbook),
     currentThemePreset,
@@ -1557,7 +1534,6 @@ function createNamespacedConfigInput(config = {}) {
     font: config.font,
     codeBlock: config.codeBlock || config.code_block,
     markdown: config.markdown,
-    background: config.background,
     cover: config.cover,
     guestbook: config.guestbook
   }
@@ -1587,7 +1563,6 @@ function normalizeRuntimeConfigInput(config = {}) {
     font: pickConfigSubset(config, RAW_FONT_CONFIG_KEYS),
     codeBlock: pickConfigSubset(config, RAW_CODE_BLOCK_CONFIG_KEYS),
     markdown: pickConfigSubset(config, RAW_MARKDOWN_CONFIG_KEYS),
-    background: pickConfigSubset(config, RAW_BACKGROUND_CONFIG_KEYS),
     cover: pickConfigSubset(config, RAW_COVER_CONFIG_KEYS),
     guestbook: pickConfigSubset(config, RAW_GUESTBOOK_CONFIG_KEYS)
   }
