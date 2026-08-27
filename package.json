@@ -32,7 +32,7 @@
     "build:config": "node scripts/build-site-config.mjs",
     "build:content-index": "node scripts/build-content-index.mjs",
     "dev": "vite",
-    "build": "vite build && node scripts/generate-static.mjs",
+    "build": "vite build && vite build --config vite.config.ssr.js && node scripts/generate-static.mjs",
     "build:lib": "vite build --config vite.config.lib.js",
     "test": "pnpm test:unit && pnpm test:components",
     "test:unit": "node --test tests/*.test.js",

@@ -125,8 +125,9 @@
             <component
               :is="sidebarAnnouncement.external ? 'a' : 'router-link'"
               v-if="sidebarAnnouncement.linkUrl && sidebarAnnouncement.linkText"
-              :href="sidebarAnnouncement.external ? sidebarAnnouncement.linkUrl : undefined"
-              :to="sidebarAnnouncement.external ? undefined : sidebarAnnouncement.linkUrl"
+              v-bind="sidebarAnnouncement.external
+                ? { href: sidebarAnnouncement.linkUrl }
+                : { to: sidebarAnnouncement.linkUrl }"
               :target="sidebarAnnouncement.external ? '_blank' : undefined"
               :rel="sidebarAnnouncement.external ? 'noreferrer' : undefined"
               class="sidebar-announcement-link"
@@ -558,7 +559,30 @@ function resolveAssetUrl(value) {
   return `${baseUrl}${normalizedPath}`.replace(/(?<!:)\/{2,}/g, '/')
 }
 
-async function loadSidebarData() {
+function isPromiseLike(value) {
+  return value !== null
+    && (typeof value === 'object' || typeof value === 'function')
+    && typeof value.then === 'function'
+}
+
+function settleSidebarSource(source) {
+  try {
+    const result = source.load()
+
+    if (isPromiseLike(result)) {
+      return result.then(
+        value => ({ status: 'fulfilled', value }),
+        reason => ({ status: 'rejected', reason })
+      )
+    }
+
+    return { status: 'fulfilled', value: result }
+  } catch (reason) {
+    return { status: 'rejected', reason }
+  }
+}
+
+function loadSidebarData() {
   const requestId = sidebarDataRequestId + 1
   sidebarDataRequestId = requestId
   const sources = [
@@ -598,34 +622,42 @@ async function loadSidebarData() {
 
   if (requestedSources.length === 0) {
     isLoading.value = false
-    return
+    return Promise.resolve([])
   }
 
   isLoading.value = true
-  const results = await Promise.allSettled(requestedSources.map(source => source.load()))
-
-  if (requestId !== sidebarDataRequestId) {
-    return
-  }
-
-  const resolvedErrors = { ...sidebarDataErrors.value }
-  results.forEach((result, index) => {
-    const source = requestedSources[index]
-
-    if (result.status === 'fulfilled') {
-      source.assign(result.value)
-      resolvedErrors[source.key] = ''
-      return
+  const settledSources = requestedSources.map(settleSidebarSource)
+  const applyResults = (results) => {
+    if (requestId !== sidebarDataRequestId) {
+      return results
     }
 
-    resolvedErrors[source.key] = getSidebarDataErrorMessage(source.key)
-    console.error(`${resolvedErrors[source.key]}:`, result.reason)
-  })
+    const resolvedErrors = { ...sidebarDataErrors.value }
+    results.forEach((result, index) => {
+      const source = requestedSources[index]
 
-  sidebarDataErrors.value = resolvedErrors
-  if (requestId === sidebarDataRequestId) {
+      if (result.status === 'fulfilled') {
+        source.assign(result.value)
+        resolvedErrors[source.key] = ''
+        return
+      }
+
+      resolvedErrors[source.key] = getSidebarDataErrorMessage(source.key)
+      console.error(`${resolvedErrors[source.key]}:`, result.reason)
+    })
+
+    sidebarDataErrors.value = resolvedErrors
     isLoading.value = false
+
+    return results
   }
+
+  if (settledSources.some(isPromiseLike)) {
+    return Promise.all(settledSources).then(applyResults)
+  }
+
+  applyResults(settledSources)
+  return Promise.resolve(settledSources)
 }
 
 watch(() => config.userProfile?.avatarUrl, () => {

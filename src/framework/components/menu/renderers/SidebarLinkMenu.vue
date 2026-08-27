@@ -3,8 +3,7 @@
     <li v-for="item in normalizedItems" :key="item.key">
       <component
         :is="item.external ? 'a' : RouterLink"
-        :to="item.external ? undefined : item.to"
-        :href="item.external ? item.href : undefined"
+        v-bind="item.external ? { href: item.href } : { to: item.to }"
         class="sidebar-nav-item"
         :class="{ 'sidebar-nav-item-tag': variant === 'tags' }"
         :target="item.external ? '_blank' : undefined"

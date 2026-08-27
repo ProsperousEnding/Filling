@@ -10,7 +10,7 @@ export function sitePath(path = '/') {
     return normalizedBasePath
   }
 
-  return `${normalizedBasePath}${normalizedPath}`.replace(/\/{2,}/gu, '/')
+  return `${normalizedBasePath}${normalizedPath}/`.replace(/\/{2,}/gu, '/')
 }
 
 export async function installCoverFixture(page, fixture) {

@@ -11,6 +11,17 @@ const COVER_FIXTURE = `
 test.describe('static fallback', () => {
   test.use({ javaScriptEnabled: false })
 
+  test('renders the complete Vue homepage without JavaScript', async ({ page }) => {
+    await page.goto(sitePath('/'))
+
+    await expect(page.locator('#app[data-vue-prerendered="true"]')).toBeVisible()
+    await expect(page.locator('[data-static-preview="true"]')).toHaveCount(0)
+    await expect(page.locator('.article-feed-card')).toHaveCount(5)
+    await expect(page.locator('.sidebar-container-desktop')).toBeVisible()
+    await expect(page.locator('.article-feed-card img[src]')).toHaveCount(5)
+    await expect(page.locator('.article-feed-card').first()).toHaveAttribute('href', /\/article\//u)
+  })
+
   test('keeps article lists and article content readable without JavaScript', async ({ page }) => {
     await page.goto(sitePath('/articles'))
 
@@ -28,7 +39,7 @@ test.describe('static fallback', () => {
   })
 })
 
-test('applies the saved theme before the runtime replaces the static preview', async ({ page }) => {
+test('keeps the fallback visible while a non-prerendered route starts', async ({ page }) => {
   let releaseMainScript
   const mainScriptGate = new Promise(resolve => {
     releaseMainScript = resolve
@@ -42,13 +53,27 @@ test('applies the saved theme before the runtime replaces the static preview', a
 
   const navigation = page.goto(sitePath('/articles'))
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await expect(page.locator('html')).toHaveAttribute('data-runtime-pending', 'true')
-  await expect(page.locator('[data-static-preview="true"]')).toBeHidden()
+  await expect(page.locator('[data-static-preview="true"]')).toBeVisible()
 
   releaseMainScript()
   await navigation
   await expect(page.locator('[data-static-preview="true"]')).toHaveCount(0)
-  await expect(page.locator('html')).not.toHaveAttribute('data-runtime-pending', 'true')
+})
+
+test('hydrates the prerendered homepage in place', async ({ page }) => {
+  const hydrationMessages = []
+  page.on('console', (message) => {
+    if (/hydration/iu.test(message.text())) {
+      hydrationMessages.push(message.text())
+    }
+  })
+
+  await page.goto(sitePath('/'))
+
+  await expect(page.locator('#app')).not.toHaveAttribute('data-vue-prerendered', 'true')
+  await expect(page.locator('[data-static-preview="true"]')).toHaveCount(0)
+  await expect(page.locator('.article-feed-card')).toHaveCount(5)
+  expect(hydrationMessages).toEqual([])
 })
 
 test('hydrates the article list and defers offscreen covers', async ({ page }) => {

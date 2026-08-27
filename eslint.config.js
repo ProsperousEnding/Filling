@@ -7,6 +7,7 @@ export default [
     ignores: [
       'dist/**',
       'dist-lib/**',
+      'dist-ssr/**',
       '**/dist-worker/**',
       '.wrangler/**',
       'node_modules/**',

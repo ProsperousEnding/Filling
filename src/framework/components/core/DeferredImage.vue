@@ -36,8 +36,17 @@ const props = defineProps({
 
 const emit = defineEmits(['load', 'error'])
 
+function isHydratingPrerenderedPage() {
+  return typeof document !== 'undefined'
+    && Boolean(document.querySelector('#app[data-vue-prerendered="true"]'))
+}
+
 const imageRef = ref(null)
-const shouldLoad = ref(props.loading === 'eager')
+const shouldLoad = ref(
+  props.loading === 'eager'
+  || import.meta.env.SSR
+  || isHydratingPrerenderedPage()
+)
 const fallbackSource = ref('')
 const hasLoaded = ref(false)
 const normalizedLoading = computed(() => (props.loading === 'eager' ? 'eager' : 'lazy'))
@@ -118,14 +127,10 @@ onBeforeUnmount(() => {
 
 <style scoped>
 img {
-  opacity: 0;
+  opacity: 1;
   transition-property: opacity, transform;
   transition-duration: 180ms, var(--deferred-image-transform-duration, 200ms);
   transition-timing-function: ease-out;
-}
-
-img[data-image-state='loaded'] {
-  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

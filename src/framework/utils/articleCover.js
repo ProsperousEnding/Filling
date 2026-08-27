@@ -41,6 +41,7 @@ export const DEFAULT_SEEDED_COVER_URLS = Object.freeze({
 })
 
 const runtimeRandomCoverPools = new Map()
+let runtimeRandomCoverSeed = ''
 
 function normalizeString(value) {
   return String(value || '').trim()
@@ -204,11 +205,38 @@ function createNumericHash(value) {
   return String(Math.abs(hash) || 1)
 }
 
-function shuffleCoverSources(sources) {
+function getRuntimeRandomCoverSeed() {
+  const injectedSeed = normalizeString(globalThis.__FILLING_COVER_POOL_SEED__)
+
+  if (injectedSeed) {
+    return injectedSeed
+  }
+
+  if (!runtimeRandomCoverSeed) {
+    runtimeRandomCoverSeed = `${Date.now()}-${Math.random()}`
+  }
+
+  return runtimeRandomCoverSeed
+}
+
+function createSeededRandom(seedInput) {
+  let state = Number.parseInt(createNumericHash(seedInput), 10) || 1
+
+  return () => {
+    state += 0x6D2B79F5
+    let value = state
+    value = Math.imul(value ^ (value >>> 15), value | 1)
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61)
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function shuffleCoverSources(sources, poolKey) {
   const shuffledSources = [...sources]
+  const random = createSeededRandom(`${getRuntimeRandomCoverSeed()}\u0000${poolKey}`)
 
   for (let index = shuffledSources.length - 1; index > 0; index -= 1) {
-    const targetIndex = Math.floor(Math.random() * (index + 1))
+    const targetIndex = Math.floor(random() * (index + 1))
     const currentSource = shuffledSources[index]
     shuffledSources[index] = shuffledSources[targetIndex]
     shuffledSources[targetIndex] = currentSource
@@ -225,7 +253,7 @@ function selectRuntimeRandomCoverSource(sources, seedInput) {
     poolState = {
       assignments: new Map(),
       cursor: 0,
-      sources: shuffleCoverSources(sources)
+      sources: shuffleCoverSources(sources, poolKey)
     }
     runtimeRandomCoverPools.set(poolKey, poolState)
   }
@@ -241,6 +269,11 @@ function selectRuntimeRandomCoverSource(sources, seedInput) {
   poolState.assignments.set(seed, source)
   poolState.cursor += 1
   return source
+}
+
+export function resetRuntimeRandomCoverPool(seed = '') {
+  runtimeRandomCoverPools.clear()
+  runtimeRandomCoverSeed = normalizeString(seed)
 }
 
 function selectSeededCoverSource(source, seedInput, options = {}) {

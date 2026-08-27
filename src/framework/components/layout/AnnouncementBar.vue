@@ -20,8 +20,9 @@
           <component
             :is="announcement.external ? 'a' : 'router-link'"
             v-if="announcement.linkUrl && announcement.linkText"
-            :href="announcement.external ? announcement.linkUrl : undefined"
-            :to="announcement.external ? undefined : announcement.linkUrl"
+            v-bind="announcement.external
+              ? { href: announcement.linkUrl }
+              : { to: announcement.linkUrl }"
             :target="announcement.external ? '_blank' : undefined"
             :rel="announcement.external ? 'noreferrer' : undefined"
             class="announcement-link"

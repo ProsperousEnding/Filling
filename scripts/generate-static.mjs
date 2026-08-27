@@ -1,6 +1,7 @@
+import { randomBytes } from 'node:crypto'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import {
   configureBlogRoutePatterns,
   getArchivePath,
@@ -40,7 +41,7 @@ import { normalizeCoverConfig } from '../src/framework/utils/coverConfig.js'
 import { createSeededArticleCover } from '../src/framework/utils/articleCover.js'
 import { normalizeAnalyticsConfig } from '../src/framework/utils/analyticsConfig.js'
 import { resolveFeatureMenuConfig } from '../src/framework/utils/featurePageConfig.js'
-import { selectHomeArticles } from '../src/framework/utils/homeArticleSelection.js'
+import { getHomeArticleModeTitle } from '../src/framework/utils/homeArticleSelection.js'
 import { buildFontConfigCss, normalizeFontConfig, resolveFontPreloadLinks } from '../src/framework/utils/fontConfig.js'
 import { normalizeMarkdownConfig } from '../src/framework/utils/markdownConfig.js'
 import {
@@ -56,6 +57,8 @@ import { resolveStaticRouteOutputFile } from './static-route-output.mjs'
 
 const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url))
 const DIST_DIR = path.join(ROOT_DIR, 'dist')
+const SSR_ENTRY_FILE = path.join(ROOT_DIR, 'dist-ssr', 'entry-server.js')
+const SSR_MANIFEST_FILE = path.join(DIST_DIR, '.vite', 'ssr-manifest.json')
 const CONFIG_DIR = path.join(ROOT_DIR, 'blog', 'config')
 const ARTICLES_DIR = path.join(ROOT_DIR, 'blog', 'content', 'articles')
 
@@ -713,12 +716,41 @@ function injectHead(template, {
   return nextTemplate.replace('</head>', `    ${headTags}\n  </head>`)
 }
 
-function replaceAppRoot(template, markup) {
-  return template.replace('<div id="app"></div>', `<div id="app">${markup}</div>`)
+function replaceAppRoot(template, markup, attributes = '') {
+  return template.replace('<div id="app"></div>', `<div id="app"${attributes}>${markup}</div>`)
+}
+
+function renderPrerenderAssetLinks(modules = [], manifest = {}, basePath = '/') {
+  const seenAssets = new Set()
+
+  return modules.flatMap(moduleId => manifest[moduleId] || [])
+    .filter((asset) => {
+      if (!asset || seenAssets.has(asset)) return false
+      seenAssets.add(asset)
+      return true
+    })
+    .map((asset) => {
+      const href = escapeAttribute(withBasePath(basePath, asset))
+
+      if (asset.endsWith('.css')) {
+        return `<link rel="stylesheet" href="${href}" />`
+      }
+
+      if (asset.endsWith('.js')) {
+        return `<link rel="modulepreload" crossorigin href="${href}" />`
+      }
+
+      if (/\.(?:woff2?|ttf|otf)$/iu.test(asset)) {
+        return `<link rel="preload" as="font" crossorigin href="${href}" />`
+      }
+
+      return ''
+    })
+    .filter(Boolean)
+    .join('\n    ')
 }
 
 const STATIC_PREVIEW_STYLE = `<style id="vue-blog-static-preview-style">
-  html[data-runtime-pending='true'] .ssg-shell{visibility:hidden}
   .ssg-shell{min-height:100vh;min-height:100dvh;background:var(--theme-body-background,#f8fafc);color:var(--theme-body-color,#0f172a);font-family:var(--font-sans,ui-sans-serif,system-ui,sans-serif)}
   .ssg-header{border-bottom:1px solid var(--theme-header-border,rgba(148,163,184,.2));background:var(--theme-header-bg,rgba(255,255,255,.9))}
   .ssg-header-inner,.ssg-main,.ssg-footer-inner{width:min(72rem,calc(100% - 2rem));margin:0 auto}
@@ -927,7 +959,7 @@ async function writeRouteFile(routePath, html) {
   await writeFile(filePath, html, 'utf8')
 }
 
-function renderPage(route, context) {
+async function renderPage(route, context) {
   const {
     site,
     profile,
@@ -976,20 +1008,19 @@ function renderPage(route, context) {
     themeHeadTags
   })
 
-  return replaceAppRoot(withHead, renderStaticPreview(route, context))
-}
+  if (route.vuePrerender) {
+    const renderResult = await context.renderVueRoute(route.path)
+    const markup = typeof renderResult === 'string' ? renderResult : renderResult.html
+    const modules = typeof renderResult === 'string' ? [] : renderResult.modules
+    const assetLinks = renderPrerenderAssetLinks(modules, context.ssrManifest, basePath)
+    const coverSeedScript = `<script>globalThis.__FILLING_COVER_POOL_SEED__=${JSON.stringify(context.coverPoolSeed).replace(/</gu, '\\u003c')}</script>`
+    const prerenderHead = [assetLinks, coverSeedScript].filter(Boolean).join('\n    ')
+    const withPrerenderHead = withHead.replace('</head>', `    ${prerenderHead}\n  </head>`)
 
-function normalizeStaticHomeArticleConfig(source = {}) {
-  return {
-    ...source,
-    includeIds: source.includeIds || source.include_ids,
-    excludeIds: source.excludeIds || source.exclude_ids,
-    excludeCategories: source.excludeCategories || source.exclude_categories,
-    excludeTags: source.excludeTags || source.exclude_tags,
-    includeSticky: source.includeSticky ?? source.include_sticky,
-    stickyFirst: source.stickyFirst ?? source.sticky_first,
-    fallbackToLatest: source.fallbackToLatest ?? source.fallback_to_latest
+    return replaceAppRoot(withPrerenderHead, markup, ' data-vue-prerendered="true"')
   }
+
+  return replaceAppRoot(withHead, renderStaticPreview(route, context))
 }
 
 async function createPageRoutes(context) {
@@ -1002,16 +1033,14 @@ async function createPageRoutes(context) {
   const tagsPage = resolveMenuPage('tags', menus, routePatterns)
   const archivePage = resolveMenuPage('archive', menus, routePatterns)
   const searchPage = resolveMenuPage('search', menus, routePatterns)
-  const homeArticleConfig = normalizeStaticHomeArticleConfig(context.site?.home_articles || context.site?.homeArticles)
-  const homePageSize = normalizePositiveInteger(homeArticleConfig.pageSize || homeArticleConfig.page_size, 8)
-  const homeArticles = selectHomeArticles(articles, homeArticleConfig).slice(0, homePageSize)
+  const homeArticleMode = context.site?.home_articles?.mode || context.site?.homeArticles?.mode
 
   if (homePage) {
     routes.push({
       path: getHomePath(),
-      pageTitle: homePage.title || '最新文章',
+      pageTitle: homePage.title || getHomeArticleModeTitle(homeArticleMode),
       description: homePage.description || '浏览站点最新发布的文章内容。',
-      staticItems: homeArticles
+      vuePrerender: true
     })
   }
 
@@ -1305,7 +1334,7 @@ async function writeRobots(siteUrl, basePath) {
 }
 
 async function write404(template, context) {
-  const html = renderPage({
+  const html = await renderPage({
     path: getNotFoundPath(),
     pageTitle: '页面未找到',
     description: '您访问的页面不存在。',
@@ -1332,9 +1361,10 @@ async function writeNoJekyll() {
 
 async function main() {
   const basePath = resolveBasePath()
-  const [template, configs] = await Promise.all([
+  const [template, configs, ssrManifestSource] = await Promise.all([
     readFile(path.join(DIST_DIR, 'index.html'), 'utf8'),
-    loadConfigs()
+    loadConfigs(),
+    readFile(SSR_MANIFEST_FILE, 'utf8')
   ])
   const defaultLicense = normalizeDefaultLicenseConfig(configs.license)
   const codeBlock = normalizeCodeBlockConfig(configs.code_block)
@@ -1348,6 +1378,8 @@ async function main() {
   const menus = normalizeMenuConfig(resolveFeatureMenuConfig(configs.site.menus, configs))
   const siteUrl = normalizeSiteUrl(configs.site.site_url || configs.site.url)
   const font = normalizeFontConfig(configs.font)
+  const coverPoolSeed = randomBytes(12).toString('hex')
+  const { render: renderVueRoute } = await import(pathToFileURL(SSR_ENTRY_FILE).href)
   const context = {
     template,
     site: configs.site,
@@ -1367,13 +1399,19 @@ async function main() {
     menus,
     routePatterns,
     basePath,
+    coverPoolSeed,
+    ssrManifest: JSON.parse(ssrManifestSource),
+    renderVueRoute: routePath => renderVueRoute(routePath, {
+      baseUrl: basePath,
+      coverPoolSeed
+    }),
     pageSize: Number(configs.site?.pagination?.page_size) || 10
   }
   const routes = await createPageRoutes(context)
   context.staticRoutePaths = new Set(routes.map(route => route.path))
 
   await Promise.all(routes.map(async (route) => {
-    const html = renderPage(route, context)
+    const html = await renderPage(route, context)
     await writeRouteFile(route.path, html)
   }))
 

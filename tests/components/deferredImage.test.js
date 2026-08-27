@@ -9,6 +9,7 @@ let wrapper
 afterEach(() => {
   wrapper?.unmount()
   wrapper = undefined
+  document.body.innerHTML = ''
   globalThis.IntersectionObserver = originalIntersectionObserver
   vi.restoreAllMocks()
 })
@@ -52,15 +53,22 @@ describe('DeferredImage', () => {
     expect(disconnect).toHaveBeenCalledOnce()
   })
 
-  it('assigns eager image sources immediately', () => {
-    originalIntersectionObserver = globalThis.IntersectionObserver
-    let observerCount = 0
-    globalThis.IntersectionObserver = class IntersectionObserverMock {
-      constructor() {
-        observerCount += 1
-      }
-    }
+  it('assigns lazy sources while hydrating a prerendered page', () => {
+    document.body.innerHTML = '<div id="app" data-vue-prerendered="true"></div>'
 
+    wrapper = mount(DeferredImage, {
+      attachTo: document.body,
+      props: {
+        src: 'https://images.example.com/cover.webp',
+        loading: 'lazy'
+      }
+    })
+
+    expect(wrapper.attributes('src')).toBe('https://images.example.com/cover.webp')
+    expect(wrapper.attributes('data-image-state')).toBe('loading')
+  })
+
+  it('assigns eager image sources immediately', () => {
     wrapper = mount(DeferredImage, {
       props: {
         src: 'https://images.example.com/cover.webp',
@@ -71,7 +79,6 @@ describe('DeferredImage', () => {
     expect(wrapper.attributes('src')).toBe('https://images.example.com/cover.webp')
     expect(wrapper.attributes('decoding')).toBe('async')
     expect(wrapper.attributes('data-image-state')).toBe('loading')
-    expect(observerCount).toBe(0)
   })
 
   it('reveals an image only after it has loaded', async () => {

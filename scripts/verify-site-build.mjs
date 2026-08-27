@@ -59,7 +59,7 @@ const articleHtml = await readFile(
 assert.equal(articleHtml.includes('<meta property="og:type" content="article"'), true)
 assert.equal(articleHtml.includes('<link rel="canonical"'), true)
 assert.equal(articleHtml.includes('data-static-preview="true"'), true)
-assert.equal(articleHtml.includes("html[data-runtime-pending='true'] .ssg-shell{visibility:hidden}"), true)
+assert.equal(articleHtml.includes('data-runtime-pending'), false)
 assert.equal(articleHtml.includes('class="ssg-article-content article-content"'), true)
 assert.equal(/<div id="app">\s*<\/div>/u.test(articleHtml), false)
 
@@ -71,6 +71,13 @@ assert.match(
   /href="[^"]*\/article\/[^"]+\/"/u,
   'Static article links must target their generated index.html directories.'
 )
+
+assert.equal(indexHtml.includes('data-vue-prerendered="true"'), true)
+assert.equal(indexHtml.includes('data-static-preview="true"'), false)
+assert.equal(indexHtml.includes('class="menu-page-list"'), true)
+assert.equal(indexHtml.includes('class="sidebar-container sidebar-container-desktop"'), true)
+assert.match(indexHtml, /<a href="\/article\/[^"]+" class="menu-page-list-item/u)
+assert.match(indexHtml, /<img[^>]+src="https:\/\//u)
 
 const notFoundHtml = await readFile(path.join(distDir, '404.html'), 'utf8')
 assert.equal(notFoundHtml.includes('页面未找到'), true)

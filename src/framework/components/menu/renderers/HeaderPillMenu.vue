@@ -12,8 +12,7 @@
       >
         <component
           :is="getItemComponent(item)"
-          :to="getItemTo(item)"
-          :href="getItemHref(item)"
+          v-bind="getItemTargetProps(item)"
           class="site-header-nav-link relative px-3 py-1 text-sm"
           :class="{ 'site-header-nav-link-active': isActive(item) }"
           :target="item.external ? '_blank' : undefined"
@@ -43,8 +42,7 @@
             :is="getItemComponent(child)"
             v-for="child in item.children"
             :key="child.key"
-            :to="getItemTo(child)"
-            :href="getItemHref(child)"
+            v-bind="getItemTargetProps(child)"
             class="site-header-nav-dropdown-link"
             :class="{ 'site-header-nav-dropdown-link-active': isActive(child) }"
             :target="child.external ? '_blank' : undefined"
@@ -72,8 +70,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 
 import {
   getMenuItemComponent,
-  getMenuItemHref,
-  getMenuItemTo,
   hasMenuItemTarget,
   isMenuItemActive,
   normalizeMenuItems
@@ -96,8 +92,11 @@ const openItemKey = ref('')
 const normalizedItems = computed(() => normalizeMenuItems(props.items))
 
 const hasTarget = hasMenuItemTarget
-const getItemTo = getMenuItemTo
-const getItemHref = getMenuItemHref
+function getItemTargetProps(item) {
+  return item.external
+    ? { href: item.href }
+    : { to: item.to }
+}
 
 function getItemComponent(item) {
   return getMenuItemComponent(item)

@@ -10,6 +10,7 @@ import {
   createArticleCoverSrcset,
   createOptimizedArticleCoverUrl,
   createSeededArticleCover,
+  resetRuntimeRandomCoverPool,
   resolveDisplayArticleCover
 } from '../src/framework/utils/articleCover.js'
 import { normalizeCoverConfig } from '../src/framework/utils/coverConfig.js'
@@ -166,6 +167,28 @@ test('random cover mode shuffles the configured pool and keeps an article stable
   assert.equal(new Set(covers).size, articles.length)
   assert.ok(covers.every(cover => pool.includes(cover)))
   assert.equal(resolveDisplayArticleCover(articles[0], { coverConfig: config }), covers[0])
+})
+
+test('random cover pools can be reproduced for prerender hydration', () => {
+  const pool = [
+    'https://images.example.com/one.webp',
+    'https://images.example.com/two.webp',
+    'https://images.example.com/three.webp'
+  ]
+  const options = {
+    style: 'mwm-anime',
+    randomizePool: true,
+    styleUrls: { 'mwm-anime': pool }
+  }
+  const articleSeeds = ['article-one', 'article-two', 'article-three']
+
+  resetRuntimeRandomCoverPool('hydration-seed')
+  const prerenderedCovers = articleSeeds.map(seed => createSeededArticleCover(seed, options))
+  resetRuntimeRandomCoverPool('hydration-seed')
+  const hydratedCovers = articleSeeds.map(seed => createSeededArticleCover(seed, options))
+
+  assert.deepEqual(hydratedCovers, prerenderedCovers)
+  assert.equal(new Set(prerenderedCovers).size, articleSeeds.length)
 })
 
 test('current fixed cover pool can assign distinct images to every article', () => {

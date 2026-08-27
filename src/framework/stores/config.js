@@ -1668,9 +1668,12 @@ export const useConfigStore = defineStore('config', {
       this.$patch(buildNormalizedState(createNamespacedConfigInput(configs)))
     },
 
-    async bootstrapConfig() {
+    async bootstrapConfig(options = {}) {
       await this.reloadConfig()
-      this.loadThemeFromStorage()
+
+      if (options.loadStoredTheme !== false) {
+        this.loadThemeFromStorage()
+      }
     }
   }
 })

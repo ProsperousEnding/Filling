@@ -101,9 +101,7 @@ const configStore = useConfigStore()
 const configState = configStore
 const route = useRoute()
 const mobileSidebarDrawer = ref(null)
-const isMobileViewport = ref(
-  typeof window !== 'undefined' && usesSidebarDrawer(window.innerWidth)
-)
+const isMobileViewport = ref(false)
 let mobileSidebarReturnFocus = null
 let previousBodyOverflow = ''
 let mobileSidebarFocusRequestId = 0

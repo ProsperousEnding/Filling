@@ -16,18 +16,29 @@ function normalizeCategory(entity) {
   }
 }
 
+function mapResponse(response, transform) {
+  return response && typeof response.then === 'function'
+    ? response.then(transform)
+    : transform(response)
+}
+
 export const useCategoryStore = defineStore('category', {
   actions: {
-    async fetchCategories() {
-      const response = await getStoreContentAdapter(this).getCategories()
-      return (Array.isArray(response) ? response : []).map(normalizeCategory)
+    fetchCategories() {
+      return mapResponse(
+        getStoreContentAdapter(this).getCategories(),
+        response => (Array.isArray(response) ? response : []).map(normalizeCategory)
+      )
     },
 
-    async fetchCategoryDetail(id) {
-      return normalizeCategory(await getStoreContentAdapter(this).getCategoryDetail(id))
+    fetchCategoryDetail(id) {
+      return mapResponse(
+        getStoreContentAdapter(this).getCategoryDetail(id),
+        normalizeCategory
+      )
     },
 
-    async fetchCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
+    fetchCategoryArticles(id, params = { page: 1, pageSize: 10 }) {
       return getStoreContentAdapter(this).getCategoryArticles(id, params)
     }
   }

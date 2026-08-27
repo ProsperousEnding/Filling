@@ -16,18 +16,29 @@ function normalizeTag(entity) {
   }
 }
 
+function mapResponse(response, transform) {
+  return response && typeof response.then === 'function'
+    ? response.then(transform)
+    : transform(response)
+}
+
 export const useTagStore = defineStore('tag', {
   actions: {
-    async fetchTags() {
-      const response = await getStoreContentAdapter(this).getTags()
-      return (Array.isArray(response) ? response : []).map(normalizeTag)
+    fetchTags() {
+      return mapResponse(
+        getStoreContentAdapter(this).getTags(),
+        response => (Array.isArray(response) ? response : []).map(normalizeTag)
+      )
     },
 
-    async fetchTagDetail(id) {
-      return normalizeTag(await getStoreContentAdapter(this).getTagDetail(id))
+    fetchTagDetail(id) {
+      return mapResponse(
+        getStoreContentAdapter(this).getTagDetail(id),
+        normalizeTag
+      )
     },
 
-    async fetchTagArticles(id, params = { page: 1, pageSize: 10 }) {
+    fetchTagArticles(id, params = { page: 1, pageSize: 10 }) {
       return getStoreContentAdapter(this).getTagArticles(id, params)
     }
   }
