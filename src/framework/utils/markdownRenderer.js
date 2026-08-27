@@ -532,7 +532,7 @@ function buildCodeLineHtml(codeHtml, content, language, codeBlockConfig) {
       codeBlockConfig.showLineNumbers
         ? `<span class="markdown-code-block__line-number" aria-hidden="true">${escapeHtml(String(start + index))}</span>`
         : '',
-      `<span class="markdown-code-block__line-content">${line.html || ' '}</span>`,
+      `<span class="markdown-code-block__line-content">${line.html}</span>`,
       '</span>'
     ].join('')
   }).join('')

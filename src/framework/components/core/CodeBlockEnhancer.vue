@@ -82,7 +82,10 @@ function handleToggle(button, block) {
 
 async function handleCopy(button, block) {
   const codeElement = block.querySelector('code')
-  const text = codeElement?.textContent || ''
+  const codeLines = codeElement?.querySelectorAll('.markdown-code-block__line-content') || []
+  const text = codeLines.length > 0
+    ? Array.from(codeLines, line => line.textContent || '').join('\n')
+    : codeElement?.textContent || ''
   const success = await copyText(text)
 
   if (!success) {
